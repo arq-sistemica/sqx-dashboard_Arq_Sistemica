@@ -67,9 +67,19 @@
   @media(max-width:700px){ #dna-panel .dna-bot-grid { grid-template-columns: repeat(2,1fr); } }
   #dna-panel .dna-bot-card {
     background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px;
+    position: relative;
   }
+  #dna-panel .dna-bot-card.removed { opacity: 0.35; border-style: dashed; }
   #dna-panel .dna-bot-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   #dna-panel .dna-bot-id  { font-size: 13px; font-weight: 600; color: var(--text); }
+  #dna-panel .dna-bot-remove {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: transparent; border: 1px solid var(--border2);
+    color: var(--text3); font-size: 11px; cursor: pointer; line-height: 1;
+    transition: all 0.15s; flex-shrink: 0; margin-left: 6px;
+  }
+  #dna-panel .dna-bot-remove:hover { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
   #dna-panel .dna-bot-meta { font-size: 10px; color: var(--text3); margin-bottom: 6px; }
   #dna-panel .dna-chips { display: flex; flex-wrap: wrap; gap: 3px; }
   #dna-panel .dna-chip {
@@ -225,6 +235,8 @@
     </div>
     <div class="topbar-right">
       <span class="sync-info" id="sync-info"></span>
+      <span id="bots-counter" style="font-size:11px;color:var(--text3);margin-right:4px"></span>
+      <button id="btn-restore" onclick="restoreBots()" title="Restaurar todos los bots eliminados" style="display:none;background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)">↩ Restaurar todos</button>
       <button onclick="refreshData()" title="Volver a leer los datos del dashboard">↺ Actualizar</button>
       <button onclick="window.close()" title="Cerrar esta pestaña">← Volver</button>
     </div>
@@ -409,10 +421,14 @@ function dnaInit(allBots) {
     const rest    = bot.inds.filter(i => !primary.includes(i));
     const div = document.createElement('div');
     div.className = 'dna-bot-card';
+    const safeId = bot.id.replace(/'/g, "\\'");
     div.innerHTML = `
       <div class="dna-bot-top">
         <div class="dna-bot-id">${bot.id}</div>
-        <span style="font-size:9px;font-weight:600;color:${stageC[bot.stage]||'var(--text3)'}">${stageL[bot.stage]||bot.stage}</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:9px;font-weight:600;color:${stageC[bot.stage]||'var(--text3)'}">${stageL[bot.stage]||bot.stage}</span>
+          <button class="dna-bot-remove" onclick="removeBot('${safeId}')" title="Eliminar este bot del análisis">×</button>
+        </div>
       </div>
       <div class="dna-bot-meta">${bot.asset} · ${bot.tf} · <b style="color:${bot.dir==='Long'?'var(--green)':'var(--red)'}">${bot.dir}</b> · ${bot.entry}</div>
       <div class="dna-chips">
@@ -786,6 +802,36 @@ const STORAGE_KEY_BOTS = 'sqx_overlap_bots';
 const STORAGE_KEY_AUTH = 'sqx_overlap_auth';
 const STORAGE_KEY_TS   = 'sqx_overlap_ts';
 
+let _originalBots = [];
+let _activeBots   = [];
+
+function _updateCounter() {
+  const el = document.getElementById('bots-counter');
+  const rb = document.getElementById('btn-restore');
+  if (!el) return;
+  const removed = _originalBots.length - _activeBots.length;
+  el.textContent = removed > 0
+    ? `${_activeBots.length} / ${_originalBots.length} bots`
+    : `${_originalBots.length} bots`;
+  if (rb) rb.style.display = removed > 0 ? 'inline-flex' : 'none';
+}
+
+function removeBot(botId) {
+  _activeBots = _activeBots.filter(b => b.id !== botId);
+  _updateCounter();
+  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  dnaInit(_activeBots);
+}
+
+function restoreBots() {
+  _activeBots = _originalBots.slice();
+  _updateCounter();
+  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  dnaInit(_activeBots);
+}
+
 function loadAndRender() {
   const auth    = localStorage.getItem(STORAGE_KEY_AUTH);
   const botsRaw = localStorage.getItem(STORAGE_KEY_BOTS);
@@ -818,11 +864,13 @@ function loadAndRender() {
     if (syncEl) syncEl.textContent = `Datos sincronizados a las ${hh}:${mm}`;
   }
 
-  dnaInit(allBots);
+  _originalBots = allBots.slice();
+  _activeBots   = allBots.slice();
+  _updateCounter();
+  dnaInit(_activeBots);
 }
 
 function refreshData() {
-  // Borra los renderizados anteriores antes de re-render
   ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
     .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
   loadAndRender();
