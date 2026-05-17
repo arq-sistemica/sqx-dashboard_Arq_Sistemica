@@ -877,6 +877,18 @@ function refreshData() {
 }
 
 loadAndRender();
+
+// ── AUTO-UPDATE: detecta cuando el dashboard empuja nuevos datos ──
+window.addEventListener('storage', e => {
+  if (e.key !== STORAGE_KEY_BOTS || !e.newValue) return;
+  const banner = document.getElementById('update-banner');
+  if (banner) { banner.style.display = 'flex'; return; }
+  const b = document.createElement('div');
+  b.id = 'update-banner';
+  b.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:12px;background:#1a7f4b;color:#fff;padding:10px 20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:13px;font-weight:500;cursor:pointer';
+  b.innerHTML = '<span>⚡ Datos actualizados desde el dashboard</span><button onclick="document.getElementById(\'update-banner\').style.display=\'none\';refreshData()" style="background:#fff;color:#1a7f4b;border:none;border-radius:5px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">Recargar</button><button onclick="document.getElementById(\'update-banner\').style.display=\'none\'" style="background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 2px">×</button>';
+  document.body.appendChild(b);
+});
 </script>
 </body>
 </html>
