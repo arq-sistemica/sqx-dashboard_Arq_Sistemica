@@ -1203,8 +1203,12 @@
         <summary>⬆ Cargar datos de Myfxbook</summary>
         <div style="margin-top:8px">
           <textarea id="mfx-20" rows="8" style="width:100%;border:1px solid #e0e3e8;border-radius:6px;padding:8px;font-size:11px;font-family:monospace;background:#fff;color:#111318;resize:vertical" placeholder="Pegá acá el texto copiado de Myfxbook (los 3 bloques juntos)..."></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button onclick="processMyfxbook('mouxb9hujum0gd0ptf',20)" style="height:32px;padding:0 16px;border-radius:6px;background:#4f46e5;border:none;color:#fff;font-size:12px;font-weight:500;cursor:pointer">⚡ Parsear y cargar</button>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+            <button onclick="processMyfxbook('mouxb9hujum0gd0ptf',20)" style="height:32px;padding:0 16px;border-radius:6px;background:#4f46e5;border:none;color:#fff;font-size:12px;font-weight:500;cursor:pointer">⚡ Parsear texto</button>
+            <label style="height:32px;padding:0 14px;border-radius:6px;background:#f1f3f5;border:1px solid #d1d5db;color:#374151;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0">
+              📂 CSV Myfxbook
+              <input type="file" accept=".csv" style="display:none" onchange="loadMyfxbookCsvFile('mouxb9hujum0gd0ptf',20,this)">
+            </label>
           </div>
           <div id="mfx-err-20" style="display:none;color:#b91c1c;font-size:12px;margin-top:6px"></div>
         </div>
@@ -11482,8 +11486,12 @@ function buildFichaHTML(s, idx) {
         <summary>${mfxLoadLabel}</summary>
         <div style="margin-top:8px">
           <textarea id="mfx-${idx}" rows="8" style="width:100%;border:1px solid #e0e3e8;border-radius:6px;padding:8px;font-size:11px;font-family:monospace;background:#fff;color:#111318;resize:vertical" placeholder="Pegá acá el texto copiado de Myfxbook (los 3 bloques juntos)..."></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button onclick="processMyfxbook('${s.id}',${idx})" style="height:32px;padding:0 16px;border-radius:6px;background:#4f46e5;border:none;color:#fff;font-size:12px;font-weight:500;cursor:pointer">⚡ Parsear y cargar</button>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+            <button onclick="processMyfxbook('${s.id}',${idx})" style="height:32px;padding:0 16px;border-radius:6px;background:#4f46e5;border:none;color:#fff;font-size:12px;font-weight:500;cursor:pointer">⚡ Parsear texto</button>
+            <label style="height:32px;padding:0 14px;border-radius:6px;background:#f1f3f5;border:1px solid #d1d5db;color:#374151;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0">
+              📂 CSV Myfxbook
+              <input type="file" accept=".csv" style="display:none" onchange="loadMyfxbookCsvFile('${s.id}',${idx},this)">
+            </label>
           </div>
           <div id="mfx-err-${idx}" style="display:none;color:#b91c1c;font-size:12px;margin-top:6px"></div>
         </div>
@@ -11819,6 +11827,141 @@ function parseMyfxbook(text) {
     }
   }
   return result;
+}
+
+// ── PARSE MYFXBOOK CSV EXPORT ─────────────────────────────────
+function parseMyfxbookCsv(csvText, filterMagic) {
+  function parseCSVLine(line) {
+    const fields = []; let field = ''; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { fields.push(field.trim()); field = ''; }
+      else { field += ch; }
+    }
+    fields.push(field.trim());
+    return fields;
+  }
+  const lines = csvText.split('\n').map(l => l.trim()).filter(l => l);
+  const headerIdx = lines.findIndex(l => /^Tags,Ticket,Open Date,Close Date/i.test(l));
+  if (headerIdx === -1) return null;
+  const headers = parseCSVLine(lines[headerIdx]);
+  const col = {};
+  headers.forEach((h, i) => { col[h.trim()] = i; });
+  // Stop at Open Trades / Open Orders section
+  let endIdx = lines.length;
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    if (/^Open Trades/i.test(lines[i]) || /^Open Orders/i.test(lines[i])) { endIdx = i; break; }
+  }
+  const result = { gain:null, absGain:null, daily:null, monthly:null, ddPct:null, balance:null,
+    trades:null, pips:null, pf:null, sharpe:null, zScore:null, zProb:null,
+    expectancyPips:null, expectancyUsd:null, ahpr:null, ghpr:null,
+    avgWinPips:null, avgWinUsd:null, avgLossPips:null, avgLossUsd:null,
+    lots:null, commissions:null, longsWon:null, shortsWon:null,
+    bestTradeUsd:null, worstTradeUsd:null, bestTradePips:null, worstTradePips:null,
+    avgTradeLength:null, tradeList:[], winRate:null, netProfit:null, startDate:null, endDate:null };
+  let cumP = 0;
+  for (let i = headerIdx + 1; i < endIdx; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.length < 14) continue;
+    const magic  = (col['Magic Number'] !== undefined ? cols[col['Magic Number']] : '').replace(/"/g,'').trim();
+    const action = (cols[col['Action']] || '').trim();
+    const symbol = (cols[col['Symbol']] || '').trim();
+    if (!symbol || /^(deposit|withdrawal|balance|credit)/i.test(action)) continue;
+    const closeDate = (cols[col['Close Date']] || '').trim();
+    if (!closeDate) continue; // skip open positions
+    if (filterMagic && String(magic) !== String(filterMagic)) continue;
+    const openDate   = (cols[col['Open Date']] || '').trim();
+    const lots       = parseFloat(cols[col['Units/Lots']]) || null;
+    const openPrice  = parseFloat(cols[col['Open Price']]) || null;
+    const closePrice = parseFloat(cols[col['Close Price']]) || null;
+    const pips       = parseFloat(cols[col['Pips']]) || null;
+    const netProfit  = parseFloat(cols[col['Profit']]);
+    const gainPct    = parseFloat(cols[col['Gain']]) || null;
+    const duration   = col['Duration (DD:HH:MM:SS)'] !== undefined ? (cols[col['Duration (DD:HH:MM:SS)']] || null) : null;
+    if (isNaN(netProfit)) continue;
+    cumP += netProfit;
+    result.tradeList.push({ magic, openDate, closeDate, symbol, action, lots, openPrice, closePrice,
+      pips, netProfit, duration, gainPct, cumProfit: Math.round(cumP * 100) / 100 });
+  }
+  if (result.tradeList.length === 0) return null;
+  // Compute aggregate stats
+  const closed  = result.tradeList;
+  const wins    = closed.filter(t => t.netProfit > 0);
+  const losses  = closed.filter(t => t.netProfit < 0);
+  result.trades    = closed.length;
+  result.winRate   = closed.length > 0 ? Math.round((wins.length / closed.length) * 1000) / 10 : null;
+  result.netProfit = Math.round(cumP * 100) / 100;
+  result.pips      = Math.round(closed.reduce((s, t) => s + (t.pips || 0), 0) * 10) / 10;
+  const grossProfit = wins.reduce((s, t) => s + t.netProfit, 0);
+  const grossLoss   = Math.abs(losses.reduce((s, t) => s + t.netProfit, 0));
+  result.pf         = grossLoss > 0 ? Math.round((grossProfit / grossLoss) * 100) / 100 : null;
+  result.bestTradeUsd  = closed.length > 0 ? Math.max(...closed.map(t => t.netProfit)) : null;
+  result.worstTradeUsd = closed.length > 0 ? Math.min(...closed.map(t => t.netProfit)) : null;
+  result.bestTradePips  = closed.length > 0 ? Math.max(...closed.map(t => t.pips || 0)) : null;
+  result.worstTradePips = closed.length > 0 ? Math.min(...closed.map(t => t.pips || 0)) : null;
+  result.lots = Math.round(closed.reduce((s, t) => s + (t.lots || 0), 0) * 100) / 100;
+  const avgWin  = wins.length   > 0 ? grossProfit / wins.length   : 0;
+  const avgLoss = losses.length > 0 ? grossLoss   / losses.length : 0;
+  result.avgWinUsd  = wins.length   > 0 ? Math.round(avgWin * 100) / 100  : null;
+  result.avgLossUsd = losses.length > 0 ? -Math.round(avgLoss * 100) / 100 : null;
+  const winPct = (result.winRate || 0) / 100;
+  result.expectancyUsd = Math.round((winPct * avgWin - (1 - winPct) * avgLoss) * 100) / 100;
+  const wPips = wins.map(t => t.pips || 0);
+  const lPips = losses.map(t => t.pips || 0);
+  result.avgWinPips  = wPips.length > 0 ? Math.round(wPips.reduce((a,b)=>a+b,0)/wPips.length*10)/10 : null;
+  result.avgLossPips = lPips.length > 0 ? Math.round(lPips.reduce((a,b)=>a+b,0)/lPips.length*10)/10 : null;
+  const longs     = closed.filter(t => /buy/i.test(t.action));
+  const longsWon  = longs.filter(t => t.netProfit > 0);
+  const shorts    = closed.filter(t => /sell/i.test(t.action));
+  const shortsWon = shorts.filter(t => t.netProfit > 0);
+  if (longs.length > 0)  result.longsWon  = { won: longsWon.length,  total: longs.length,  pct: Math.round(longsWon.length/longs.length*1000)/10 };
+  if (shorts.length > 0) result.shortsWon = { won: shortsWon.length, total: shorts.length, pct: Math.round(shortsWon.length/shorts.length*1000)/10 };
+  // Dates (tradeList is newest-first from Myfxbook export)
+  const sortedByOpen = [...closed].sort((a, b) => (a.openDate || '').localeCompare(b.openDate || ''));
+  result.startDate = sortedByOpen[0]?.openDate || null;
+  result.endDate   = sortedByOpen[sortedByOpen.length - 1]?.closeDate || null;
+  return result;
+}
+
+function loadMyfxbookCsvFile(botId, idx, input) {
+  const file = input?.files?.[0];
+  if (!input) { input.value = ''; return; }
+  const errEl = document.getElementById('mfx-err-' + idx);
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    if (errEl) { errEl.textContent = 'Solo archivos .csv'; errEl.style.display = 'block'; }
+    input.value = '';
+    return;
+  }
+  const bot = DB.find(b => b.id === botId);
+  if (!bot) return;
+  const filterMagic = bot.magic && String(bot.magic) !== '0' ? String(bot.magic) : null;
+  const rd = new FileReader();
+  rd.onload = e => {
+    const text = e.target.result;
+    const parsed = parseMyfxbookCsv(text, filterMagic);
+    if (!parsed || parsed.tradeList.length === 0) {
+      // Try without magic filter
+      const parsedAll = parseMyfxbookCsv(text, null);
+      if (!parsedAll || parsedAll.tradeList.length === 0) {
+        if (errEl) { errEl.textContent = 'No se encontraron trades cerrados en el CSV.'; errEl.style.display = 'block'; }
+        input.value = '';
+        return;
+      }
+      bot.myfxbookData = parsedAll;
+      const uniqueMagics = [...new Set(parsedAll.tradeList.map(t => t.magic).filter(Boolean))];
+      if (errEl) { errEl.textContent = `Cargados sin filtro de magic (${uniqueMagics.join(', ')}). Verificá que el CSV sea del bot correcto.`; errEl.style.display = 'block'; }
+    } else {
+      bot.myfxbookData = parsed;
+      if (errEl) errEl.style.display = 'none';
+    }
+    input.value = '';
+    markDirty();
+    collapseRow(idx); expandedRow = null;
+    setTimeout(() => { expandRow(idx); expandedRow = idx; }, 60);
+  };
+  rd.readAsText(file, 'utf-8');
 }
 
 // ── PROCESS MYFXBOOK ───────────────────────────────────────────
