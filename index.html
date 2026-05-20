@@ -1367,15 +1367,16 @@ try {
     } else if (_lsParsed && typeof _lsParsed === 'object') {
       if (Array.isArray(_lsParsed.db)) DB = _lsParsed.db;
     }
-    // Merge myfxbookData y overviewData del HTML embebido hacia el localStorage
-    // (no sobreescribe datos más nuevos que el usuario haya ingresado en sesión)
+    // Merge del HTML embebido hacia el localStorage
+    // myfxbookData: el embeddedDB es la fuente MT5 — siempre pisa (es el dato más fresco)
+    // overviewData: solo se copia si el bot no tiene uno (dato ingresado manualmente)
     if (_embeddedDB.length > 0) {
       const _embMap = {};
       _embeddedDB.forEach(b => { if (b.id) _embMap[b.id] = b; });
       DB.forEach(b => {
         const src = _embMap[b.id];
         if (src) {
-          if (!b.myfxbookData && src.myfxbookData) b.myfxbookData = src.myfxbookData;
+          if (src.myfxbookData) b.myfxbookData = src.myfxbookData;
           if (!b.overviewData  && src.overviewData)  b.overviewData  = src.overviewData;
         }
       });
