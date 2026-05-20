@@ -47,8 +47,12 @@ def normalize_name(s: str) -> str:
       SQX : Strategy 3.1.15(2) - Improved 2.1.6 → strategy31152improved216
 
     El suffix que falta en MT5 (truncación a 31 chars) se resuelve con prefix matching.
+    El prefijo WFM_ (convención de SQX Walk-Forward) se elimina antes de comparar.
     """
-    return re.sub(r'[^a-z0-9]', '', s.lower())
+    result = re.sub(r'[^a-z0-9]', '', s.lower())
+    if result.startswith('wfm'):
+        result = result[3:]
+    return result
 
 # Si el comment está vacío, fallback al magic number como string
 def get_bot_key(trade):
