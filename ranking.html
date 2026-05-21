@@ -523,7 +523,6 @@ function refreshData() {
 // ════════════════════════════════════════════
 (function init() {
   const botsRaw = localStorage.getItem(STORAGE_KEY_BOTS);
-  const ts      = localStorage.getItem(STORAGE_KEY_TS);
 
   if (!botsRaw) {
     document.getElementById('no-data-screen').style.display = 'flex';
@@ -543,17 +542,10 @@ function refreshData() {
   document.getElementById('no-data-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
-  if (ts) {
-    const d  = new Date(parseInt(ts, 10));
-    const hh = d.getHours().toString().padStart(2, '0');
-    const mm = d.getMinutes().toString().padStart(2, '0');
-    const el = document.getElementById('sync-info');
-    if (el) el.textContent = 'Datos sincronizados a las ' + hh + ':' + mm;
-  }
-
   wrUpdateLabel();
   wrRefreshHistorySelect();
   wrRender(wrGetBots());
+  updateSyncLabel();
 })();
 
 // Auto-refresh cuando index.html actualiza sqx_ranking_bots desde otra pestaña
@@ -563,17 +555,35 @@ window.addEventListener('storage', function(e) {
     RANKING_SOURCE = JSON.parse(e.newValue);
     if (!wrViewingSnapshot) {
       wrRender(wrGetBots());
-      const ts = localStorage.getItem(STORAGE_KEY_TS);
-      if (ts) {
-        const d  = new Date(parseInt(ts, 10));
-        const hh = d.getHours().toString().padStart(2, '0');
-        const mm = d.getMinutes().toString().padStart(2, '0');
-        const el = document.getElementById('sync-info');
-        if (el) el.textContent = 'Auto-actualizado a las ' + hh + ':' + mm;
-      }
+      updateSyncLabel();
     }
   } catch(err) {}
 });
+
+// Re-leer datos al enfocar la pestaña (captura actualizaciones del dashboard)
+window.addEventListener('focus', function() {
+  const botsRaw = localStorage.getItem(STORAGE_KEY_BOTS);
+  if (!botsRaw) return;
+  try {
+    const newBots = JSON.parse(botsRaw);
+    if (!Array.isArray(newBots)) return;
+    RANKING_SOURCE = newBots;
+    if (!wrViewingSnapshot) {
+      wrRender(wrGetBots());
+      updateSyncLabel();
+    }
+  } catch(e) {}
+});
+
+function updateSyncLabel() {
+  const ts = localStorage.getItem(STORAGE_KEY_TS);
+  if (!ts) return;
+  const d  = new Date(parseInt(ts, 10));
+  const hh = d.getHours().toString().padStart(2, '0');
+  const mm = d.getMinutes().toString().padStart(2, '0');
+  const el = document.getElementById('sync-info');
+  if (el) el.textContent = 'Actualizado a las ' + hh + ':' + mm;
+}
 </script>
 </body>
 </html>
