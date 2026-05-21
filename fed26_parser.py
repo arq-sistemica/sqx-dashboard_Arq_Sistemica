@@ -121,18 +121,22 @@ def calculate_metrics(trades):
     avg_loss = (gross_loss   / len(losers))  if losers  else 0
 
     # Equity curve, max drawdown y tradeList para dashboard
-    running = 0.0
-    peak    = 0.0
-    max_dd  = 0.0
+    # eq arranca en INITIAL_EQUITY (igual que el dashboard) — DD relativo a equity total
+    # cum_profit arranca en 0 — para cumProfit en la tabla de trades
+    cum_profit = 0.0
+    eq         = INITIAL_EQUITY
+    peak       = INITIAL_EQUITY
+    max_dd     = 0.0
     trade_list = []
 
     sorted_trades = sorted(trades, key=lambda t: t["close_time"])
     for t in sorted_trades:
         net = t["profit"] + t["commission"] + t["swap"]
-        running += net
-        if running > peak:
-            peak = running
-        dd = (peak - running) / peak * 100 if peak > 0 else 0
+        cum_profit += net
+        eq         += net
+        if eq > peak:
+            peak = eq
+        dd = (peak - eq) / peak * 100
         if dd > max_dd:
             max_dd = dd
         trade_list.append({
@@ -146,7 +150,7 @@ def calculate_metrics(trades):
             "pips":       None,
             "netProfit":  round(net, 2),
             "gainPct":    round(net / INITIAL_EQUITY * 100, 4),
-            "cumProfit":  round(running, 2),
+            "cumProfit":  round(cum_profit, 2),
         })
 
     from collections import Counter
