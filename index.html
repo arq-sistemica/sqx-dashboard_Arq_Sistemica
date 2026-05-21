@@ -1425,6 +1425,12 @@ const MAGIC_BY_BOT_ID = {
 };
 DB.forEach(b => { if (b.id && MAGIC_BY_BOT_ID[b.id] && !b.magic) b.magic = MAGIC_BY_BOT_ID[b.id]; });
 
+// Correcciones de timeframe por magic number
+const TF_BY_MAGIC = {
+  3223415: 'H4',
+};
+DB.forEach(b => { if (b.magic && TF_BY_MAGIC[b.magic]) b.tf = TF_BY_MAGIC[b.magic]; });
+
 let dirty = false;
 
 // ── CRITERIOS ──────────────────────────────────────────────────
