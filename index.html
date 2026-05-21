@@ -3297,7 +3297,9 @@ function buildDnaBots() {
       const stage = ph === 'live' ? 'live' : ph === 'descartado' ? 'descartado' : 'incubacion';
       const allConds = [...(p.condicionesLong || []), ...(p.condicionesShort || [])];
       const signal = allConds.slice(0, 3).join(' AND ') || b.name;
-      return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal };
+      const ddPct = b.myfxbookData?.ddPct ?? null;
+      const pf    = b.myfxbookData?.pf    ?? null;
+      return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal, ddPct, pf };
     })
     .filter(b => {
       const bn = norm(b.id);
@@ -3387,6 +3389,10 @@ function dnaInit() {
         <span style="font-size:9px;font-weight:600;color:${stageC[bot.stage]}">${stageL[bot.stage]}</span>
       </div>
       <div class="dna-bot-meta">${bot.asset} · ${bot.tf} · <b style="color:${bot.dir==='Long'?'var(--green)':'var(--red)'}">${bot.dir}</b> · ${bot.entry}</div>
+      ${(bot.ddPct != null || bot.pf != null) ? `<div style="display:flex;gap:8px;margin-bottom:5px;margin-top:4px">
+        ${bot.pf  != null ? `<span style="font-size:10px;font-weight:600;color:${bot.pf>=1.3?'var(--green)':bot.pf>=1.1?'#d97706':'var(--red)'}">PF ${bot.pf.toFixed(2)}</span>` : ''}
+        ${bot.ddPct != null ? `<span style="font-size:10px;font-weight:600;color:${bot.ddPct<=5?'var(--green)':bot.ddPct<=15?'#d97706':'var(--red)'}">DD ${bot.ddPct.toFixed(1)}%</span>` : ''}
+      </div>` : ''}
       <div class="dna-chips">
         ${primary.map(i=>`<span class="dna-chip dna-chip-primary">${i}</span>`).join('')}
         ${rest.map(i=>`<span class="dna-chip ${bot.dir==='Short'?'dna-chip-short':''}">${i}</span>`).join('')}
