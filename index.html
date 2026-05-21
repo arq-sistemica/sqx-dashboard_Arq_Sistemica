@@ -1384,8 +1384,30 @@ try {
       const _lsIds = new Set(DB.map(b => b.id).filter(Boolean));
       _embeddedDB.forEach(b => { if (b.id && !_lsIds.has(b.id)) DB.push(b); });
 
-      // Limpiar entradas fed26_ que ya tienen un bot SQX equivalente (quita duplicados por WFM fix)
+      // Fusionar bots SQX (source='csv') con sus fed26_ equivalentes y eliminar el duplicado SQX
+      // Cubre el caso: se importa un Databank CSV después de que ya existe un bot fed26_ con ese mismo bot
       const _normN = s => { const r = (s||'').toLowerCase().replace(/[^a-z0-9]/g,''); return r.startsWith('wfm') ? r.slice(3) : r; };
+      const _toRemove = new Set();
+      DB.filter(b => b.source === 'csv' && b.id && !b.id.startsWith('fed26_')).forEach(csvBot => {
+        const cNorm = _normN(csvBot.name);
+        const fed26 = DB.find(f => f.id && f.id.startsWith('fed26_') && (() => {
+          const fNorm = _normN(f.name || f.id.replace('fed26_',''));
+          return fNorm === cNorm || fNorm.startsWith(cNorm) || cNorm.startsWith(fNorm);
+        })());
+        if (fed26) {
+          // Pasar métricas SQX al bot fed26_ y adoptarle el nombre completo
+          fed26.is = csvBot.is; fed26.oos = csvBot.oos;
+          fed26.sqxFilter = csvBot.sqxFilter;
+          fed26.symbol = fed26.symbol || csvBot.symbol;
+          fed26.tf = fed26.tf || csvBot.tf;
+          fed26.source = 'csv';
+          fed26.name = csvBot.name;
+          _toRemove.add(csvBot.id);
+        }
+      });
+      if (_toRemove.size > 0) DB = DB.filter(b => !_toRemove.has(b.id));
+
+      // Limpiar entradas fed26_ residuales que ya tienen un bot SQX equivalente (sin métricas SQX)
       const _sqxNorms = DB.filter(b => b.id && !b.id.startsWith('fed26_')).map(b => _normN(b.name));
       DB = DB.filter(b => {
         if (!b.id || !b.id.startsWith('fed26_')) return true;
@@ -1585,18 +1607,30 @@ function processFile(file) {
       } else {
         const parsed = parseCSV(text);
         let added = 0, merged = 0;
+        // Normalizar: strip non-alnum + strip prefijo wfm (igual que fed26_parser.py)
+        const _nN = n => { const r = (n||'').toLowerCase().replace(/[^a-z0-9]/g,''); return r.startsWith('wfm') ? r.slice(3) : r; };
         const mergeSQX = (existing, s) => {
           existing.is = s.is; existing.oos = s.oos;
           existing.sqxFilter = s.sqxFilter;
           existing.symbol = existing.symbol || s.symbol;
           existing.tf = existing.tf || s.tf;
           existing.source = 'csv';
+          // Si es un bot fed26_ (MT5), adoptar el nombre completo de SQX
+          if (existing.id && existing.id.startsWith('fed26_')) existing.name = s.name;
         };
 
         parsed.forEach(s => {
+          const sNorm = _nN(s.name);
+          // 1. Match exacto por nombre
           const exactMatch = DB.find(x => x.name === s.name);
-          if (exactMatch) { mergeSQX(exactMatch, s); merged++; }
-          else { DB.push(s); added++; }
+          if (exactMatch) { mergeSQX(exactMatch, s); merged++; return; }
+          // 2. Match fuzzy normalizado (cubre fed26_ vs SQX y truncación MT5 a 31 chars)
+          const fuzzyMatch = DB.find(x => {
+            const xNorm = _nN(x.name);
+            return xNorm === sNorm || xNorm.startsWith(sNorm) || sNorm.startsWith(xNorm);
+          });
+          if (fuzzyMatch) { mergeSQX(fuzzyMatch, s); merged++; return; }
+          DB.push(s); added++;
         });
         markDirty(); render();
         alertOk(`✓ Databank CSV procesado — ${added} nuevo(s), ${merged} actualizado(s).`);
