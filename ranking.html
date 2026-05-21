@@ -277,7 +277,9 @@
             <button class="mode-btn active" id="mode-all"     onclick="wrSetMode('all')">📊 Historial</button>
             <button class="mode-btn"        id="mode-week"    onclick="wrSetMode('week')">📅 Semana</button>
             <button class="mode-btn"        id="mode-month"   onclick="wrSetMode('month')">📆 Mes</button>
-            <button class="mode-btn"        id="mode-quarter" onclick="wrSetMode('quarter')">🗓 Trimestre</button>
+            <button class="mode-btn"        id="mode-quarter"  onclick="wrSetMode('quarter')">🗓 Trimestre</button>
+            <button class="mode-btn"        id="mode-semester" onclick="wrSetMode('semester')">📈 6 Meses</button>
+            <button class="mode-btn"        id="mode-year"     onclick="wrSetMode('year')">📅 Anual</button>
           </div>
         </div>
         <div class="wr-controls" id="period-nav" style="display:none">
@@ -413,6 +415,35 @@ function getPeriodRange(mode, offset) {
       start: start.getTime(), end: end.getTime(),
       label: `${QNAMES[q]} ${year}`,
       key:   `${year}-Q${q + 1}`,
+    };
+  }
+
+  if (mode === 'semester') {
+    const baseMonth = now.getMonth() + offset * 6;
+    const year = now.getFullYear() + Math.floor(baseMonth / 12);
+    const m    = ((baseMonth % 12) + 12) % 12;
+    const s    = m < 6 ? 0 : 1;
+    const start = new Date(year, s * 6, 1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(year, s * 6 + 6, 0);
+    end.setHours(23, 59, 59, 999);
+    return {
+      start: start.getTime(), end: end.getTime(),
+      label: `${s === 0 ? 'S1 (Ene–Jun)' : 'S2 (Jul–Dic)'} ${year}`,
+      key:   `${year}-S${s + 1}`,
+    };
+  }
+
+  if (mode === 'year') {
+    const year  = now.getFullYear() + offset;
+    const start = new Date(year, 0, 1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(year, 11, 31);
+    end.setHours(23, 59, 59, 999);
+    return {
+      start: start.getTime(), end: end.getTime(),
+      label: `Año ${year}`,
+      key:   `${year}`,
     };
   }
 
@@ -582,7 +613,7 @@ function wrSetMode(mode) {
   wrViewingSnapshot = null;
 
   // Actualizar botones
-  ['all','week','month','quarter'].forEach(m => {
+  ['all','week','month','quarter','semester','year'].forEach(m => {
     const btn = document.getElementById('mode-' + m);
     if (btn) btn.classList.toggle('active', m === mode);
   });
@@ -600,10 +631,12 @@ function wrSetMode(mode) {
   // Footer
   const footer = document.getElementById('wr-footer-note');
   const labels = {
-    all:     'Historial completo desde los trades MT5 cargados',
-    week:    'Semana: métricas calculadas desde los trades del período seleccionado',
-    month:   'Mes: métricas calculadas desde los trades del período seleccionado',
-    quarter: 'Trimestre: métricas calculadas desde los trades del período seleccionado',
+    all:      'Historial completo desde los trades MT5 cargados',
+    week:     'Semana: métricas calculadas desde los trades del período seleccionado',
+    month:    'Mes: métricas calculadas desde los trades del período seleccionado',
+    quarter:  'Trimestre: métricas calculadas desde los trades del período seleccionado',
+    semester: '6 Meses: métricas calculadas desde los trades del período seleccionado',
+    year:     'Anual: métricas calculadas desde los trades del período seleccionado',
   };
   if (footer) footer.textContent = `SCORE = PF×40 + WinRate×20 + (1/DD)×20 + Ganancia×20 — ${labels[mode]}`;
 
@@ -689,7 +722,8 @@ function wrRefreshHistorySelect() {
     const h = history[k];
     const opt = document.createElement('option');
     opt.value = k;
-    const modeTag = h.mode ? ` [${h.mode === 'week' ? 'Sem' : h.mode === 'month' ? 'Mes' : 'Trim'}]` : '';
+    const modeLabels = { week:'Sem', month:'Mes', quarter:'Trim', semester:'6M', year:'Año' };
+    const modeTag = h.mode ? ` [${modeLabels[h.mode] || h.mode}]` : '';
     opt.textContent = (h.label || k) + modeTag;
     sel.appendChild(opt);
   });
