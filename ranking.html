@@ -342,9 +342,9 @@ function wrGetBots(weekOffset) {
 
   return RANKING_SOURCE.map(b => {
     const mfx = b.mfx || {};
-    const pf_live = mfx.pf    || 0;
-    const dd_live = mfx.ddPct || 0;
-    const wr      = mfx.winRate || 0;
+    const pf_live = mfx.pf      ?? null;
+    const dd_live = mfx.ddPct   ?? null;
+    const wr      = mfx.winRate ?? null;
 
     const weekGain = (mfx.tradeList || [])
       .filter(t => {
@@ -408,9 +408,9 @@ function wrRender(bots) {
       <td><div class="wr-name" title="${b.name}">${b.name}</div></td>
       <td class="wr-symbol">${b.symbol}</td>
       <td class="wr-magic">${b.magic}</td>
-      <td class="${pfClass}">${b.pf_live ? b.pf_live.toFixed(2) : '—'}</td>
-      <td>${b.dd_live ? b.dd_live.toFixed(2) + '%' : '—'}</td>
-      <td>${b.wr ? b.wr.toFixed(1) + '%' : '—'}</td>
+      <td class="${pfClass}">${b.pf_live != null ? b.pf_live.toFixed(2) : '—'}</td>
+      <td style="${b.dd_live != null ? 'color:' + (b.dd_live <= 5 ? 'var(--green)' : b.dd_live <= 15 ? '#d97706' : 'var(--red)') + ';font-weight:600' : ''}">${b.dd_live != null ? b.dd_live.toFixed(2) + '%' : '—'}</td>
+      <td>${b.wr != null ? b.wr.toFixed(1) + '%' : '—'}</td>
       <td class="${gainCls}">${gainStr}</td>
       <td>${dpfStr}</td>
       <td><div class="wr-score-bar-wrap"><span class="wr-score-num">${b.score}</span>
@@ -555,6 +555,25 @@ function refreshData() {
   wrRefreshHistorySelect();
   wrRender(wrGetBots());
 })();
+
+// Auto-refresh cuando index.html actualiza sqx_ranking_bots desde otra pestaña
+window.addEventListener('storage', function(e) {
+  if (e.key !== STORAGE_KEY_BOTS || !e.newValue) return;
+  try {
+    RANKING_SOURCE = JSON.parse(e.newValue);
+    if (!wrViewingSnapshot) {
+      wrRender(wrGetBots());
+      const ts = localStorage.getItem(STORAGE_KEY_TS);
+      if (ts) {
+        const d  = new Date(parseInt(ts, 10));
+        const hh = d.getHours().toString().padStart(2, '0');
+        const mm = d.getMinutes().toString().padStart(2, '0');
+        const el = document.getElementById('sync-info');
+        if (el) el.textContent = 'Auto-actualizado a las ' + hh + ':' + mm;
+      }
+    }
+  } catch(err) {}
+});
 </script>
 </body>
 </html>

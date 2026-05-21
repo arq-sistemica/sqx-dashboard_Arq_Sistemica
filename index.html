@@ -1632,7 +1632,7 @@ function processFile(file) {
           if (fuzzyMatch) { mergeSQX(fuzzyMatch, s); merged++; return; }
           DB.push(s); added++;
         });
-        markDirty(); render();
+        markDirty(); render(); updateRankingCache();
         alertOk(`✓ Databank CSV procesado — ${added} nuevo(s), ${merged} actualizado(s).`);
       }
     } catch(err) { alertErr('Error: ' + err.message); }
@@ -1958,6 +1958,28 @@ function importMyfxbookCSV(csvText) {
   console.log('Actualizados:', matched, '| Creados:', created, '| Reparados:', repaired);
   DB.forEach(b => { if (b.myfxbookData) console.log(`  ✓ Bot "${b.name}" (magic ${b.magic}) — PF ${b.myfxbookData.pf}`); });
   console.groupEnd();
+  updateRankingCache();
+}
+
+// ── RANKING CACHE — sincronización automática con ranking.html ─
+function updateRankingCache() {
+  try {
+    const rankingBots = DB.filter(b => b.myfxbookData).map(b => ({
+      name:   b.name   || '—',
+      magic:  b.magic  || '—',
+      symbol: b.symbol || '—',
+      dpf:    b.dpf !== undefined ? b.dpf : null,
+      estado: b.estado || b.phase || '—',
+      mfx: {
+        pf:        b.myfxbookData.pf        ?? null,
+        ddPct:     b.myfxbookData.ddPct     ?? null,
+        winRate:   b.myfxbookData.winRate   ?? null,
+        tradeList: b.myfxbookData.tradeList || [],
+      },
+    }));
+    localStorage.setItem('sqx_ranking_bots', JSON.stringify(rankingBots));
+    localStorage.setItem('sqx_overlap_ts', Date.now().toString());
+  } catch(e) {}
 }
 
 // ── VIEW DATA ──────────────────────────────────────────────────
@@ -3788,9 +3810,9 @@ function openRanking() {
       dpf:    b.dpf !== undefined ? b.dpf : null,
       estado: b.estado || b.phase || '—',
       mfx: {
-        pf:        b.myfxbookData.pf       || 0,
-        ddPct:     b.myfxbookData.ddPct    || 0,
-        winRate:   b.myfxbookData.winRate  || 0,
+        pf:        b.myfxbookData.pf       ?? null,
+        ddPct:     b.myfxbookData.ddPct    ?? null,
+        winRate:   b.myfxbookData.winRate  ?? null,
         tradeList: b.myfxbookData.tradeList || [],
       },
     }));
@@ -3825,6 +3847,7 @@ function toggleDnaCollapse() {
 repairDuplicateBots();
 updateDbCount();
 render();
+updateRankingCache();
 
 /* ══════════════════════════════════════
    WEEKLY RANKING — logica completa
@@ -3850,9 +3873,9 @@ render();
     if (typeof DB === "undefined" || !Array.isArray(DB)) return bots;
     DB.filter(b => b.myfxbookData).forEach(b => {
       const mfx = b.myfxbookData;
-      const pf_live = mfx.pf      || 0;
-      const dd_live = mfx.ddPct   || 0;
-      const wr      = mfx.winRate || 0;
+      const pf_live = mfx.pf      ?? null;
+      const dd_live = mfx.ddPct   ?? null;
+      const wr      = mfx.winRate ?? null;
       // ganancia de la última semana (trades de los últimos 7 días)
       const now = Date.now();
       const weekMs = 7 * 24 * 60 * 60 * 1000;
