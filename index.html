@@ -2090,8 +2090,9 @@ function render() {
     const nm = s.name.length>28?s.name.slice(0,28)+'…':s.name;
     const hasOv = s.overviewData ? ' 📋' : '';
     const hasMfx = s.myfxbookData ? ' 📊' : '';
+    const hasPsc = s.pseudocodigoData ? ' 📝' : '';
     return `<tr id="datarow-${idx}" class="data-row" onclick="toggleRow(${idx})">
-      <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}</td>
+      <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
       <td class="left">${s.symbol||'—'}</td>
       <td class="left">${s.tf||'—'}</td>
       <td>${sqxB}</td>
