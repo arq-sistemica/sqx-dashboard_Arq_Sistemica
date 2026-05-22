@@ -114,8 +114,10 @@
   .src-tag{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg3);color:var(--text3);border:1px solid var(--border);margin-left:4px;vertical-align:middle;font-weight:600;text-transform:uppercase}
   .del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:0 4px;line-height:1}
   .del-btn:hover{color:var(--red)}
-  .btn-del-row{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;cursor:pointer;padding:0 10px;height:26px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+  .btn-del-row{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;cursor:pointer;padding:0;width:26px;height:26px;border-radius:5px;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
   .btn-del-row:hover{background:#fee2e2;border-color:#f87171}
+  .dir-long{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;letter-spacing:0.3px}
+  .dir-short{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;letter-spacing:0.3px}
   .empty-row td{padding:3rem;text-align:center;color:var(--text3);font-size:13px}
   /* EXPANDABLE ROWS */
   @keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -579,6 +581,7 @@
           <div class="field"><label>Símbolo</label><input id="f-symbol" placeholder="AUDUSD"></div>
           <div class="field"><label>Timeframe</label><select id="f-tf"><option>M1</option><option>M5</option><option>M15</option><option>M30</option><option selected="">H1</option><option>H4</option><option>D1</option></select></div>
           <div class="field"><label>Fase</label><select id="f-phase"><option>IS</option><option>OOS</option><option selected="">IS+OOS</option><option>WFM</option><option>Demo Live</option></select></div>
+          <div class="field"><label>Dirección</label><select id="f-dir"><option value="">—</option><option>Long</option><option>Short</option></select></div>
           <div class="field"><label>Profit Factor</label><input id="f-pf" type="number" step="0.01" placeholder="1.45"></div>
           <div class="field"><label>SQN ★</label><input id="f-sqn" type="number" step="0.01" placeholder="2.10"></div>
           <div class="field"><label>DD $ (absoluto)</label><input id="f-dd" type="number" placeholder="1350"></div>
@@ -739,9 +742,9 @@
       <td class="pass">1.06</td>
       <td class="pass">901</td>
       <td class="fail">0.43</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(0)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(0)">🗑</button>
         <span class="expand-arrow" id="arrow-0" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-1" class="data-row" onclick="toggleRow(1)">
@@ -754,9 +757,9 @@
       <td class="pass">1.16</td>
       <td class="pass">1168</td>
       <td class="pass">0.51</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(1)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(1)">🗑</button>
         <span class="expand-arrow" id="arrow-1" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-2" class="data-row" onclick="toggleRow(2)">
@@ -769,9 +772,9 @@
       <td class="pass">1.05</td>
       <td class="pass">1027</td>
       <td class="fail">0.49</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(2)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(2)">🗑</button>
         <span class="expand-arrow" id="arrow-2" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-3" class="data-row" onclick="toggleRow(3)">
@@ -784,9 +787,9 @@
       <td class="pass">1.22</td>
       <td class="pass">1335</td>
       <td class="pass">1.02</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(3)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(3)">🗑</button>
         <span class="expand-arrow" id="arrow-3" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-4" class="data-row" onclick="toggleRow(4)">
@@ -799,9 +802,9 @@
       <td class="pass">1.09</td>
       <td class="pass">1312</td>
       <td class="pass">1.08</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(4)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(4)">🗑</button>
         <span class="expand-arrow" id="arrow-4" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-5" class="data-row" onclick="toggleRow(5)">
@@ -814,9 +817,9 @@
       <td class="pass">1.01</td>
       <td class="pass">1408</td>
       <td class="pass">0.92</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(5)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(5)">🗑</button>
         <span class="expand-arrow" id="arrow-5" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-6" class="data-row" onclick="toggleRow(6)">
@@ -829,9 +832,9 @@
       <td class="pass">1.09</td>
       <td class="pass">1706</td>
       <td class="pass">1.09</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(6)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(6)">🗑</button>
         <span class="expand-arrow" id="arrow-6" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-7" class="data-row" onclick="toggleRow(7)">
@@ -844,9 +847,9 @@
       <td class="pass">1.04</td>
       <td class="pass">1510</td>
       <td class="pass">0.91</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(7)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(7)">🗑</button>
         <span class="expand-arrow" id="arrow-7" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-8" class="data-row" onclick="toggleRow(8)">
@@ -859,9 +862,9 @@
       <td class="pass">1.02</td>
       <td class="pass">2475</td>
       <td class="pass">1.16</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(8)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(8)">🗑</button>
         <span class="expand-arrow" id="arrow-8" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-9" class="data-row" onclick="toggleRow(9)">
@@ -874,9 +877,9 @@
       <td class="pass">1.03</td>
       <td class="pass">557</td>
       <td class="pass">0.65</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(9)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(9)">🗑</button>
         <span class="expand-arrow" id="arrow-9" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-10" class="data-row" onclick="toggleRow(10)">
@@ -889,9 +892,9 @@
       <td class="pass">1.10</td>
       <td class="pass">579</td>
       <td class="pass">0.67</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(10)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(10)">🗑</button>
         <span class="expand-arrow" id="arrow-10" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-11" class="data-row" onclick="toggleRow(11)">
@@ -904,9 +907,9 @@
       <td class="pass">1.06</td>
       <td class="pass">550</td>
       <td class="pass">0.66</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(11)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(11)">🗑</button>
         <span class="expand-arrow" id="arrow-11" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-12" class="data-row" onclick="toggleRow(12)">
@@ -919,9 +922,9 @@
       <td class="pass">1.11</td>
       <td class="pass">581</td>
       <td class="pass">0.64</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(12)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(12)">🗑</button>
         <span class="expand-arrow" id="arrow-12" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-13" class="data-row" onclick="toggleRow(13)">
@@ -934,9 +937,9 @@
       <td class="pass">1.11</td>
       <td class="pass">581</td>
       <td class="pass">0.66</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(13)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(13)">🗑</button>
         <span class="expand-arrow" id="arrow-13" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-14" class="data-row" onclick="toggleRow(14)">
@@ -949,9 +952,9 @@
       <td class="pass">1.08</td>
       <td class="pass">562</td>
       <td class="pass">0.66</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(14)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(14)">🗑</button>
         <span class="expand-arrow" id="arrow-14" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-15" class="data-row" onclick="toggleRow(15)">
@@ -964,9 +967,9 @@
       <td class="pass">1.12</td>
       <td class="pass">560</td>
       <td class="pass">0.67</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(15)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(15)">🗑</button>
         <span class="expand-arrow" id="arrow-15" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-16" class="data-row" onclick="toggleRow(16)">
@@ -979,9 +982,9 @@
       <td class="pass">1.09</td>
       <td class="pass">608</td>
       <td class="fail">0.42</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(16)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(16)">🗑</button>
         <span class="expand-arrow" id="arrow-16" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-17" class="data-row" onclick="toggleRow(17)">
@@ -994,9 +997,9 @@
       <td class="pass">1.11</td>
       <td class="pass">942</td>
       <td class="fail">0.48</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(17)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(17)">🗑</button>
         <span class="expand-arrow" id="arrow-17" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-18" class="data-row" onclick="toggleRow(18)">
@@ -1009,9 +1012,9 @@
       <td class="fail">0.99</td>
       <td class="pass">1345</td>
       <td class="pass">0.58</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(18)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(18)">🗑</button>
         <span class="expand-arrow" id="arrow-18" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-19" class="data-row" onclick="toggleRow(19)">
@@ -1024,9 +1027,9 @@
       <td class="pass">1.12</td>
       <td class="pass">1905</td>
       <td class="pass">0.58</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(19)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(19)">🗑</button>
         <span class="expand-arrow" id="arrow-19" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-20" class="data-row" onclick="toggleRow(20)">
@@ -1039,9 +1042,9 @@
       <td class="pass">1.01</td>
       <td class="pass">1353</td>
       <td class="pass">0.68</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(20)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(20)">🗑</button>
         <span class="expand-arrow open" id="arrow-20" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="expanded-20" class="expanded-row"><td colspan="11" style="padding: 0px; border-bottom: 2px solid rgb(99, 102, 241);"><div style="padding:1.5rem;background:#f8f9fa;animation:slideDown 0.2s ease">
@@ -1050,11 +1053,9 @@
       <div style="font-size:16px;font-weight:500;color:#111318">WFM_Strategy 1.5.5(5) - Improved 1.1.5</div>
       <span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:600">EURUSD</span>
       <span style="font-size:11px;background:#f1f3f5;color:#4a5060;padding:2px 8px;border-radius:4px">H1</span>
-      <span class="badge badge-fail">✗ Descartar</span>
+      <span class="badge badge-fail">✗</span>
       <span style="font-size:11px;color:#9098a8">Cargado: 2026-05-07</span>
-      <button onclick="event.stopPropagation();deleteBot('mouxb9hujum0gd0ptf',20)" style="margin-left:auto;height:28px;padding:0 12px;border-radius:6px;border:1px solid #fcc;background:#fef2f2;color:#b91c1c;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px" title="Eliminar esta estrategia de la base de datos">
-        🗑 Eliminar
-      </button>
+      <button onclick="event.stopPropagation();deleteBot('mouxb9hujum0gd0ptf',20)" style="margin-left:auto;width:30px;height:30px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#b91c1c;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0" title="Eliminar esta estrategia de la base de datos">🗑</button>
     </div>
     <div style="font-size:12px;color:var(--red);margin-bottom:1rem">Criterios fallando: SQN, Ann%, PF~1.24, Stag~835d</div>
 
@@ -1224,9 +1225,9 @@
       <td class="pass">1.17</td>
       <td class="pass">1482</td>
       <td class="pass">0.90</td>
-      <td><span class="badge badge-warn">~ Parcial</span></td>
+      <td><span class="badge badge-warn">◑</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(21)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(21)">🗑</button>
         <span class="expand-arrow" id="arrow-21" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-22" class="data-row" onclick="toggleRow(22)">
@@ -1239,9 +1240,9 @@
       <td class="pass">1.03</td>
       <td class="pass">1293</td>
       <td class="pass">0.97</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(22)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(22)">🗑</button>
         <span class="expand-arrow" id="arrow-22" style="margin-left:6px">▶</span>
       </td>
     </tr><tr id="datarow-23" class="data-row" onclick="toggleRow(23)">
@@ -1254,9 +1255,9 @@
       <td class="pass">1.15</td>
       <td class="pass">1377</td>
       <td class="pass">0.62</td>
-      <td><span class="badge badge-fail">✗ Descartar</span></td>
+      <td><span class="badge badge-fail">✗</span></td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(23)">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(23)">🗑</button>
         <span class="expand-arrow" id="arrow-23" style="margin-left:6px">▶</span>
       </td>
     </tr></tbody>
@@ -2085,15 +2086,16 @@ function render() {
     const fails = evalS(s);
     const idx = DB.indexOf(s);
     const st = fails.length===0?'ok':fails.length<=2?'warn':'fail';
-    const badge = st==='ok'?'<span class="badge badge-ok">✓ OK</span>':st==='warn'?'<span class="badge badge-warn">~ Parcial</span>':'<span class="badge badge-fail">✗ Descartar</span>';
+    const badge = st==='ok'?'<span class="badge badge-ok" title="OK">✓</span>':st==='warn'?'<span class="badge badge-warn" title="Parcial">◑</span>':'<span class="badge badge-fail" title="Descartar">✗</span>';
     const sqxB = s.sqxFilter==='PASSED'?'<span class="sqx-ok">PASSED</span>':s.sqxFilter?`<span class="sqx-fail">${s.sqxFilter}</span>`:'—';
     const srcT = `<span class="src-tag">${s.source==='csv'?'CSV':'Manual'}</span>`;
     const nm = s.name.length>28?s.name.slice(0,28)+'…':s.name;
     const hasOv = s.overviewData ? ' 📋' : '';
     const hasMfx = s.myfxbookData ? ' 📊' : '';
     const hasPsc = s.pseudocodigoData ? ' 📝' : '';
+    const dirBadge = s.direction==='Long'?'<span class="dir-long">L</span> ':s.direction==='Short'?'<span class="dir-short">S</span> ':'';
     return `<tr id="datarow-${idx}" class="data-row" onclick="toggleRow(${idx})">
-      <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
+      <td class="left name-cell" title="${s.name}">${dirBadge}${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
       <td class="left">${s.symbol||'—'}</td>
       <td class="left">${s.tf||'—'}</td>
       <td>${sqxB}</td>
@@ -2104,7 +2106,7 @@ function render() {
       <td class="${cls('sharpe',d.sharpe)}">${f(d.sharpe)}</td>
       <td>${badge}</td>
       <td style="white-space:nowrap;padding:4px 8px;text-align:right" onclick="event.stopPropagation()">
-        <button class="btn-del-row" onclick="delS(${idx})">🗑 Borrar</button>
+        <button class="btn-del-row" onclick="delS(${idx})">🗑</button>
         <span class="expand-arrow" id="arrow-${idx}" style="margin-left:6px">▶</span>
       </td>
     </tr>`;
@@ -2151,7 +2153,7 @@ function buildFichaHTML(s, idx) {
   const d = getVD(s);
   const fails = evalS(s);
   const st = fails.length===0?'ok':fails.length<=2?'warn':'fail';
-  const stLabel = st==='ok'?'✓ OK':st==='warn'?'~ Parcial':'✗ Descartar';
+  const stLabel = st==='ok'?'✓':st==='warn'?'◑':'✗';
   const badgeCls = st==='ok'?'badge-ok':st==='warn'?'badge-warn':'badge-fail';
   const ov = s.overviewData;
   const mfx = s.myfxbookData;
@@ -2204,13 +2206,12 @@ function buildFichaHTML(s, idx) {
       <div style="font-size:16px;font-weight:500;color:#111318">${s.name}</div>
       <span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:600">${s.symbol||'—'}</span>
       <span style="font-size:11px;background:#f1f3f5;color:#4a5060;padding:2px 8px;border-radius:4px">${s.tf||'—'}</span>
-      <span class="badge ${badgeCls}">${stLabel}</span>
+      ${s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':''}
+      <span class="badge ${badgeCls}" title="${st==='ok'?'OK':st==='warn'?'Parcial':'Descartar'}">${stLabel}</span>
       <span style="font-size:11px;color:#9098a8">Cargado: ${s.added||'—'}</span>
       <button onclick="event.stopPropagation();deleteBot('${s.id}',${idx})"
-        style="margin-left:auto;height:28px;padding:0 12px;border-radius:6px;border:1px solid #fcc;background:#fef2f2;color:#b91c1c;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px"
-        title="Eliminar esta estrategia de la base de datos">
-        🗑 Eliminar
-      </button>
+        style="margin-left:auto;width:30px;height:30px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#b91c1c;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0"
+        title="Eliminar esta estrategia de la base de datos">🗑</button>
     </div>
     ${failsHtml}
 
@@ -2896,10 +2897,10 @@ const ni = id => { const v=parseInt(g(id)); return isNaN(v)?null:v; };
 
 function addManual() {
   const name = g('f-name').trim(); if (!name) { showFE('Ingresá un nombre o Magic ID.'); return; } hideFE();
-  DB.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2), name, symbol:g('f-symbol'), tf:g('f-tf'), phase:g('f-phase'), source:'manual', sqxFilter:'', added:new Date().toISOString().slice(0,10), notes:g('f-notes'), sqn:nv('f-sqn'), stag:ni('f-stag'), zp:nv('f-zp'), pf:nv('f-pf'), dd:nv('f-dd'), cagr:nv('f-cagr'), wr:nv('f-wr'), retdd:nv('f-retdd'), cagrdd:nv('f-cagrdd'), trades:ni('f-trades'), np:nv('f-np'), sharpe:nv('f-sharpe'), stability:nv('f-stability'), fitness:nv('f-fitness'), is:null, oos:null });
+  DB.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2), name, symbol:g('f-symbol'), tf:g('f-tf'), phase:g('f-phase'), direction:g('f-dir')||null, source:'manual', sqxFilter:'', added:new Date().toISOString().slice(0,10), notes:g('f-notes'), sqn:nv('f-sqn'), stag:ni('f-stag'), zp:nv('f-zp'), pf:nv('f-pf'), dd:nv('f-dd'), cagr:nv('f-cagr'), wr:nv('f-wr'), retdd:nv('f-retdd'), cagrdd:nv('f-cagrdd'), trades:ni('f-trades'), np:nv('f-np'), sharpe:nv('f-sharpe'), stability:nv('f-stability'), fitness:nv('f-fitness'), is:null, oos:null });
   markDirty(); clearForm(); render();
 }
-function clearForm() { ['f-name','f-symbol','f-pf','f-sqn','f-dd','f-cagr','f-wr','f-retdd','f-cagrdd','f-trades','f-np','f-sharpe','f-stability','f-fitness','f-stag','f-zp','f-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); }
+function clearForm() { ['f-name','f-symbol','f-pf','f-sqn','f-dd','f-cagr','f-wr','f-retdd','f-cagrdd','f-trades','f-np','f-sharpe','f-stability','f-fitness','f-stag','f-zp','f-notes','f-dir'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); }
 function showFE(m){const e=document.getElementById('form-err');e.textContent=m;e.style.display='block';}
 function hideFE(){document.getElementById('form-err').style.display='none';}
 function alertOk(m){const e=document.getElementById('alert-ok');e.textContent=m;e.style.display='block';document.getElementById('alert-err').style.display='none';setTimeout(()=>e.style.display='none',8000);}
