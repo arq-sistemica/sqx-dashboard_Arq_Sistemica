@@ -653,9 +653,8 @@
         <div class="t-sub" id="t-sub">Mostrando 24 de 24 — Vista IS</div>
       </div>
       <div class="view-tabs">
-        <button class="vtab active" onclick="setView('IS',this)">IS</button>
-        <button class="vtab" onclick="setView('OOS',this)">OOS</button>
-        <button class="vtab" onclick="setView('Full',this)">Full</button>
+        <button class="vtab active" onclick="setView('IS',this)">SQX</button>
+        <button class="vtab" onclick="setView('Full',this)">IS+OOS</button>
       </div>
     </div>
     <div class="filter-bar">
@@ -2066,7 +2065,8 @@ function render() {
     document.getElementById('s-warn').textContent = warn;
     document.getElementById('s-fail').textContent = fail;
     document.getElementById('s-csv').textContent = csv;
-    document.getElementById('t-sub').textContent = `Mostrando ${rows.length} de ${DB.length} — Vista ${view}`;
+    const viewLabel = view === 'IS' ? 'SQX' : 'IS+OOS';
+    document.getElementById('t-sub').textContent = `Mostrando ${rows.length} de ${DB.length} — Vista ${viewLabel}`;
   } else {
     document.getElementById('sum-grid').style.display = 'none';
     document.getElementById('t-sub').textContent = 'Sin datos cargados';
@@ -2187,7 +2187,7 @@ function buildFichaHTML(s, idx) {
     const oosStr = s.source==='csv' ? `<td class="${clr(oosV)}" style="text-align:right">${oosV!==null?m.fmt(oosV):'—'}</td>` : '<td style="text-align:right;color:var(--text3)">—</td>';
     return `<tr style="border-bottom:1px solid #f1f3f5">
       <td style="padding:6px 10px;font-weight:600;color:#4a5060;font-size:12px">${m.label}</td>
-      ${isStr}${oosStr}
+      ${isStr}
       <td class="${clr(vFull)}" style="text-align:right">${vFull!==null?m.fmt(vFull):'—'}</td>
     </tr>`;
   }).join('');
@@ -2222,17 +2222,16 @@ function buildFichaHTML(s, idx) {
     </div>
     ${failsHtml}
 
-    <!-- MÉTRICAS IS/OOS/Full -->
+    <!-- MÉTRICAS SQX -->
     <div class="ficha-sec-hdr" onclick="toggleFichaSection('metrics-${idx}')">
-      <span>📊 Métricas IS / OOS / Full</span><span>▾</span>
+      <span>📊 Métricas SQX</span><span>▾</span>
     </div>
     <div id="metrics-${idx}" class="ficha-subsection" style="margin-bottom:1rem;overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:400px">
         <thead><tr style="background:#f1f3f5">
           <th style="padding:7px 10px;text-align:left;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">Métrica</th>
-          <th style="padding:7px 10px;text-align:right;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">IS</th>
-          <th style="padding:7px 10px;text-align:right;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">OOS</th>
-          <th style="padding:7px 10px;text-align:right;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">Full</th>
+          <th style="padding:7px 10px;text-align:right;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">SQX</th>
+          <th style="padding:7px 10px;text-align:right;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">IS+OOS</th>
         </tr></thead>
         <tbody>${metricRows}</tbody>
       </table>
