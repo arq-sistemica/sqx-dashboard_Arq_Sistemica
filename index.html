@@ -1425,6 +1425,12 @@ const MAGIC_BY_BOT_ID = {
 };
 DB.forEach(b => { if (b.id && MAGIC_BY_BOT_ID[b.id] && !b.magic) b.magic = MAGIC_BY_BOT_ID[b.id]; });
 
+// Correcciones de timeframe por magic number
+const TF_BY_MAGIC = {
+  3223415: 'H4',
+};
+DB.forEach(b => { if (b.magic && TF_BY_MAGIC[b.magic]) b.tf = TF_BY_MAGIC[b.magic]; });
+
 let dirty = false;
 
 // ── CRITERIOS ──────────────────────────────────────────────────
@@ -1632,7 +1638,7 @@ function processFile(file) {
           if (fuzzyMatch) { mergeSQX(fuzzyMatch, s); merged++; return; }
           DB.push(s); added++;
         });
-        markDirty(); render();
+        markDirty(); render(); updateRankingCache();
         alertOk(`✓ Databank CSV procesado — ${added} nuevo(s), ${merged} actualizado(s).`);
       }
     } catch(err) { alertErr('Error: ' + err.message); }
@@ -1958,6 +1964,28 @@ function importMyfxbookCSV(csvText) {
   console.log('Actualizados:', matched, '| Creados:', created, '| Reparados:', repaired);
   DB.forEach(b => { if (b.myfxbookData) console.log(`  ✓ Bot "${b.name}" (magic ${b.magic}) — PF ${b.myfxbookData.pf}`); });
   console.groupEnd();
+  updateRankingCache();
+}
+
+// ── RANKING CACHE — sincronización automática con ranking.html ─
+function updateRankingCache() {
+  try {
+    const rankingBots = DB.filter(b => b.myfxbookData).map(b => ({
+      name:   b.name   || '—',
+      magic:  b.magic  || '—',
+      symbol: b.symbol || '—',
+      dpf:    b.dpf !== undefined ? b.dpf : null,
+      estado: b.estado || b.phase || '—',
+      mfx: {
+        pf:        b.myfxbookData.pf        ?? null,
+        ddPct:     b.myfxbookData.ddPct     ?? null,
+        winRate:   b.myfxbookData.winRate   ?? null,
+        tradeList: b.myfxbookData.tradeList || [],
+      },
+    }));
+    localStorage.setItem('sqx_ranking_bots', JSON.stringify(rankingBots));
+    localStorage.setItem('sqx_overlap_ts', Date.now().toString());
+  } catch(e) {}
 }
 
 // ── VIEW DATA ──────────────────────────────────────────────────
@@ -2068,8 +2096,9 @@ function render() {
     const nm = s.name.length>28?s.name.slice(0,28)+'…':s.name;
     const hasOv = s.overviewData ? ' 📋' : '';
     const hasMfx = s.myfxbookData ? ' 📊' : '';
+    const hasPsc = s.pseudocodigoData ? ' 📝' : '';
     return `<tr id="datarow-${idx}" class="data-row" onclick="toggleRow(${idx})">
-      <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}</td>
+      <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
       <td class="left">${s.symbol||'—'}</td>
       <td class="left">${s.tf||'—'}</td>
       <td>${sqxB}</td>
@@ -3297,7 +3326,9 @@ function buildDnaBots() {
       const stage = ph === 'live' ? 'live' : ph === 'descartado' ? 'descartado' : 'incubacion';
       const allConds = [...(p.condicionesLong || []), ...(p.condicionesShort || [])];
       const signal = allConds.slice(0, 3).join(' AND ') || b.name;
-      return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal };
+      const ddPct = b.myfxbookData?.ddPct ?? null;
+      const pf    = b.myfxbookData?.pf    ?? null;
+      return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal, ddPct, pf };
     })
     .filter(b => {
       const bn = norm(b.id);
@@ -3387,6 +3418,10 @@ function dnaInit() {
         <span style="font-size:9px;font-weight:600;color:${stageC[bot.stage]}">${stageL[bot.stage]}</span>
       </div>
       <div class="dna-bot-meta">${bot.asset} · ${bot.tf} · <b style="color:${bot.dir==='Long'?'var(--green)':'var(--red)'}">${bot.dir}</b> · ${bot.entry}</div>
+      ${(bot.ddPct != null || bot.pf != null) ? `<div style="display:flex;gap:8px;margin-bottom:5px;margin-top:4px">
+        ${bot.pf  != null ? `<span style="font-size:10px;font-weight:600;color:${bot.pf>=1.3?'var(--green)':bot.pf>=1.1?'#d97706':'var(--red)'}">PF ${bot.pf.toFixed(2)}</span>` : ''}
+        ${bot.ddPct != null ? `<span style="font-size:10px;font-weight:600;color:${bot.ddPct<=5?'var(--green)':bot.ddPct<=15?'#d97706':'var(--red)'}">DD ${bot.ddPct.toFixed(1)}%</span>` : ''}
+      </div>` : ''}
       <div class="dna-chips">
         ${primary.map(i=>`<span class="dna-chip dna-chip-primary">${i}</span>`).join('')}
         ${rest.map(i=>`<span class="dna-chip ${bot.dir==='Short'?'dna-chip-short':''}">${i}</span>`).join('')}
@@ -3782,9 +3817,9 @@ function openRanking() {
       dpf:    b.dpf !== undefined ? b.dpf : null,
       estado: b.estado || b.phase || '—',
       mfx: {
-        pf:        b.myfxbookData.pf       || 0,
-        ddPct:     b.myfxbookData.ddPct    || 0,
-        winRate:   b.myfxbookData.winRate  || 0,
+        pf:        b.myfxbookData.pf       ?? null,
+        ddPct:     b.myfxbookData.ddPct    ?? null,
+        winRate:   b.myfxbookData.winRate  ?? null,
         tradeList: b.myfxbookData.tradeList || [],
       },
     }));
@@ -3819,6 +3854,7 @@ function toggleDnaCollapse() {
 repairDuplicateBots();
 updateDbCount();
 render();
+updateRankingCache();
 
 /* ══════════════════════════════════════
    WEEKLY RANKING — logica completa
@@ -3844,9 +3880,9 @@ render();
     if (typeof DB === "undefined" || !Array.isArray(DB)) return bots;
     DB.filter(b => b.myfxbookData).forEach(b => {
       const mfx = b.myfxbookData;
-      const pf_live = mfx.pf      || 0;
-      const dd_live = mfx.ddPct   || 0;
-      const wr      = mfx.winRate || 0;
+      const pf_live = mfx.pf      ?? null;
+      const dd_live = mfx.ddPct   ?? null;
+      const wr      = mfx.winRate ?? null;
       // ganancia de la última semana (trades de los últimos 7 días)
       const now = Date.now();
       const weekMs = 7 * 24 * 60 * 60 * 1000;
