@@ -2365,10 +2365,14 @@ function buildMyfxbookBlock(mfx, idx, botId) {
         <thead style="position:sticky;top:0;background:#f1f3f5">
           <tr>${['Apertura','Cierre','Par','Dir.','Lots','Open','Close','Pips','P&L','Gain%','Acum'].map(h=>`<th style="padding:5px 8px;text-align:right;font-size:9px;font-weight:700;color:#4a5060;border-bottom:1px solid #e0e3e8;white-space:nowrap">${h}</th>`).join('')}</tr>
         </thead>
-        <tbody>${mfx.tradeList.map(t => {
+        <tbody>${(()=>{ let mk='',sh=0; return mfx.tradeList.map(t => {
+          const parts=(t.closeDate||'').split('/');
+          const mKey=parts.length>=3?parts[2].slice(0,4)+'/'+parts[0]:'';
+          if(mKey&&mKey!==mk){mk=mKey;sh=1-sh;}
+          const bg=sh===0?'#ffffff':'#f0f1f3';
           const pc = t.netProfit > 0 ? '#1a7f4b' : t.netProfit < 0 ? '#b91c1c' : '#9098a8';
           const pip = t.pips > 0 ? '#1a7f4b' : t.pips < 0 ? '#b91c1c' : '#9098a8';
-          return `<tr style="border-bottom:1px solid #f1f3f5">
+          return `<tr style="border-bottom:1px solid #e8eaed;background:${bg}">
             <td style="padding:4px 8px;color:#4a5060;white-space:nowrap;text-align:left">${t.openDate||'—'}</td>
             <td style="padding:4px 8px;text-align:right;color:#9098a8;white-space:nowrap">${t.closeDate||'—'}</td>
             <td style="padding:4px 8px;font-weight:600;color:#111318;text-align:left">${t.symbol||'—'}</td>
@@ -2381,7 +2385,7 @@ function buildMyfxbookBlock(mfx, idx, botId) {
             <td style="padding:4px 8px;text-align:right;color:${pc}">${t.gainPct!==null?(t.gainPct>=0?'+':'')+t.gainPct.toFixed(2)+'%':'—'}</td>
             <td style="padding:4px 8px;text-align:right;font-weight:600;color:${t.cumProfit>=0?'#1a7f4b':'#b91c1c'}">${t.cumProfit!==null?(t.cumProfit>=0?'+$':'-$')+Math.abs(t.cumProfit).toFixed(2):'—'}</td>
           </tr>`;
-        }).join('')}</tbody>
+        }).join(''); })()}</tbody>
       </table>
     </div>` : '<div style="color:#9098a8;font-size:12px">Sin trades registrados.</div>';
   return kpis + stats + tradesTable;
