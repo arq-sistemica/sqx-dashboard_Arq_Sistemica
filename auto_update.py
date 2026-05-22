@@ -104,6 +104,7 @@ def main():
 
     run(["git", "push", "origin", "dev"])
     run(["git", "checkout", "main"])
+    run(["git", "pull", "origin", "main"])
     run(["git", "merge", "dev"])
     run(["git", "push", "origin", "main"])
     run(["git", "checkout", "dev"])
