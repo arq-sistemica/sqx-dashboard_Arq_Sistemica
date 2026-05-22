@@ -2159,31 +2159,29 @@ function buildFichaHTML(s, idx) {
 
   // Metrics comparison table
   const metricDefs = [
-    {label:'Profit Factor', key:'pf', fmt:v=>f(v), crit:'pf'},
-    {label:'Ann. Return %', key:'cagr', fmt:v=>f(v)+'%', crit:'cagr'},
-    {label:'W/L Ratio', key:'wr', fmt:v=>f(v), crit:'wr'},
-    {label:'# Trades', key:'trades', fmt:v=>v||'—', crit:'trades'},
-    {label:'Sharpe', key:'sharpe', fmt:v=>f(v), crit:'sharpe'},
-    {label:'Drawdown $', key:'dd', fmt:v=>fm(v), crit:null},
-    {label:'Net Profit', key:'np', fmt:v=>fm(v), crit:null},
-    {label:'Ret/DD', key:'retdd', fmt:v=>f(v), crit:null},
-    {label:'CAGR/DD%', key:'cagrdd', fmt:v=>f(v), crit:null},
-    {label:'Stability', key:'stability', fmt:v=>f(v), crit:null},
-    {label:'Fitness', key:'fitness', fmt:v=>f(v), crit:null},
+    {label:'PF',       key:'pf',        fmt:v=>f(v),      crit:'pf'},
+    {label:'Ann %',    key:'cagr',      fmt:v=>f(v)+'%',  crit:'cagr'},
+    {label:'W/L',      key:'wr',        fmt:v=>f(v),      crit:'wr'},
+    {label:'Trades',   key:'trades',    fmt:v=>v||'—',    crit:'trades'},
+    {label:'Sharpe',   key:'sharpe',    fmt:v=>f(v),      crit:'sharpe'},
+    {label:'DD $',     key:'dd',        fmt:v=>fm(v),     crit:null},
+    {label:'NP $',     key:'np',        fmt:v=>fm(v),     crit:null},
+    {label:'Ret/DD',   key:'retdd',     fmt:v=>f(v),      crit:null},
+    {label:'CAGR/DD',  key:'cagrdd',    fmt:v=>f(v),      crit:null},
+    {label:'Stab.',    key:'stability', fmt:v=>f(v),      crit:null},
+    {label:'Fitness',  key:'fitness',   fmt:v=>f(v),      crit:null},
   ];
-  const isD = s.is || {}, oosD = s.oos || {};
-  const metricRows = metricDefs.map(m => {
-    const isV = isD[m.key] ?? null;
-    const oosV = oosD[m.key] ?? null;
-    const fullD = getVD(s);
-    const vFull = fullD[m.key] ?? null;
-    const clr = (v) => { if (v===null||isNaN(v)) return 'na'; if (!m.crit) return ''; if (m.crit==='pf') return pfCls(v); return cls(m.crit, v); };
-    const isStr = s.source==='csv' ? `<td class="${clr(isV)}" style="text-align:right">${isV!==null?m.fmt(isV):'—'}</td>` : '<td style="text-align:right;color:var(--text3)">—</td>';
-    const oosStr = s.source==='csv' ? `<td class="${clr(oosV)}" style="text-align:right">${oosV!==null?m.fmt(oosV):'—'}</td>` : '<td style="text-align:right;color:var(--text3)">—</td>';
-    return `<tr style="border-bottom:1px solid #f1f3f5">
-      <td style="padding:6px 10px;font-weight:600;color:#4a5060;font-size:12px">${m.label}</td>
-      ${isStr}
-    </tr>`;
+  const isD = s.is || {};
+  const clrM = (m, v) => { if (v===null||isNaN(v)) return ''; if (!m.crit) return ''; if (m.crit==='pf') return pfCls(v); return cls(m.crit, v); };
+  const metricCards = metricDefs.map(m => {
+    const v = s.source==='csv' ? (isD[m.key] ?? null) : null;
+    const colorCls = clrM(m, v);
+    const colorStyle = colorCls==='pass' ? 'color:#1a7f4b' : colorCls==='warn-cell' ? 'color:#d97706' : colorCls==='fail' ? 'color:#b91c1c' : 'color:#111318';
+    const valStr = v !== null ? m.fmt(v) : '—';
+    return `<div style="background:#fff;border:1px solid #e0e3e8;border-radius:6px;padding:6px 10px;text-align:center;min-width:58px">
+      <div style="font-size:9px;font-weight:600;color:#9098a8;text-transform:uppercase;margin-bottom:3px">${m.label}</div>
+      <div style="font-size:13px;font-weight:700;${colorStyle}">${valStr}</div>
+    </div>`;
   }).join('');
 
   // Overview KPIs block
@@ -2220,14 +2218,10 @@ function buildFichaHTML(s, idx) {
     <div class="ficha-sec-hdr" onclick="toggleFichaSection('metrics-${idx}')">
       <span>📊 Métricas SQX</span><span>▾</span>
     </div>
-    <div id="metrics-${idx}" class="ficha-subsection" style="margin-bottom:1rem;overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:400px">
-        <thead><tr style="background:#f1f3f5">
-          <th style="padding:7px 10px;text-align:left;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">Métrica</th>
-          <th style="padding:7px 10px;text-align:right;font-weight:600;color:#4a5060;border-bottom:1px solid #e0e3e8">SQX</th>
-        </tr></thead>
-        <tbody>${metricRows}</tbody>
-      </table>
+    <div id="metrics-${idx}" class="ficha-subsection" style="margin-bottom:1rem">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px">
+        ${metricCards}
+      </div>
     </div>
 
     <!-- OVERVIEW METRICS -->
