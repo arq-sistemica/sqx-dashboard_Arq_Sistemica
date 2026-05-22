@@ -722,6 +722,7 @@
             <th class="left" onclick="sort('name')">Estrategia</th>
             <th class="left" onclick="sort('symbol')">Símbolo</th>
             <th class="left" onclick="sort('tf')">TF</th>
+            <th onclick="sort('direction')">Dir</th>
             <th onclick="sort('sqxFilter')">SQX</th>
             <th onclick="sort('pf')">PF</th>
             <th onclick="sort('cagr')">Ann.Ret%</th>
@@ -2093,11 +2094,12 @@ function render() {
     const hasOv = s.overviewData ? ' 📋' : '';
     const hasMfx = s.myfxbookData ? ' 📊' : '';
     const hasPsc = s.pseudocodigoData ? ' 📝' : '';
-    const dirBadge = s.direction==='Long'?'<span class="dir-long">L</span> ':s.direction==='Short'?'<span class="dir-short">S</span> ':'';
+    const dirCell = s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':'<span style="color:#c0c4ce">—</span>';
     return `<tr id="datarow-${idx}" class="data-row" onclick="toggleRow(${idx})">
-      <td class="left name-cell" title="${s.name}">${dirBadge}${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
+      <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
       <td class="left">${s.symbol||'—'}</td>
       <td class="left">${s.tf||'—'}</td>
+      <td style="text-align:center">${dirCell}</td>
       <td>${sqxB}</td>
       <td class="${pfCls(d.pf)}">${f(d.pf)}</td>
       <td class="${cls('cagr',d.cagr)}">${d.cagr!==null?f(d.cagr)+'%':'—'}</td>
