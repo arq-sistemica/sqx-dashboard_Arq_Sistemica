@@ -80,9 +80,11 @@
   /* BOT INDICATORS */
   .bot-indicators { display:flex; flex-direction:column; gap:2px; align-items:center; }
   .bot-dot { font-size:10px; padding:1px 5px; border-radius:10px; font-weight:600; white-space:nowrap; line-height:1.4; }
+  .bot-dot { cursor:pointer; }
   .bot-dot.short { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
   .bot-dot.long  { background:#dcfce7; color:#166534; border:1px solid #86efac; }
   .bot-dot.mixed { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+  tr.has-bots td.col-pair { border-left:3px solid var(--accent); }
 
   /* ALIGNMENT INDICATORS */
   .align-icon { font-size:14px; }
@@ -180,6 +182,7 @@ const MONTHS_IDX = new Date().getMonth(); // 0-based, auto-detect current month
 // ── STATE ──
 let seasonData   = null;
 let activeBots   = {};    // { 'AUDUSD': ['short','long'], 'GBPJPY': ['short'] }
+let botMeta      = {};    // { 'AUDUSD': [{name, magic, tf, dir}] }
 let currentTab   = 'forex';
 let filterBots   = false;
 
@@ -209,24 +212,32 @@ async function loadDashboard() {
     const r  = await fetch(DASHBOARD_URL + '?t=' + Date.now());
     const db = await r.json();
     activeBots = {};
+    botMeta    = {};
 
     db.forEach(bot => {
       if (!bot.symbol) return;
-      const sym  = bot.symbol.toUpperCase().replace('_','');
-      // Detectar dirección desde tradeList
-      let buys = 0, sells = 0;
-      if (bot.tradeList) {
+      const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
+
+      // Usar bot.direction si está disponible, sino inferir desde tradeList
+      let dir = 'mixed';
+      if (bot.direction === 'Long')  dir = 'long';
+      else if (bot.direction === 'Short') dir = 'short';
+      else if (bot.direction === 'Both')  dir = 'mixed';
+      else if (bot.tradeList) {
+        let buys = 0, sells = 0;
         bot.tradeList.forEach(t => {
           if (t.action === 'Buy')  buys++;
           if (t.action === 'Sell') sells++;
         });
+        if (sells > 0 && buys === 0) dir = 'short';
+        if (buys  > 0 && sells === 0) dir = 'long';
       }
-      let dir = 'mixed';
-      if (sells > 0 && buys === 0)  dir = 'short';
-      if (buys  > 0 && sells === 0) dir = 'long';
 
       if (!activeBots[sym]) activeBots[sym] = [];
       if (!activeBots[sym].includes(dir)) activeBots[sym].push(dir);
+
+      if (!botMeta[sym]) botMeta[sym] = [];
+      botMeta[sym].push({ dir, name: bot.name || sym, magic: bot.magic || '', tf: bot.tf || '' });
     });
   } catch(e) {
     console.warn('Dashboard no disponible, continuando sin bots:', e);
@@ -345,20 +356,23 @@ function renderTable() {
   html += '</tr></thead><tbody>';
 
   filtered.forEach(pair => {
-    const data    = assetClass[pair];
-    const botDirs = activeBots[pair] || [];
-    html += '<tr>';
+    const data  = assetClass[pair];
+    const metas = botMeta[pair] || [];
+    const hasBots = metas.length > 0;
+    html += hasBots ? '<tr class="has-bots">' : '<tr>';
 
     // Pair name
     html += `<td class="col-pair">${pair}</td>`;
 
     // Bot indicators
     html += '<td class="col-bots"><div class="bot-indicators">';
-    if (botDirs.length === 0) {
+    if (metas.length === 0) {
       html += '<span style="color:var(--text3);font-size:10px;">—</span>';
     } else {
-      botDirs.forEach(dir => {
-        html += `<span class="bot-dot ${dir}">${dir === 'short' ? 'S' : dir === 'long' ? 'L' : 'M'}</span>`;
+      metas.forEach(m => {
+        const label = m.dir === 'short' ? 'S' : m.dir === 'long' ? 'L' : 'M';
+        const tip   = `${m.name}${m.tf ? ' · ' + m.tf : ''}${m.magic ? ' · Magic ' + m.magic : ''}`;
+        html += `<span class="bot-dot ${m.dir}" title="${tip}" onclick="window.open('index.html','_blank')">${label}</span>`;
       });
     }
     html += '</div></td>';

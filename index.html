@@ -1366,6 +1366,29 @@ authInit();
 
 // ── DB LOAD ────────────────────────────────────────────────────
 let DB = [];
+let seasonData = null;
+
+async function loadSeasonData() {
+  try {
+    const r = await fetch('seasonality_data.json?t=' + Date.now());
+    if (r.ok) { seasonData = await r.json(); render(); }
+  } catch(e) { /* seasonal optional */ }
+}
+
+function getSeasonChip(sym) {
+  if (!seasonData || !sym) return '';
+  const clean = sym.toUpperCase().replace(/[^A-Z]/g, '');
+  const pair  = (seasonData.forex || {})[clean];
+  if (!pair) return '';
+  const month = new Date().getMonth();
+  const pos   = pair.pos && pair.pos[month];
+  if (pos == null) return '';
+  const cat   = (seasonData.categories || []).find(c => pos >= c.min && pos <= c.max);
+  if (!cat) return '';
+  const arrow = pos >= 55 ? '↑' : pos <= 45 ? '↓' : '→';
+  const mName = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][month];
+  return `<span title="Estacionalidad ${mName}: ${pos}% · ${cat.label}" style="font-size:10px;padding:1px 5px;border-radius:3px;font-weight:700;background:${cat.bg};color:${cat.text};margin-left:5px;vertical-align:middle;white-space:nowrap;cursor:pointer" onclick="event.stopPropagation();window.open('estacionalidad.html','_blank')">${pos}%${arrow}</span>`;
+}
 let _embeddedDB = [];
 try {
   const raw = document.getElementById('db-store').textContent.trim();
@@ -2117,9 +2140,10 @@ function render() {
     const hasMfx = s.myfxbookData ? ' 📊' : '';
     const hasPsc = s.pseudocodigoData ? ' 📝' : '';
     const dirCell = s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':s.direction==='Both'?'<span class="dir-both">BOTH</span>':'<span style="color:#c0c4ce">—</span>';
+    const seasonChip = getSeasonChip(s.symbol);
     return `<tr id="datarow-${idx}" class="data-row" onclick="toggleRow(${idx})">
       <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
-      <td class="left">${s.symbol||'—'}</td>
+      <td class="left">${s.symbol||'—'}${seasonChip}</td>
       <td class="left">${s.tf||'—'}</td>
       <td style="text-align:center">${dirCell}</td>
       <td>${sqxB}</td>
@@ -3900,6 +3924,7 @@ repairDuplicateBots();
 updateDbCount();
 render();
 updateRankingCache();
+loadSeasonData();
 
 /* ══════════════════════════════════════
    WEEKLY RANKING — logica completa
