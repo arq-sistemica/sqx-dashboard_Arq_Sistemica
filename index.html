@@ -1569,10 +1569,19 @@ async function saveToGitHub() {
       body: JSON.stringify({ message: `Dashboard update — ${DB.length} bots — ${new Date().toISOString().slice(0,16)}`, content, sha })
     });
     if (!putResp.ok) { const err = await putResp.json(); throw new Error(err.message || `Error ${putResp.status}`); }
-    // Publicar también los archivos auxiliares (ranking.html y overlap.html)
+    // Publicar archivos auxiliares y db_data.json sincronizado
+    const dbDataContent = btoa(unescape(encodeURIComponent(JSON.stringify(DB, null, 2))));
+    const dbDataUrl = `https://api.github.com/repos/${user}/${repo}/contents/db_data.json`;
+    let dbDataSha;
+    const dbDataGet = await fetch(dbDataUrl, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' } });
+    if (dbDataGet.ok) dbDataSha = (await dbDataGet.json()).sha;
+    const dbDataBody = { message: `Sync db_data.json — ${DB.length} bots`, content: dbDataContent };
+    if (dbDataSha) dbDataBody.sha = dbDataSha;
     await Promise.allSettled([
       pushAuxToGitHub(token, user, repo, 'ranking.html'),
       pushAuxToGitHub(token, user, repo, 'overlap.html'),
+      pushAuxToGitHub(token, user, repo, 'estacionalidad.html'),
+      fetch(dbDataUrl, { method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' }, body: JSON.stringify(dbDataBody) }),
     ]);
     dirty = false;
     document.getElementById('save-notice').style.display = 'none';
