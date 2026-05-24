@@ -31,6 +31,14 @@
   .logo{font-size:16px;font-weight:700;letter-spacing:-0.3px}.logo span{color:var(--accent)}
   .module-tag{font-size:11px;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid #c7d2fe;font-weight:600;margin-left:10px}
   .topbar-right{display:flex;gap:8px;align-items:center}
+  .tb-dropdown{position:relative}
+  .tb-dropdown-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:200px;z-index:500;padding:6px}
+  .tb-dropdown-menu.open{display:block}
+  .tb-dropdown-menu button{width:100%;text-align:left;border:none;background:transparent;border-radius:var(--radius);padding:0 12px;height:34px;font-size:13px;color:var(--text2)}
+  .tb-dropdown-menu button:hover{background:var(--bg3);color:var(--text);border:none}
+  .tb-dropdown-menu .dd-sep{height:1px;background:var(--border);margin:5px 0}
+  .tb-nav-btn{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);transition:all 0.12s}
+  .tb-nav-btn:hover{background:var(--accent);color:#fff}
   .main{padding:1.5rem 2rem;max-width:1500px;margin:0 auto}
   button{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:all 0.12s}
   button:hover{background:var(--bg3);color:var(--text);border-color:#adb5bd}
@@ -503,19 +511,31 @@
   </div>
   <div class="topbar-right">
     <span id="db-count" style="font-size:11px;color:var(--text3);margin-right:4px">24 bots guardados</span>
-    <span id="sync-status" style="font-size: 11px; margin-right: 4px; color: rgb(217, 119, 6);">⏳ Guardando...</span>
-    <button onclick="saveToGitHub()" id="btn-save" disabled="">☁ Guardar en GitHub</button>
-    <button onclick="exportJSON()">⬇ Exportar estado</button>
-    <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="importJSON(this)">
-    <button onclick="document.getElementById('import-json-input').click()">⬆ Importar estado</button>
-    <button onclick="exportCSV()">⬇ CSV</button>
-    <button onclick="showConfig()">⚙ Config</button>
-    <button class="btn-danger" onclick="clearAll()">Limpiar todo</button>
-    <button onclick="autoFillDirection()" title="Detecta Long/Short/Both desde el pseudocódigo de cada bot">🧭 Auto-Dir</button>
-    <button onclick="toggleDnaSection()" id="btn-dna" title="Overlap de Indicadores — Similitudes entre pseudocódigos">📊 Overlap</button>
-    <button onclick="openRanking()" title="Ranking semanal de bots Myfxbook">🏆 Ranking Live</button>
-    <button onclick="authChangePassword()" title="Cambiar contraseña" style="padding:0 10px">🔑</button>
-    <button onclick="authLogout()" title="Cerrar sesión" style="padding:0 10px">⎋ Salir</button>
+    <span id="sync-status" style="font-size:11px;margin-right:4px;color:rgb(217,119,6);">⏳ Guardando...</span>
+
+    <!-- Dropdown Ajustes -->
+    <div class="tb-dropdown" id="settings-dd">
+      <button onclick="toggleSettingsMenu(event)" style="font-weight:600">⚙ Ajustes ▾</button>
+      <div class="tb-dropdown-menu" id="settings-menu">
+        <button onclick="saveToGitHub();closeSettingsMenu()" id="btn-save" disabled="">☁ Guardar en GitHub</button>
+        <button onclick="exportJSON();closeSettingsMenu()">⬇ Exportar estado</button>
+        <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="importJSON(this)">
+        <button onclick="document.getElementById('import-json-input').click();closeSettingsMenu()">⬆ Importar estado</button>
+        <button onclick="exportCSV();closeSettingsMenu()">⬇ CSV</button>
+        <button onclick="autoFillDirection();closeSettingsMenu()">🧭 Auto-Dir</button>
+        <button onclick="showConfig();closeSettingsMenu()">⚙ Config</button>
+        <button onclick="authChangePassword();closeSettingsMenu()">🔑 Contraseña</button>
+        <div class="dd-sep"></div>
+        <button class="btn-danger" onclick="clearAll()">🗑 Limpiar todo</button>
+        <div class="dd-sep"></div>
+        <button onclick="authLogout()">⎋ Salir</button>
+      </div>
+    </div>
+
+    <!-- Nav tabs -->
+    <button class="tb-nav-btn" onclick="toggleDnaSection()" title="Overlap de Indicadores">📊 Overlap</button>
+    <button class="tb-nav-btn" onclick="openRanking()" title="Ranking live de bots">🏆 Ranking</button>
+    <button class="tb-nav-btn" onclick="window.open('estacionalidad.html','_blank')" title="Estacionalidad anual — 28 pares">📅 Estacionalidad</button>
   </div>
 </div>
 
@@ -3820,6 +3840,18 @@ function dnaInit() {
   agHtml += '</div>';
   ag.innerHTML = agHtml;
 }
+
+function toggleSettingsMenu(e) {
+  e.stopPropagation();
+  document.getElementById('settings-menu').classList.toggle('open');
+}
+function closeSettingsMenu() {
+  document.getElementById('settings-menu').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('settings-dd');
+  if (dd && !dd.contains(e.target)) closeSettingsMenu();
+});
 
 function openRanking() {
   try {
