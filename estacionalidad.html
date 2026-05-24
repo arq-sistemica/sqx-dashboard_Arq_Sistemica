@@ -297,7 +297,7 @@ function buildLegend() {
 function renderTable() {
   if (!seasonData) return;
 
-  const search     = (document.getElementById('search-input').value || '').toUpperCase();
+  const search     = (document.getElementById('search-input').value || '').toUpperCase().trim().replace(/[\s\/\-_]/g, '');
   const assetClass = seasonData[currentTab] || {};
   const pairs      = Object.keys(assetClass);
 
