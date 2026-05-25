@@ -60,13 +60,13 @@
 
   th { padding:8px 10px; text-align:center; font-size:11px; font-weight:600; color:var(--text2); border-bottom:2px solid var(--border); white-space:nowrap; }
   th.col-pair { text-align:left; min-width:100px; padding-left:14px; }
-  th.col-bots { min-width:70px; }
+  th.col-bots { min-width:180px; }
   th.col-month { min-width:72px; }
   th.col-month.current-month { background:#eef2ff; color:var(--accent); border-bottom:2px solid var(--accent); }
 
   td { padding:0; border-bottom:1px solid var(--border); vertical-align:middle; }
   td.col-pair { padding:0 10px 0 14px; font-weight:600; font-size:12px; white-space:nowrap; height:48px; }
-  td.col-bots { text-align:center; padding:4px 6px; }
+  td.col-bots { text-align:left; padding:4px 8px; }
   td.col-month { text-align:center; vertical-align:middle; }
 
   .cell-inner { padding:5px 4px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:48px; position:relative; }
@@ -78,12 +78,15 @@
   tr:last-child td { border-bottom:none; }
 
   /* BOT INDICATORS */
-  .bot-indicators { display:flex; flex-direction:column; gap:2px; align-items:center; }
-  .bot-dot { font-size:10px; padding:1px 5px; border-radius:10px; font-weight:600; white-space:nowrap; line-height:1.4; }
-  .bot-dot { cursor:pointer; }
-  .bot-dot.short { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
-  .bot-dot.long  { background:#dcfce7; color:#166534; border:1px solid #86efac; }
-  .bot-dot.mixed { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+  .bot-indicators { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+  .bot-row { display:flex; align-items:center; gap:5px; cursor:pointer; width:100%; }
+  .bot-row:hover .bot-name { text-decoration:underline; }
+  .bot-dir { font-size:9px; padding:1px 5px; border-radius:10px; font-weight:700; white-space:nowrap; line-height:1.6; flex-shrink:0; }
+  .bot-dir.short { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+  .bot-dir.long  { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+  .bot-dir.mixed { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+  .bot-name { font-size:10px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+  .bot-tf   { font-size:9px; color:var(--text3); flex-shrink:0; }
   tr.has-bots td.col-pair { border-left:3px solid var(--accent); }
 
   /* ALIGNMENT INDICATORS */
@@ -299,8 +302,9 @@ function buildLegend() {
   });
   container.innerHTML += `
     <span class="legend-label" style="margin-left:12px">Bots:</span>
-    <div class="legend-item"><span class="bot-dot short">S</span><span style="color:var(--text2)">Short activo</span></div>
-    <div class="legend-item"><span class="bot-dot long">L</span><span style="color:var(--text2)">Long activo</span></div>
+    <div class="legend-item"><span class="bot-dir short">Short</span><span style="color:var(--text2)">bot Short</span></div>
+    <div class="legend-item"><span class="bot-dir long">Long</span><span style="color:var(--text2)">bot Long</span></div>
+    <div class="legend-item"><span class="bot-dir mixed">Mixto</span><span style="color:var(--text2)">ambas dirs</span></div>
     <div class="legend-item"><span style="font-size:12px">⭐</span><span style="color:var(--text2)">Señal excepcional</span></div>`;
 }
 
@@ -370,9 +374,14 @@ function renderTable() {
       html += '<span style="color:var(--text3);font-size:10px;">—</span>';
     } else {
       metas.forEach(m => {
-        const label = m.dir === 'short' ? 'S' : m.dir === 'long' ? 'L' : 'M';
-        const tip   = `${m.name}${m.tf ? ' · ' + m.tf : ''}${m.magic ? ' · Magic ' + m.magic : ''}`;
-        html += `<span class="bot-dot ${m.dir}" title="${tip}" onclick="window.open('index.html','_blank')">${label}</span>`;
+        const dirLabel = m.dir === 'short' ? 'Short' : m.dir === 'long' ? 'Long' : 'Mixto';
+        const tip = `${m.name}${m.tf ? ' · ' + m.tf : ''}${m.magic ? ' · Magic ' + m.magic : ''}`;
+        const shortName = m.name ? m.name.replace(/^(SQX_|sqx_)/i,'') : m.dir;
+        html += `<div class="bot-row" title="${tip}" onclick="window.open('index.html','_blank')">
+          <span class="bot-dir ${m.dir}">${dirLabel}</span>
+          <span class="bot-name">${shortName}</span>
+          ${m.tf ? `<span class="bot-tf">${m.tf}</span>` : ''}
+        </div>`;
       });
     }
     html += '</div></td>';
