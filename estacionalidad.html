@@ -314,8 +314,11 @@ function renderTable() {
 
   // Update subtitle
   const currentMonthName = MONTHS_ES[MONTHS_IDX];
+  const totalActivos = Object.keys(seasonData.forex || {}).length +
+                       Object.keys(seasonData.indices || {}).length +
+                       Object.keys(seasonData.commodities || {}).length;
   document.getElementById('subtitle-meta').textContent =
-    `28 pares forex · ${pairs.length} activos · Mes actual resaltado: ${currentMonthName}`;
+    `${totalActivos} activos · Mes actual resaltado: ${currentMonthName}`;
 
   if (pairs.length === 0) {
     document.getElementById('table-container').innerHTML =
