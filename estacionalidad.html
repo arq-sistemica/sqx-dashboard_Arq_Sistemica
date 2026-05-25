@@ -232,18 +232,28 @@ async function loadDashboard() {
       if (!bot.symbol) return;
       const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
 
-      // Usar bot.direction si está disponible, sino inferir desde tradeList
+      // 1. bot.direction (campo explícito)
       let dir = null;
       if (bot.direction === 'Long')        dir = 'long';
       else if (bot.direction === 'Short')  dir = 'short';
       else if (bot.direction === 'Both')   dir = 'mixed';
-      else if (bot.tradeList) {
+
+      // 2. Pseudocódigo cargado (entradaTipo del .txt de SQX)
+      if (!dir) {
+        const et = bot.pseudocodigoData?.parsed?.entradaTipo;
+        if (et === 'Buy (Long)')             dir = 'long';
+        else if (et === 'Sell (Short)')      dir = 'short';
+        else if (et === 'Both (Buy + Sell)') dir = 'mixed';
+      }
+
+      // 3. Inferir desde tradeList como último recurso
+      if (!dir && bot.tradeList) {
         let buys = 0, sells = 0;
         bot.tradeList.forEach(t => {
           if (t.action === 'Buy')  buys++;
           if (t.action === 'Sell') sells++;
         });
-        if (sells > 0 && buys === 0)  dir = 'short';
+        if (sells > 0 && buys === 0)      dir = 'short';
         else if (buys > 0 && sells === 0) dir = 'long';
         else if (buys > 0 && sells > 0)   dir = 'mixed';
       }
