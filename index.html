@@ -3041,11 +3041,9 @@ function parseSQXFile(text) {
     condicionesLong:[], condicionesShort:[], timeframe:na
   };
 
-  // 0. Timeframe — múltiples formatos de SQX:
-  // "Timeframe: H4" / "Timeframe (IS): H4" / "TimeFrame=H4"
-  // "Data series 1: EURUSD (H4, Main chart)"
-  const TF_PAT = /(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)/i;
-  const tfM = text.match(/\btimeframe\s*(?:\([^)]*\))?\s*[:=]\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\b/i)
+  // 0. Timeframe — formato SQX: "Backtested on SYMBOL / H4, fecha"
+  const tfM = text.match(/backtested\s+on\s+\S+\s*\/\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\b/i)
+           || text.match(/\btimeframe\s*(?:\([^)]*\))?\s*[:=]\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\b/i)
            || text.match(/data\s+series[^\n]*\(\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\s*[,)]/i);
   if (tfM) r.timeframe = tfM[1].toUpperCase();
 
