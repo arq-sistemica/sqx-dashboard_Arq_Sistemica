@@ -212,8 +212,19 @@ async function loadSeasonality() {
 
 async function loadDashboard() {
   try {
-    const r  = await fetch(DASHBOARD_URL + '?t=' + Date.now());
-    const db = await r.json();
+    // Leer la DB embebida de index.html (tiene direction, tf, etc. completos)
+    // Fallback a db_data.json si falla
+    let db;
+    try {
+      const r = await fetch('index.html?t=' + Date.now());
+      const html = await r.text();
+      const m = html.match(/<script id="db-store" type="application\/json">([\s\S]*?)<\/script>/);
+      if (!m) throw new Error('db-store no encontrado');
+      db = JSON.parse(m[1]);
+    } catch(e) {
+      const r = await fetch(DASHBOARD_URL + '?t=' + Date.now());
+      db = await r.json();
+    }
     activeBots = {};
     botMeta    = {};
 
