@@ -3269,11 +3269,9 @@ function loadPseudocodigoInline(botId, idx, input) {
       const bot = DB.find(b => b.id === botId);
       if (!bot) throw new Error('Bot no encontrado');
       bot.pseudocodigoData = { filename: file.name, parsed, aiExplanation: null, aiLoading: true };
-      if (!bot.direction) {
-        if (parsed.entradaTipo === 'Buy (Long)')        bot.direction = 'Long';
-        else if (parsed.entradaTipo === 'Sell (Short)') bot.direction = 'Short';
-        else if (parsed.entradaTipo === 'Both (Buy + Sell)') bot.direction = 'Both';
-      }
+      if (parsed.entradaTipo === 'Buy (Long)')             bot.direction = 'Long';
+      else if (parsed.entradaTipo === 'Sell (Short)')      bot.direction = 'Short';
+      else if (parsed.entradaTipo === 'Both (Buy + Sell)') bot.direction = 'Both';
       if (parsed.timeframe && parsed.timeframe !== 'No especificado') bot.tf = parsed.timeframe;
       markDirty();
       if (document.getElementById('overlap-section-card').style.display !== 'none') dnaInit();
