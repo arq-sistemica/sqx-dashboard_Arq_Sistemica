@@ -222,25 +222,26 @@ async function loadDashboard() {
       const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
 
       // Usar bot.direction si está disponible, sino inferir desde tradeList
-      let dir = 'mixed';
-      if (bot.direction === 'Long')  dir = 'long';
-      else if (bot.direction === 'Short') dir = 'short';
-      else if (bot.direction === 'Both')  dir = 'mixed';
+      let dir = null;
+      if (bot.direction === 'Long')        dir = 'long';
+      else if (bot.direction === 'Short')  dir = 'short';
+      else if (bot.direction === 'Both')   dir = 'mixed';
       else if (bot.tradeList) {
         let buys = 0, sells = 0;
         bot.tradeList.forEach(t => {
           if (t.action === 'Buy')  buys++;
           if (t.action === 'Sell') sells++;
         });
-        if (sells > 0 && buys === 0) dir = 'short';
-        if (buys  > 0 && sells === 0) dir = 'long';
+        if (sells > 0 && buys === 0)  dir = 'short';
+        else if (buys > 0 && sells === 0) dir = 'long';
+        else if (buys > 0 && sells > 0)   dir = 'mixed';
       }
 
       if (!activeBots[sym]) activeBots[sym] = [];
-      if (!activeBots[sym].includes(dir)) activeBots[sym].push(dir);
+      if (dir && !activeBots[sym].includes(dir)) activeBots[sym].push(dir);
 
       if (!botMeta[sym]) botMeta[sym] = [];
-      botMeta[sym].push({ dir, name: bot.name || sym, magic: bot.magic || '', tf: bot.tf || '' });
+      if (dir) botMeta[sym].push({ dir, name: bot.name || sym, magic: bot.magic || '', tf: bot.tf || '' });
     });
   } catch(e) {
     console.warn('Dashboard no disponible, continuando sin bots:', e);
