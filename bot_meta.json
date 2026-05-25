@@ -1,0 +1,762 @@
+[
+  {
+    "id": "mot87jsnxcixhg4pfr",
+    "magic": null,
+    "name": "Strategy 2.7.19(1) - Improved 1.1.7",
+    "symbol": "AUDUSD",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mot87jsn7ayp189u9qe",
+    "magic": 4914,
+    "name": "Strategy 4.9.14 - Improved 1.1.5",
+    "symbol": "AUDUSD",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mot87jsozw09pgmjwwc",
+    "magic": null,
+    "name": "Strategy 2.6.23 - Improved 2.1.4",
+    "symbol": "AUDUSD",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mouryfc0aht88q4e805",
+    "magic": null,
+    "name": "Strategy 2.6.20 - Improved 2.1.5(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": "Both"
+  },
+  {
+    "id": "mouryfc1nb5jsxr98f",
+    "magic": null,
+    "name": "Strategy 3.1.15(2) - Improved 2.1.6",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouryfc1yr0lro6p9sc",
+    "magic": null,
+    "name": "Strategy 3.1.15(3) - Improved 4.1.5(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouryfc1mcw1gxbo67f",
+    "magic": null,
+    "name": "Strategy 1.2.22 - Improved 4.1.5",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouryfc26nrm62e7ehx",
+    "magic": null,
+    "name": "Strategy 2.3.25 - Improved 2.1.4(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouryfc2ie40evly0ok",
+    "magic": null,
+    "name": "Strategy 3.1.18(6) - Improved 1.1.5",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouxa61bs9pa3vqu4xh",
+    "magic": 1319,
+    "name": "Strategy 1.3.19(1) - Improved 1.1.6",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouxa61criarl4hdkdj",
+    "magic": null,
+    "name": "Strategy 1.4.20 - Improved 3.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mouxa61dpb28l6b7ll",
+    "magic": null,
+    "name": "Strategy 3.1.18(1) - Improved 5.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mouxa61dln4jrpsm5em",
+    "magic": null,
+    "name": "Strategy 3.1.18(1) - Improved 5.1.6",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouxa61dr0g4um2jbbo",
+    "magic": null,
+    "name": "Strategy 3.2.20(1) - Improved 4.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouxa61d7hm6oz6e40c",
+    "magic": null,
+    "name": "Strategy 3.2.20(1) - Improved 4.1.7",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouxa61d84qg938o4gm",
+    "magic": null,
+    "name": "Strategy 5.6.16 - Improved 3.1.5",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mouxb9ht1jom7eabgwh",
+    "magic": 1263,
+    "name": "Strategy 1.2.6(3) - Improved 1.1.4",
+    "symbol": "EURUSD",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mouxb9hus22igs6x2wf",
+    "magic": 1555,
+    "name": "Strategy 1.5.5(5) - Improved 4.1.4",
+    "symbol": "EURUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mouxb9hurbn9thy81x",
+    "magic": 3845,
+    "name": "Strategy 3.8.4(5) - Improved 5.1.4",
+    "symbol": "EURUSD",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mouxb9hujum0gd0ptf",
+    "magic": null,
+    "name": "WFM_Strategy 1.5.5(5) - Improved 1.1.5",
+    "symbol": "EURUSD",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mouxb9hu3edjlagn2wc",
+    "magic": 4642,
+    "name": "Strategy 4.6.4(2) - Improved 3.1.7",
+    "symbol": "EURUSD",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mouxuiat215f0t8bbvh",
+    "magic": null,
+    "name": "Strategy 3.1.17 - Improved 2.1.5(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mouyafa0upq28mv0uja",
+    "magic": 1916,
+    "name": "Strategy 1.9.16 - Improved 2.1.4(2)",
+    "symbol": "AUDJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "moykaect8efqgmej2u",
+    "magic": null,
+    "name": "Strategy 2.6.20 - Improved 1.1.7",
+    "symbol": "EURJPY",
+    "tf": "H4",
+    "direction": null
+  },
+  {
+    "id": "mp0awlcfg090ol3bdet",
+    "magic": 9125,
+    "name": "Strategy 9 1 25",
+    "symbol": "NDX",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp7ptgmm18dsvikswsy",
+    "magic": 1624,
+    "name": "Strategy 1 6 24 Improved 1 1 4Strategy 1 6 24 Improved 1 1 4",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp7ptgmn9nqttvu6rv",
+    "magic": 3223,
+    "name": "Strategy 3 2 23 Improved 4 1 5",
+    "symbol": "SP",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp7ptgmohd0nflggozf",
+    "magic": 5962,
+    "name": "Strategy 5 9 6 2 Improved 1 1",
+    "symbol": "EURUSD",
+    "tf": "H4",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8ynd9e2n3g4mxihji",
+    "magic": 4217,
+    "name": "Strategy 4 2 17 1 Improved 1 1",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8zpvtb4x3b9jpa797",
+    "magic": 1452,
+    "name": "Strategy 1.4.5(2) - Improved 3.1.5",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mp8zpvtbyy2vcncy53",
+    "magic": 2642,
+    "name": "Strategy 2.6.4(2) - Improved 2.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mp8zpvtbycqt93756j",
+    "magic": 3145,
+    "name": "Strategy 3.1.4(5) - Improved 3.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mp8zpvtbpqx2kvglp1",
+    "magic": 334,
+    "name": "Strategy 3.3.4 - Improved 5.1.5",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Long"
+  },
+  {
+    "id": "mp8zs89hcdrxn59fcv",
+    "magic": 11143,
+    "name": "Strategy 1.1.14(3) - Improved 2.1.5",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8zs89hltazgmggysm",
+    "magic": 1621,
+    "name": "Strategy 1.6.21 - Improved 1.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8zs89hwq9k1836r6",
+    "magic": null,
+    "name": "Strategy 1.6.21 - Improved 2.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8zs89har5xxj6m4ph",
+    "magic": null,
+    "name": "Strategy 1.8.18 - Improved 1.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8zs89hvkdr5ys8s4k",
+    "magic": 4326,
+    "name": "Strategy 4.3.26(1) - Improved 4.1.6",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8zs89ioan9vjpz5p",
+    "magic": null,
+    "name": "Strategy 4.6.15(2) - Improved 2.1.5",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": "Short"
+  },
+  {
+    "id": "mp8zs89inmw31jgxdj8",
+    "magic": 4718,
+    "name": "Strategy 4.7.18(1) - Improved 2.1.4",
+    "symbol": "GBPJPY",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmvq8gxgot0ed",
+    "magic": null,
+    "name": "Strategy 1.1.20 - Improved 1.1.4(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmvp7imfimj6kh",
+    "magic": null,
+    "name": "Strategy 1.2.22 - Improved 4.1.5(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmvxdgj6o6cfh",
+    "magic": null,
+    "name": "Strategy 1.2.22(2) - Improved 3.1.4(2)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmv97m3itheygb",
+    "magic": 1315,
+    "name": "Strategy 1.3.15 - Improved 3.1.4(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmvo8b97buq1",
+    "magic": null,
+    "name": "Strategy 1.3.26(1) - Improved 1.1.5",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmw00v66a8m5luuo",
+    "magic": null,
+    "name": "Strategy 1.3.26(1) - Improved 1.1.6",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmwtpejog7nwuh",
+    "magic": null,
+    "name": "Strategy 1.5.18 - Improved 5.1.7",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmwwekwmw971um",
+    "magic": null,
+    "name": "Strategy 1.7.19(1) - Improved 2.1.6(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmweztukdh8q5c",
+    "magic": null,
+    "name": "Strategy 1.9.17 - Improved 1.1.5",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmwtr7ipe62pzn",
+    "magic": 1917,
+    "name": "Strategy 1.9.17(1) - Improved 5.1.5",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmw6j6tjch2dff",
+    "magic": null,
+    "name": "Strategy 2.2.18 - Improved 1.1.5(2)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmw8znlf4x88sm",
+    "magic": 2225,
+    "name": "Strategy 2.2.25 - Improved 4.1.7",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmwjy7dbms6b48",
+    "magic": null,
+    "name": "Strategy 2.3.25 - Improved 2.1.4(1)(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmx97czjpkdhtj",
+    "magic": null,
+    "name": "Strategy 2.6.20 - Improved 2.1.5(1)(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxh5kguytxlc6",
+    "magic": null,
+    "name": "Strategy 2.10.26 - Improved 2.1.7",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxjcloszlskq",
+    "magic": null,
+    "name": "Strategy 3.1.15(2) - Improved 1.1.6(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxkf9d1sl7uk",
+    "magic": null,
+    "name": "Strategy 3.1.15(2) - Improved 2.1.6(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxr5ab5ni3iao",
+    "magic": null,
+    "name": "Strategy 3.1.15(3) - Improved 1.1.4(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxe6oc89t7bqp",
+    "magic": null,
+    "name": "Strategy 3.1.15(3) - Improved 4.1.5(1)(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxqnnlzk9zrn",
+    "magic": null,
+    "name": "Strategy 3.1.17 - Improved 1.1.4",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxyof0bmpt2ig",
+    "magic": null,
+    "name": "Strategy 3.1.17 - Improved 2.1.5(1)(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxq4vd74a8a7d",
+    "magic": null,
+    "name": "Strategy 3.1.18(6) - Improved 1.1.4",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmxb8mquwssgjt",
+    "magic": null,
+    "name": "Strategy 3.1.18(6) - Improved 1.1.5(2)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmyybibyenucr",
+    "magic": null,
+    "name": "Strategy 3.1.18(6) - Improved 1.1.5(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmydalomupt4o",
+    "magic": null,
+    "name": "Strategy 3.1.19 - Improved 1.1.5(1)",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmy9krkc3pjgw7",
+    "magic": null,
+    "name": "Strategy 3.1.19 - Improved 1.1.6",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp976rmy8f5myaapby6",
+    "magic": null,
+    "name": "Strategy 3.1.24 - Improved 3.1.5",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp97gk7bb0pdi8zds5d",
+    "magic": 1514,
+    "name": "Strategy 1 5 14 Improved 1 1 7",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp97gk7iz3934htv1f",
+    "magic": 2718,
+    "name": "Strategy 2 7 18 Improved 1 1 5",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "mp97gk7jawzawmlth9",
+    "magic": 2920,
+    "name": "Strategy 2 9 20 Improved 2 1 4",
+    "symbol": "XAUUSD",
+    "tf": "H1",
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_4_1_25_4_Improved_3_1",
+    "magic": null,
+    "name": "Strategy_4_1_25_4_Improved_3_1",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_5_2_24_1_Improved_1_1",
+    "magic": null,
+    "name": "Strategy_5_2_24_1_Improved_1_1",
+    "symbol": "USDCHF",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_3_9_15_Improved_1_1_6",
+    "magic": null,
+    "name": "Strategy_3_9_15_Improved_1_1_6",
+    "symbol": "NDX",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_2_5_22_3_Improved_1_1",
+    "magic": null,
+    "name": "Strategy_2_5_22_3_Improved_1_1",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_2_5_22_3_Improved_2_1",
+    "magic": null,
+    "name": "Strategy_2_5_22_3_Improved_2_1",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_4_10_23_Improved_1_1_",
+    "magic": null,
+    "name": "Strategy_4_10_23_Improved_1_1_",
+    "symbol": "SP",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_2_8_17_Improved_2_1_4",
+    "magic": null,
+    "name": "Strategy_2_8_17_Improved_2_1_4",
+    "symbol": "SP",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_1_6_19_Improved_2_1_4",
+    "magic": null,
+    "name": "Strategy_1_6_19_Improved_2_1_4",
+    "symbol": "SP",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_5_5_24_1_Improved_4_1",
+    "magic": null,
+    "name": "Strategy_5_5_24_1_Improved_4_1",
+    "symbol": "SP",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_2_6_26_Improved_5_1_5",
+    "magic": null,
+    "name": "Strategy_2_6_26_Improved_5_1_5",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_3_3_15_Improved_5_1_4",
+    "magic": null,
+    "name": "Strategy_3_3_15_Improved_5_1_4",
+    "symbol": "AUDJPY",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_1_1_19_2_Improved_4_1",
+    "magic": null,
+    "name": "Strategy_1_1_19_2_Improved_4_1",
+    "symbol": "AUDJPY",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_5_6_18_Improved_5_1_4",
+    "magic": null,
+    "name": "Strategy_5_6_18_Improved_5_1_4",
+    "symbol": "AUDJPY",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_2_7_7_4_Improved_4_1_",
+    "magic": null,
+    "name": "Strategy_2_7_7_4_Improved_4_1_",
+    "symbol": "EURUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_7_5_40",
+    "magic": null,
+    "name": "Strategy_7_5_40",
+    "symbol": "NDX",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_9_31_27",
+    "magic": null,
+    "name": "Strategy_9_31_27",
+    "symbol": "NDX",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_9_40_29",
+    "magic": null,
+    "name": "Strategy_9_40_29",
+    "symbol": "NDX",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_2_3_28",
+    "magic": null,
+    "name": "Strategy_2_3_28",
+    "symbol": "NDX",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_1_1_18_Improved_4_1_4",
+    "magic": null,
+    "name": "Strategy_1_1_18_Improved_4_1_4",
+    "symbol": "AUDJPY",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_9_12_38",
+    "magic": null,
+    "name": "Strategy_9_12_38",
+    "symbol": "NDX",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_1_9_17_Improved_2_1_7",
+    "magic": null,
+    "name": "Strategy_1_9_17_Improved_2_1_7",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_2_3_25_1_Improved_3_1",
+    "magic": null,
+    "name": "Strategy_2_3_25_1_Improved_3_1",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_4_8_15_2_Improved_3_2",
+    "magic": null,
+    "name": "Strategy_4_8_15_2_Improved_3_2",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_1_7_22_1_Improved_2_1",
+    "magic": null,
+    "name": "Strategy_1_7_22_1_Improved_2_1",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  },
+  {
+    "id": "fed26_Strategy_4_3_24_Improved_4_1_6",
+    "magic": null,
+    "name": "Strategy_4_3_24_Improved_4_1_6",
+    "symbol": "XAUUSD",
+    "tf": null,
+    "direction": null
+  }
+]

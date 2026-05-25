@@ -212,19 +212,8 @@ async function loadSeasonality() {
 
 async function loadDashboard() {
   try {
-    // Leer la DB embebida de index.html (tiene direction, tf, etc. completos)
-    // Fallback a db_data.json si falla
-    let db;
-    try {
-      const r = await fetch('index.html?t=' + Date.now());
-      const html = await r.text();
-      const m = html.match(/<script id="db-store" type="application\/json">([\s\S]*?)<\/script>/);
-      if (!m) throw new Error('db-store no encontrado');
-      db = JSON.parse(m[1]);
-    } catch(e) {
-      const r = await fetch(DASHBOARD_URL + '?t=' + Date.now());
-      db = await r.json();
-    }
+    const r  = await fetch('bot_meta.json?t=' + Date.now());
+    const db = await r.json();
     activeBots = {};
     botMeta    = {};
 
@@ -232,31 +221,10 @@ async function loadDashboard() {
       if (!bot.symbol) return;
       const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
 
-      // 1. bot.direction (campo explícito)
       let dir = null;
-      if (bot.direction === 'Long')        dir = 'long';
-      else if (bot.direction === 'Short')  dir = 'short';
-      else if (bot.direction === 'Both')   dir = 'mixed';
-
-      // 2. Pseudocódigo cargado (entradaTipo del .txt de SQX)
-      if (!dir) {
-        const et = bot.pseudocodigoData?.parsed?.entradaTipo;
-        if (et === 'Buy (Long)')             dir = 'long';
-        else if (et === 'Sell (Short)')      dir = 'short';
-        else if (et === 'Both (Buy + Sell)') dir = 'mixed';
-      }
-
-      // 3. Inferir desde tradeList como último recurso
-      if (!dir && bot.tradeList) {
-        let buys = 0, sells = 0;
-        bot.tradeList.forEach(t => {
-          if (t.action === 'Buy')  buys++;
-          if (t.action === 'Sell') sells++;
-        });
-        if (sells > 0 && buys === 0)      dir = 'short';
-        else if (buys > 0 && sells === 0) dir = 'long';
-        else if (buys > 0 && sells > 0)   dir = 'mixed';
-      }
+      if (bot.direction === 'Long')       dir = 'long';
+      else if (bot.direction === 'Short') dir = 'short';
+      else if (bot.direction === 'Both')  dir = 'mixed';
 
       if (!activeBots[sym]) activeBots[sym] = [];
       if (dir && !activeBots[sym].includes(dir)) activeBots[sym].push(dir);
