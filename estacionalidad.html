@@ -78,13 +78,20 @@
   tr:last-child td { border-bottom:none; }
 
   /* BOT INDICATORS */
-  .bot-indicators { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
-  .bot-row { display:flex; align-items:center; gap:5px; cursor:pointer; width:100%; }
-  .bot-row:hover .bot-name { text-decoration:underline; }
   .bot-dir { font-size:9px; padding:1px 5px; border-radius:10px; font-weight:700; white-space:nowrap; line-height:1.6; flex-shrink:0; }
   .bot-dir.short { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
   .bot-dir.long  { background:#dcfce7; color:#166534; border:1px solid #86efac; }
   .bot-dir.mixed { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+  /* Compact summary row */
+  .bot-summary { display:flex; align-items:center; gap:5px; cursor:pointer; padding:5px 8px; border-radius:var(--radius); flex-wrap:wrap; }
+  .bot-summary:hover { background:var(--bg2); }
+  .bot-expand-chev { font-size:10px; color:var(--text3); margin-left:auto; flex-shrink:0; transition:transform 0.15s; }
+  .bot-expand-chev.open { transform:rotate(180deg); }
+  /* Expanded list */
+  .bot-list-detail { display:none; flex-direction:column; gap:3px; padding:4px 8px 8px; border-top:1px solid var(--border); margin-top:2px; }
+  .bot-list-detail.open { display:flex; }
+  .bot-row { display:flex; align-items:center; gap:5px; cursor:pointer; width:100%; padding:2px 0; }
+  .bot-row:hover .bot-name { text-decoration:underline; }
   .bot-name { font-size:10px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
   .bot-tf   { font-size:9px; color:var(--text3); flex-shrink:0; }
   tr.has-bots td.col-pair { border-left:3px solid var(--accent); }
@@ -377,23 +384,37 @@ function renderTable() {
     // Pair name
     html += `<td class="col-pair">${pair}</td>`;
 
-    // Bot indicators
-    html += '<td class="col-bots"><div class="bot-indicators">';
+    // Bot indicators — compact summary + expandable list
+    html += '<td class="col-bots">';
     if (metas.length === 0) {
-      html += '<span style="color:var(--text3);font-size:10px;">—</span>';
+      html += '<span style="color:var(--text3);font-size:10px;padding:5px 8px;display:block;">—</span>';
     } else {
+      const cellId = 'bots-' + pair.replace(/[^A-Z0-9]/g,'');
+      const longN  = metas.filter(m => m.dir === 'long').length;
+      const shortN = metas.filter(m => m.dir === 'short').length;
+      const mixN   = metas.filter(m => m.dir === 'mixed').length;
+      let badges = '';
+      if (longN)  badges += `<span class="bot-dir long">Long ×${longN}</span>`;
+      if (shortN) badges += `<span class="bot-dir short">Short ×${shortN}</span>`;
+      if (mixN)   badges += `<span class="bot-dir mixed">Mixto ×${mixN}</span>`;
+      html += `<div class="bot-summary" onclick="toggleBotList('${cellId}')">
+        ${badges}
+        <span class="bot-expand-chev" id="chev-${cellId}">▾</span>
+      </div>
+      <div class="bot-list-detail" id="${cellId}">`;
       metas.forEach(m => {
         const dirLabel = m.dir === 'short' ? 'Short' : m.dir === 'long' ? 'Long' : 'Mixto';
-        const tip = `${m.name}${m.tf ? ' · ' + m.tf : ''}${m.magic ? ' · Magic ' + m.magic : ''}`;
-        const shortName = m.name ? m.name.replace(/^(SQX_|sqx_)/i,'') : m.dir;
-        html += `<div class="bot-row" title="${tip}" onclick="window.open('index.html','_blank')">
+        const shortName = (m.name || m.dir).replace(/^(SQX_|sqx_)/i,'');
+        const url = m.magic ? `index.html?magic=${m.magic}&section=myfxbook` : 'index.html';
+        html += `<div class="bot-row" onclick="event.stopPropagation();window.open('${url}','_blank')">
           <span class="bot-dir ${m.dir}">${dirLabel}</span>
           <span class="bot-name">${shortName}</span>
           ${m.tf ? `<span class="bot-tf">${m.tf}</span>` : ''}
         </div>`;
       });
+      html += '</div>';
     }
-    html += '</div></td>';
+    html += '</td>';
 
     // Month cells
     MONTHS_ES.forEach((m, i) => {
@@ -453,6 +474,16 @@ function renderExceptional() {
       ${e.notes ? `<div class="exc-notes">${e.notes}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ── BOT LIST TOGGLE ──
+function toggleBotList(id) {
+  const list = document.getElementById(id);
+  const chev = document.getElementById('chev-' + id);
+  if (!list) return;
+  const isOpen = list.classList.contains('open');
+  list.classList.toggle('open', !isOpen);
+  if (chev) chev.classList.toggle('open', !isOpen);
 }
 
 // ── EXCEPTIONAL TOGGLE ──
