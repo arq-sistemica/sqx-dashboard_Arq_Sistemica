@@ -99,7 +99,12 @@
 
   /* EXCEPTIONAL PANEL */
   .exceptional-panel { margin-top:24px; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
-  .exceptional-header { padding:12px 16px; background:var(--bg2); border-bottom:1px solid var(--border); font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; }
+  .exceptional-header { padding:12px 16px; background:var(--bg2); border-bottom:1px solid var(--border); font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+  .exceptional-header:hover { background:var(--bg3); }
+  .exc-chevron { margin-left:auto; font-size:11px; color:var(--text3); transition:transform 0.2s; }
+  .exceptional-panel.collapsed .exc-chevron { transform:rotate(-90deg); }
+  .exceptional-panel.collapsed .exceptional-grid { display:none; }
+  .exceptional-panel.collapsed .exceptional-header { border-bottom:none; }
   .exceptional-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:0; }
   .exc-item { padding:12px 16px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
   .exc-item:last-child { border-bottom:none; }
@@ -169,7 +174,10 @@
 
   <!-- EXCEPTIONAL PANEL -->
   <div class="exceptional-panel" id="exceptional-panel" style="display:none">
-    <div class="exceptional-header">⭐ Señales Excepcionales — Pos% ≥82% o ≤18%</div>
+    <div class="exceptional-header" onclick="toggleExceptional()">
+      ⭐ Señales Excepcionales — Pos% ≥82% o ≤18%
+      <span class="exc-chevron" id="exc-chevron">▼</span>
+    </div>
     <div class="exceptional-grid" id="exceptional-grid"></div>
   </div>
 
@@ -445,6 +453,11 @@ function renderExceptional() {
       ${e.notes ? `<div class="exc-notes">${e.notes}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ── EXCEPTIONAL TOGGLE ──
+function toggleExceptional() {
+  document.getElementById('exceptional-panel').classList.toggle('collapsed');
 }
 
 // ── FILTERS ──
