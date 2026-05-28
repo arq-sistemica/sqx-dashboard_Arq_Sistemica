@@ -5,8 +5,8 @@ Convierte CSV exportados por TradeCapture v2 en JSON para el dashboard SQX.
 Agrupa por campo 'comment' (identificador único del bot) y mergea con db_data.json.
 
 Uso:
-  python fed26_parser.py --input fed26_trades_*.csv --output myfxbook_output.json
-  python fed26_parser.py --input fed26_trades_*.csv --output myfxbook_output.json --merge-db db_data.json
+  python fed26_parser.py --input fed26_trades_*.csv --output mt5_output.json
+  python fed26_parser.py --input fed26_trades_*.csv --output mt5_output.json --merge-db db_data.json
   python fed26_parser.py --input fed26_trades_*.csv --dry-run
 """
 
@@ -160,7 +160,7 @@ def calculate_metrics(trades):
     return {
         "symbol":        primary_symbol,
         "total_profit":  round(total_profit, 2),
-        "myfxbookData": {
+        "mt5Data": {
             "pf":          round(pf, 2),
             "ddPct":       round(max_dd, 2),
             "winRate":     round(wr, 2),
@@ -192,14 +192,14 @@ def build_output(bots_by_key):
             "comment":      key,
             "magic":        magic_sample,
             "symbol":       metrics["symbol"],
-            "myfxbookData": metrics["myfxbookData"],
+            "mt5Data": metrics["mt5Data"],
         })
     return result
 
 
 def merge_with_db(parsed_bots, db_path):
     """
-    Inyecta el bloque 'myfxbook' en db_data.json.
+    Inyecta el bloque 'mt5' en db_data.json.
 
     Orden de matching por bot:
       1. COMMENT_TO_DB_ID explícito (override manual)
@@ -265,7 +265,7 @@ def merge_with_db(parsed_bots, db_path):
                 print(f"  OK [magic]  '{comment}' (magic={magic}) → '{db_bot.get('name', '?')}'")
 
         if db_bot:
-            db_bot["myfxbookData"] = bot["myfxbookData"]
+            db_bot["mt5Data"] = bot["mt5Data"]
             matched += 1
         else:
             unmatched.append(comment)
@@ -274,7 +274,7 @@ def merge_with_db(parsed_bots, db_path):
                 "name":         comment,
                 "symbol":       bot["symbol"],
                 "source":       "fed26_csv",
-                "myfxbookData": bot["myfxbookData"],
+                "mt5Data": bot["mt5Data"],
             })
             print(f"  + [nuevo]  '{comment}' → sin match SQX, agregado como entrada nueva")
 

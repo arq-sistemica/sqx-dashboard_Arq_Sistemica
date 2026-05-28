@@ -405,7 +405,7 @@ function renderTable() {
       metas.forEach(m => {
         const dirLabel = m.dir === 'short' ? 'Short' : m.dir === 'long' ? 'Long' : 'Mixto';
         const shortName = (m.name || m.dir).replace(/^(SQX_|sqx_)/i,'');
-        const url = m.magic ? `index.html?magic=${m.magic}&section=myfxbook` : 'index.html';
+        const url = m.magic ? `index.html?magic=${m.magic}&section=mt5` : 'index.html';
         html += `<div class="bot-row" onclick="event.stopPropagation();window.open('${url}','_blank')">
           <span class="bot-dir ${m.dir}">${dirLabel}</span>
           <span class="bot-name">${shortName}</span>

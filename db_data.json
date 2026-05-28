@@ -440,7 +440,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 1.57,
       "absGain": 1.57,
       "daily": 0.01,
@@ -695,7 +695,7 @@
       "startDate": "01.22.2026 00:27",
       "endDate": "Close Price"
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 14,
       "winning": 9,
       "losing": 5,
@@ -1209,7 +1209,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": -0.16,
       "absGain": -0.16,
       "daily": 0,
@@ -1554,7 +1554,7 @@
       "startDate": "01.22.2026 00:27",
       "endDate": "Close Price"
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 18,
       "winning": 10,
       "losing": 8,
@@ -2083,7 +2083,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 0.06,
       "absGain": 0.06,
       "daily": 0,
@@ -2308,7 +2308,7 @@
       "startDate": "01.22.2026 00:27",
       "endDate": "Close Price"
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 12,
       "winning": 7,
       "losing": 5,
@@ -2813,7 +2813,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 1.62,
       "absGain": 1.62,
       "daily": 0.04,
@@ -2933,7 +2933,7 @@
       "startDate": "03.25.2026 18:17",
       "endDate": "Close Price"
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 4,
       "winning": 4,
       "losing": 0,
@@ -3007,7 +3007,7 @@
       "cagrdd": 0,
       "fitness": 0
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 1.39,
       "absGain": 1.39,
       "daily": 0.03,
@@ -3541,7 +3541,7 @@
         }
       ]
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 7,
       "winning": 5,
       "losing": 2,
@@ -4026,7 +4026,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 1.45,
       "absGain": 1.45,
       "daily": 0.03,
@@ -4146,7 +4146,7 @@
       "startDate": "03.25.2026 18:17",
       "endDate": "Close Price"
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 6,
       "winning": 4,
       "losing": 2,
@@ -4627,7 +4627,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 1,
       "absGain": 1,
       "daily": 0.02,
@@ -4777,7 +4777,7 @@
       "startDate": "03.25.2026 18:17",
       "endDate": "Close Price"
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 8,
       "winning": 4,
       "losing": 4,
@@ -5266,7 +5266,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 1.69,
       "absGain": 1.69,
       "daily": 0.04,
@@ -5813,7 +5813,7 @@
         }
       ]
     },
-    "myfxbookData": {
+    "mt5Data": {
       "gain": 0.98,
       "absGain": 0.98,
       "daily": 0.02,
@@ -5963,7 +5963,7 @@
       "startDate": "03.25.2026 18:17",
       "endDate": "Close Price"
     },
-    "myfxbook": {
+    "mt5": {
       "trades": 12,
       "winning": 5,
       "losing": 7,
@@ -6032,7 +6032,7 @@
     "name": "Strategy_4_1_25_4_Improved_3_1",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 289,
       "winning": 136,
       "losing": 153,
@@ -7209,7 +7209,7 @@
     "name": "Strategy_2_6_4_2_Improved_2_1_",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 31,
       "winning": 15,
       "losing": 16,
@@ -7354,7 +7354,7 @@
     "name": "Strategy_3_1_4_5_Improved_3_1_",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 38,
       "winning": 17,
       "losing": 21,
@@ -7527,7 +7527,7 @@
     "name": "Strategy_3_8_4_5_Improved_5_1_",
     "symbol": "EURUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 35,
       "winning": 15,
       "losing": 20,
@@ -7688,7 +7688,7 @@
     "name": "Strategy_1_4_5_2_Improved_3_1_",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 31,
       "winning": 17,
       "losing": 14,
@@ -7833,7 +7833,7 @@
     "name": "Strategy_3_3_4_Improved_5_1_5",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 17,
       "winning": 10,
       "losing": 7,
@@ -7922,7 +7922,7 @@
     "name": "Strategy_5_2_24_1_Improved_1_1",
     "symbol": "USDCHF",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 2,
       "winning": 0,
       "losing": 2,
@@ -7951,7 +7951,7 @@
     "name": "Strategy_1_2_6_3_Improved_1_1_",
     "symbol": "EURUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 13,
       "winning": 7,
       "losing": 6,
@@ -8024,7 +8024,7 @@
     "name": "Strategy_1_5_5_5_Improved_4_1_",
     "symbol": "EURUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 18,
       "winning": 11,
       "losing": 7,
@@ -8117,7 +8117,7 @@
     "name": "Strategy_3_9_15_Improved_1_1_6",
     "symbol": "NDX",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 86,
       "winning": 39,
       "losing": 47,
@@ -8482,7 +8482,7 @@
     "name": "Strategy_1_6_24_Improved_1_1_4",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 13,
       "winning": 6,
       "losing": 7,
@@ -8555,7 +8555,7 @@
     "name": "Strategy_2_5_22_3_Improved_1_1",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 10,
       "winning": 5,
       "losing": 5,
@@ -8616,7 +8616,7 @@
     "name": "Strategy_2_5_22_3_Improved_2_1",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 5,
       "winning": 3,
       "losing": 2,
@@ -8657,7 +8657,7 @@
     "name": "Strategy_4_10_23_Improved_1_1_",
     "symbol": "SP500",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 34,
       "winning": 21,
       "losing": 13,
@@ -8814,7 +8814,7 @@
     "name": "Strategy_2_8_17_Improved_2_1_4",
     "symbol": "SP500",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 45,
       "winning": 24,
       "losing": 21,
@@ -9015,7 +9015,7 @@
     "name": "Strategy_1_6_19_Improved_2_1_4",
     "symbol": "SP500",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 31,
       "winning": 20,
       "losing": 11,
@@ -9160,7 +9160,7 @@
     "name": "Strategy_3_2_23_Improved_4_1_5",
     "symbol": "SP500",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 31,
       "winning": 21,
       "losing": 10,
@@ -9305,7 +9305,7 @@
     "name": "Strategy_5_5_24_1_Improved_4_1",
     "symbol": "SP500",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 41,
       "winning": 25,
       "losing": 16,
@@ -9490,7 +9490,7 @@
     "name": "Strategy_2_6_26_Improved_5_1_5",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 7,
       "winning": 5,
       "losing": 2,
@@ -9539,7 +9539,7 @@
     "name": "Strategy_1_9_16_Improved_2_1_4",
     "symbol": "AUDJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 12,
       "winning": 9,
       "losing": 3,
@@ -9608,7 +9608,7 @@
     "name": "Strategy_4_3_26_1_Improved_4_1",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 4,
       "winning": 2,
       "losing": 2,
@@ -9645,7 +9645,7 @@
     "name": "Strategy_3_3_15_Improved_5_1_4",
     "symbol": "AUDJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 3,
       "winning": 1,
       "losing": 2,
@@ -9678,7 +9678,7 @@
     "name": "Strategy_4_7_18_1_Improved_2_1",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 5,
       "winning": 2,
       "losing": 3,
@@ -9719,7 +9719,7 @@
     "name": "Strategy_1_1_19_2_Improved_4_1",
     "symbol": "AUDJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 8,
       "winning": 2,
       "losing": 6,
@@ -9772,7 +9772,7 @@
     "name": "Strategy_1_1_14_3_Improved_2_1",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 5,
       "winning": 2,
       "losing": 3,
@@ -9813,7 +9813,7 @@
     "name": "Strategy_5_6_18_Improved_5_1_4",
     "symbol": "AUDJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 4,
       "winning": 2,
       "losing": 2,
@@ -9850,7 +9850,7 @@
     "name": "Strategy_2_7_7_4_Improved_4_1_",
     "symbol": "EURUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 3,
       "winning": 1,
       "losing": 2,
@@ -9883,7 +9883,7 @@
     "name": "Strategy_7_5_40",
     "symbol": "NDX",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 1,
       "winning": 1,
       "losing": 0,
@@ -9908,7 +9908,7 @@
     "name": "Strategy_9_31_27",
     "symbol": "NDX",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 1,
       "winning": 1,
       "losing": 0,
@@ -9933,7 +9933,7 @@
     "name": "Strategy_9_40_29",
     "symbol": "NDX",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 2,
       "winning": 1,
       "losing": 1,
@@ -9962,7 +9962,7 @@
     "name": "Strategy_9_1_25",
     "symbol": "NDX",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 20,
       "winning": 10,
       "losing": 10,
@@ -10063,7 +10063,7 @@
     "name": "Strategy_4_6_4_2_Improved_3_1_",
     "symbol": "EURUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 11,
       "winning": 5,
       "losing": 6,
@@ -10128,7 +10128,7 @@
     "name": "Strategy_2_3_28",
     "symbol": "NDX",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 23,
       "winning": 14,
       "losing": 9,
@@ -10241,7 +10241,7 @@
     "name": "Strategy_1_5_5_5_Improved_1_1_",
     "symbol": "EURUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 8,
       "winning": 5,
       "losing": 3,
@@ -10294,7 +10294,7 @@
     "name": "Strategy_4_2_17_1_Improved_1_1",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 3,
       "winning": 0,
       "losing": 3,
@@ -10327,7 +10327,7 @@
     "name": "Strategy_1_6_21_Improved_1_1_4",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 4,
       "winning": 1,
       "losing": 3,
@@ -10364,7 +10364,7 @@
     "name": "Strategy_1_1_18_Improved_4_1_4",
     "symbol": "AUDJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 1,
       "winning": 0,
       "losing": 1,
@@ -10389,7 +10389,7 @@
     "name": "Strategy_1_3_19_1_Improved_1_1",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 1,
       "winning": 0,
       "losing": 1,
@@ -10414,7 +10414,7 @@
     "name": "Strategy_5_9_6_2_Improved_1_1_",
     "symbol": "EURUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 2,
       "winning": 2,
       "losing": 0,
@@ -10443,7 +10443,7 @@
     "name": "Strategy_9_12_38",
     "symbol": "NDX",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 13,
       "winning": 7,
       "losing": 6,
@@ -10516,7 +10516,7 @@
     "name": "Strategy_2_7_18_Improved_1_1_5",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 8,
       "winning": 2,
       "losing": 6,
@@ -10569,7 +10569,7 @@
     "name": "Strategy_1_9_17_Improved_2_1_7",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 3,
       "winning": 0,
       "losing": 3,
@@ -10602,7 +10602,7 @@
     "name": "Strategy_1_3_15_Improved_3_1_4",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 7,
       "winning": 2,
       "losing": 5,
@@ -10651,7 +10651,7 @@
     "name": "Strategy_2_3_25_1_Improved_3_1",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 9,
       "winning": 4,
       "losing": 5,
@@ -10708,7 +10708,7 @@
     "name": "Strategy_1_9_17_Improved_1_1_5",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 7,
       "winning": 2,
       "losing": 5,
@@ -10757,7 +10757,7 @@
     "name": "Strategy_3_1_17_Improved_2_1_5",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 7,
       "winning": 2,
       "losing": 5,
@@ -10806,7 +10806,7 @@
     "name": "Strategy_1_3_26_1_Improved_1_1",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 19,
       "winning": 11,
       "losing": 8,
@@ -10903,7 +10903,7 @@
     "name": "Strategy_1_5_14_Improved_1_1_7",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 14,
       "winning": 7,
       "losing": 7,
@@ -10980,7 +10980,7 @@
     "name": "Strategy_1_9_17_1_Improved_5_1",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 13,
       "winning": 6,
       "losing": 7,
@@ -11053,7 +11053,7 @@
     "name": "Strategy_2_2_25_Improved_4_1_7",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 9,
       "winning": 4,
       "losing": 5,
@@ -11110,7 +11110,7 @@
     "name": "Strategy_2_9_20_Improved_2_1_4",
     "symbol": "XAUUSD",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 8,
       "winning": 6,
       "losing": 2,
@@ -11163,7 +11163,7 @@
     "name": "Strategy_1_4_20_Improved_3_1_4",
     "symbol": "GBPJPY",
     "source": "fed26_csv",
-    "myfxbook": {
+    "mt5": {
       "trades": 1,
       "winning": 0,
       "losing": 1,
