@@ -2280,19 +2280,27 @@ function importMt5CSV(csvText) {
 // ── RANKING CACHE — sincronización automática con ranking.html ─
 function updateRankingCache() {
   try {
-    const rankingBots = DB.filter(b => b.mt5Data).map(b => ({
-      name:   b.name   || '—',
-      magic:  b.magic  || '—',
-      symbol: b.symbol || '—',
-      dpf:    b.dpf !== undefined ? b.dpf : null,
-      estado: b.estado || b.phase || '—',
-      mfx: {
-        pf:        b.mt5Data.pf        ?? null,
-        ddPct:     b.mt5Data.ddPct     ?? null,
-        winRate:   b.mt5Data.winRate   ?? null,
-        tradeList: b.mt5Data.tradeList || [],
-      },
-    }));
+    // Incluye bots con mt5Data (legado) Y bots con magic + datos live de Supabase
+    const live = window.LIVE || {};
+    const rankingBots = DB
+      .filter(b => b.mt5Data || (b.magic && live[String(b.magic)]))
+      .map(b => {
+        const liveData = b.magic ? live[String(b.magic)] : null;
+        const src = liveData || b.mt5Data || {};
+        return {
+          name:   b.name   || '—',
+          magic:  b.magic  || '—',
+          symbol: b.symbol || '—',
+          dpf:    b.dpf !== undefined ? b.dpf : null,
+          estado: b.estado || b.phase || '—',
+          mfx: {
+            pf:        src.pf        ?? null,
+            ddPct:     src.ddPct     ?? null,
+            winRate:   src.winRate   ?? null,
+            tradeList: src.tradeList || [],
+          },
+        };
+      });
     localStorage.setItem('sqx_ranking_bots', JSON.stringify(rankingBots));
     localStorage.setItem('sqx_overlap_ts', Date.now().toString());
   } catch(e) {}
