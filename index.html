@@ -699,6 +699,7 @@
     <div class="stat"><div class="stat-lbl">Parciales (1-2 fallos)</div><div class="stat-val amber" id="s-warn">10</div></div>
     <div class="stat"><div class="stat-lbl">Descartados</div><div class="stat-val red" id="s-fail">14</div></div>
     <div class="stat"><div class="stat-lbl">Desde CSV</div><div class="stat-val blue" id="s-csv">24</div></div>
+    <div class="stat" title="Bots con datos live de MT5 (magic number vinculado)"><div class="stat-lbl">Con datos live 📊</div><div class="stat-val" id="s-live" style="color:var(--green)">—</div></div>
   </div>
 
   <!-- TABLE -->
@@ -2405,13 +2406,21 @@ function render() {
   const rows = getFiltered();
   if (DB.length > 0) {
     document.getElementById('sum-grid').style.display = 'grid';
-    let ok=0,warn=0,fail=0,csv=0;
-    DB.forEach(s => { const fl=evalS(s).length; if(fl===0)ok++;else if(fl<=2)warn++;else fail++; if(s.source==='csv')csv++; });
+    let ok=0,warn=0,fail=0,csv=0,live=0;
+    const lv = window.LIVE || {};
+    DB.forEach(s => {
+      const fl=evalS(s).length;
+      if(fl===0)ok++;else if(fl<=2)warn++;else fail++;
+      if(s.source==='csv')csv++;
+      if(s.mt5Data || (s.magic && lv[String(s.magic)])) live++;
+    });
     document.getElementById('s-tot').textContent = DB.length;
     document.getElementById('s-ok').textContent = ok;
     document.getElementById('s-warn').textContent = warn;
     document.getElementById('s-fail').textContent = fail;
     document.getElementById('s-csv').textContent = csv;
+    const liveEl = document.getElementById('s-live');
+    if (liveEl) liveEl.textContent = live > 0 ? `${live} / ${DB.length}` : '—';
     document.getElementById('t-sub').textContent = `Mostrando ${rows.length} de ${DB.length}`;
   } else {
     document.getElementById('sum-grid').style.display = 'none';
