@@ -51,13 +51,12 @@ Vuelve al inicio con mejor versión
 - ✅ Checklist con chips — selección interactiva
 - ⬜ Correlación matemática en tiempo real entre bots activos
 
-### Capa 4 — Optimización ⬜ (visión)
+### Capa 4 — Optimización ⚠️ (parcialmente implementado)
 ¿Cómo mejorar los bots existentes?
-- **Overlap inteligente**: cruzar pseudocódigo + resultados live
-- Identificar qué indicadores/combinaciones correlacionan con buen PF
-- Identificar qué combinaciones correlacionan con alto DD
-- Sugerencias concretas: "Bot X usa Bollinger en XAUUSD → históricamente bajo en este período"
-- Ciclo de feedback: dashboard → SQX → bot mejorado → dashboard
+- ✅ **Indicadores × Performance**: en overlap.html, para cada indicador muestra PF promedio y DD promedio de bots live que lo usan
+- ✅ Identifica qué indicadores correlacionan con mejor PF y menor DD
+- ⬜ Sugerencias concretas por bot: "Bot X usa Bollinger → avg PF 0.98 en tu portfolio"
+- ⬜ Ciclo de feedback: dashboard → SQX → bot mejorado → dashboard
 
 ### Capa 5 — Alertas ⬜ (futuro)
 ¿Qué está pasando ahora mismo?
@@ -184,3 +183,4 @@ PASO 4 — Todo fluye automáticamente
 | 2026-05-28 | Carpeta docs/ creada con arquitectura y roadmap |
 | 2026-05-28 | buildMt5Block: Net P&L en lugar de Gain% para bots Supabase |
 | 2026-05-28 | portfolio.html — Portfolio Builder (Capa 3) con equity combinada |
+| 2026-05-28 | overlap.html — panel Indicadores × Performance Live (Capa 4 parcial) |
