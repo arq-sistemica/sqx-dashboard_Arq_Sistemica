@@ -214,15 +214,17 @@
 <div id="no-data-screen" style="display:none">
   <div class="no-data-card">
     <div class="no-data-icon">📊</div>
-    <div class="no-data-title">Sin datos del portfolio</div>
-    <div class="no-data-sub">Esta página recibe los datos del dashboard principal.<br>Seguí estos pasos para verlo:</div>
+    <div class="no-data-title">Sin bots con pseudocódigo</div>
+    <div class="no-data-sub">El análisis de overlap necesita bots con pseudocódigo cargado.<br>Seguí estos pasos:</div>
     <div class="no-data-steps">
-      <p><span class="step-num">1</span> Abrí <strong>index.html</strong> en tu navegador</p>
-      <p><span class="step-num">2</span> Iniciá sesión en el dashboard</p>
-      <p><span class="step-num">3</span> Hacé clic en el botón <strong>📊 Overlap</strong> de la barra superior</p>
-      <p><span class="step-num">4</span> Esta página se abrirá automáticamente con los datos cargados</p>
+      <p><span class="step-num">1</span> Iniciá sesión en <strong>index.html</strong></p>
+      <p><span class="step-num">2</span> Cargá pseudocódigos en tus bots (sección "Pseudocódigo" en cada ficha)</p>
+      <p><span class="step-num">3</span> Volvé aquí — se cargarán directo desde Supabase</p>
     </div>
-    <button class="btn-primary" onclick="window.location.href='index.html'">Ir al Dashboard</button>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn-primary" onclick="window.location.href='index.html'">Ir al Dashboard</button>
+      <button onclick="loadAndRender()" style="font-size:12px">↺ Reintentar</button>
+    </div>
   </div>
 </div>
 
@@ -238,7 +240,7 @@
       <span class="sync-info" id="sync-info"></span>
       <span id="bots-counter" style="font-size:11px;color:var(--text3);margin-right:4px"></span>
       <button id="btn-restore" onclick="restoreBots()" title="Restaurar todos los bots eliminados" style="display:none;background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)">↩ Restaurar todos</button>
-      <button onclick="refreshData()" title="Volver a leer los datos del dashboard">↺ Actualizar</button>
+      <button onclick="refreshData()" title="Recargar bots y trades desde Supabase">↺ Recargar</button>
       <button onclick="window.open('estacionalidad.html','_blank')" title="Estacionalidad anual — 28 pares forex">📅 Estacionalidad</button>
       <button onclick="window.close()" title="Cerrar esta pestaña">← Volver</button>
     </div>
@@ -822,70 +824,144 @@ function _updateCounter() {
   if (rb) rb.style.display = removed > 0 ? 'inline-flex' : 'none';
 }
 
+function _clearPanels() {
+  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+}
+
 function removeBot(botId) {
   _activeBots = _activeBots.filter(b => b.id !== botId);
   _updateCounter();
-  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
-    .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  _clearPanels();
   dnaInit(_activeBots);
 }
 
 function restoreBots() {
   _activeBots = _originalBots.slice();
   _updateCounter();
-  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
-    .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  _clearPanels();
   dnaInit(_activeBots);
 }
 
-function loadAndRender() {
+// Calcula PF y DD desde trades (mismo algoritmo que index.html)
+function _computeLiveMetrics(trades) {
+  const byMagic = {};
+  for (const t of trades) {
+    const m = String(t.magic || '');
+    if (!m || m === '0') continue;
+    if (!byMagic[m]) byMagic[m] = [];
+    byMagic[m].push(t);
+  }
+  const result = {};
+  for (const [magic, list] of Object.entries(byMagic)) {
+    const netPs = list.map(t => +((t.profit||0)+(t.commission||0)+(t.swap||0)).toFixed(2));
+    const wins  = netPs.filter(p => p > 0);
+    const losses= netPs.filter(p => p < 0);
+    const gW = wins.reduce((a,b)=>a+b,0);
+    const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
+    const pf = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
+    let peak=0,eq=0,maxDD=0;
+    netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+    result[magic] = { pf, ddPct: +(maxDD*100).toFixed(2) };
+  }
+  return result;
+}
+
+// Convierte bots de Supabase al formato que dnaInit() espera
+function _botsToOverlapFormat(remoteBots, liveByMagic) {
+  const na = 'No especificado';
+  return remoteBots
+    .filter(b => b.pseudocodigoData?.parsed)
+    .map(b => {
+      const p = b.pseudocodigoData.parsed;
+      const indsRaw = p.indicadores !== na ? p.indicadores.split(' | ') : [];
+      const inds = [...new Set(indsRaw.map(s => (s.match(/^([A-Za-z]+)/) || [])[1]).filter(Boolean))];
+      const dir = p.entradaTipo === 'Sell (Short)' ? 'Short' :
+                  p.entradaTipo === 'Both (Buy + Sell)' ? 'Both' : 'Long';
+      const entry = p.ordenTipo !== na ? p.ordenTipo : 'Market';
+      const ph = (b.phase || '').toLowerCase();
+      const stage = ph === 'live' ? 'live' : ph === 'descartado' ? 'descartado' : 'incubacion';
+      const allConds = [...(p.condicionesLong || []), ...(p.condicionesShort || [])];
+      const signal = allConds.slice(0, 3).join(' AND ') || b.name;
+      const live = b.magic ? (liveByMagic[String(b.magic)] || null) : null;
+      const ddPct = live?.ddPct ?? b.mt5Data?.ddPct ?? null;
+      const pf    = live?.pf    ?? b.mt5Data?.pf    ?? null;
+      return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal, ddPct, pf };
+    });
+}
+
+function _showApp(allBots, syncLabel) {
+  document.getElementById('no-data-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const syncEl = document.getElementById('sync-info');
+  if (syncEl && syncLabel) syncEl.textContent = syncLabel;
+  _originalBots = allBots.slice();
+  _activeBots   = allBots.slice();
+  _updateCounter();
+  _clearPanels();
+  dnaInit(_activeBots);
+}
+
+async function loadAndRender() {
+  // 1. Intentar localStorage primero (carga rápida)
   const auth    = localStorage.getItem(STORAGE_KEY_AUTH);
   const botsRaw = localStorage.getItem(STORAGE_KEY_BOTS);
   const ts      = localStorage.getItem(STORAGE_KEY_TS);
 
-  if (!auth || auth !== '1' || !botsRaw) {
-    // Si hay sesión Supabase activa, redirigir a index.html para que
-    // cargue los bots y llene el localStorage antes de volver acá
-    if (typeof sb !== 'undefined' && sb.isAuthenticated()) {
-      window.location.href = 'index.html';
-      return;
-    }
-    document.getElementById('no-data-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-    return;
+  if (auth === '1' && botsRaw) {
+    try {
+      const allBots = JSON.parse(botsRaw);
+      if (Array.isArray(allBots) && allBots.length) {
+        let syncLabel = '';
+        if (ts) {
+          const d = new Date(parseInt(ts, 10));
+          syncLabel = `Cache local ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        }
+        _showApp(allBots, syncLabel);
+        return;
+      }
+    } catch(e) { /* caer a Supabase */ }
   }
 
-  let allBots;
-  try {
-    allBots = JSON.parse(botsRaw);
-    if (!Array.isArray(allBots) || !allBots.length) throw new Error('empty');
-  } catch(e) {
-    document.getElementById('no-data-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-    return;
-  }
-
-  document.getElementById('no-data-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-
-  if (ts) {
-    const d = new Date(parseInt(ts, 10));
-    const hh = d.getHours().toString().padStart(2,'0');
-    const mm = d.getMinutes().toString().padStart(2,'0');
+  // 2. Sin localStorage → cargar desde Supabase si hay sesión
+  if (typeof sb !== 'undefined' && sb.isAuthenticated()) {
     const syncEl = document.getElementById('sync-info');
-    if (syncEl) syncEl.textContent = `Datos sincronizados a las ${hh}:${mm}`;
+    if (syncEl) syncEl.textContent = 'Cargando desde Supabase...';
+    try {
+      const [remoteBots, trades] = await Promise.all([sb.getBots(), sb.getMyTrades()]);
+      const liveByMagic = _computeLiveMetrics(trades);
+      const allBots = _botsToOverlapFormat(remoteBots, liveByMagic);
+      if (!allBots.length) {
+        document.getElementById('no-data-screen').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+        return;
+      }
+      // Guardar en localStorage para próximas visitas
+      try {
+        localStorage.setItem(STORAGE_KEY_BOTS, JSON.stringify(allBots));
+        localStorage.setItem(STORAGE_KEY_AUTH, '1');
+        localStorage.setItem(STORAGE_KEY_TS, Date.now().toString());
+      } catch(e) {}
+      const now = new Date();
+      _showApp(allBots, `Supabase ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`);
+      return;
+    } catch(e) {
+      if (syncEl) syncEl.textContent = 'Error al cargar';
+      console.error('Overlap: error cargando desde Supabase', e);
+    }
   }
 
-  _originalBots = allBots.slice();
-  _activeBots   = allBots.slice();
-  _updateCounter();
-  dnaInit(_activeBots);
+  // 3. Sin datos y sin sesión → pantalla de bienvenida
+  document.getElementById('no-data-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
 }
 
-function refreshData() {
-  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
-    .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
-  loadAndRender();
+async function refreshData() {
+  // Forzar recarga desde Supabase ignorando localStorage
+  localStorage.removeItem(STORAGE_KEY_BOTS);
+  localStorage.removeItem(STORAGE_KEY_AUTH);
+  _clearPanels();
+  await loadAndRender();
 }
 
 loadAndRender();
@@ -898,7 +974,7 @@ window.addEventListener('storage', e => {
   const b = document.createElement('div');
   b.id = 'update-banner';
   b.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:12px;background:#1a7f4b;color:#fff;padding:10px 20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:13px;font-weight:500;cursor:pointer';
-  b.innerHTML = '<span>⚡ Datos actualizados desde el dashboard</span><button onclick="document.getElementById(\'update-banner\').style.display=\'none\';refreshData()" style="background:#fff;color:#1a7f4b;border:none;border-radius:5px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">Recargar</button><button onclick="document.getElementById(\'update-banner\').style.display=\'none\'" style="background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 2px">×</button>';
+  b.innerHTML = '<span>⚡ Datos actualizados desde el dashboard</span><button onclick="document.getElementById(\'update-banner\').style.display=\'none\';refreshData()" style="background:#fff;color:#1a7f4b;border:none;border-radius:5px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">↺ Recargar</button><button onclick="document.getElementById(\'update-banner\').style.display=\'none\'" style="background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 2px">×</button>';
   document.body.appendChild(b);
 });
 </script>
