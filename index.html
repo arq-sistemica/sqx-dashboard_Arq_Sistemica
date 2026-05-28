@@ -2732,7 +2732,10 @@ function buildMt5Block(mfx, idx, botId) {
     <div class="kpi-main" style="border-top:3px solid ${statusColor}"><div class="kpi-lbl">Profit Factor</div><div class="kpi-val" style="color:${statusColor}">${mfx.pf ? mfx.pf.toFixed(2) : '—'}</div></div>
     <div class="kpi-main" style="border-top:3px solid #b91c1c"><div class="kpi-lbl">DD %</div><div class="kpi-val" style="color:#b91c1c">${mfx.ddPct ? mfx.ddPct.toFixed(2)+'%' : '—'}</div></div>
     <div class="kpi-main" style="border-top:3px solid ${winRateColor}"><div class="kpi-lbl">Winning %</div><div class="kpi-val" style="color:${winRateColor}">${winRate}</div></div>
-    <div class="kpi-main" style="border-top:3px solid ${gainColor}"><div class="kpi-lbl">Gain</div><div class="kpi-val" style="color:${gainColor}">${mfx.gain != null ? (mfx.gain >= 0 ? '+' : '')+mfx.gain.toFixed(2)+'%' : '—'}</div></div>
+    ${mfx.gain != null
+      ? `<div class="kpi-main" style="border-top:3px solid ${gainColor}"><div class="kpi-lbl">Gain</div><div class="kpi-val" style="color:${gainColor}">${(mfx.gain >= 0 ? '+' : '')+mfx.gain.toFixed(2)+'%'}</div></div>`
+      : `<div class="kpi-main" style="border-top:3px solid ${mfx.netProfit>0?'#1a7f4b':mfx.netProfit<0?'#b91c1c':'#111318'}"><div class="kpi-lbl">Net P&L</div><div class="kpi-val" style="color:${mfx.netProfit>0?'#1a7f4b':mfx.netProfit<0?'#b91c1c':'#111318'}">${mfx.netProfit!=null?(mfx.netProfit>=0?'+':'')+fm(mfx.netProfit):'—'}</div></div>`
+    }
   </div>`;
   const stats = `<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px">
     ${[['# Trades',mfx.trades||'—'],['Balance',mfx.balance?'$'+Math.round(mfx.balance).toLocaleString():'—'],['Sharpe',mfx.sharpe?mfx.sharpe.toFixed(2):'—'],['Z-Prob',mfx.zProb?mfx.zProb.toFixed(2)+'%':'—'],['Avg Win$',mfx.avgWinUsd?'$'+mfx.avgWinUsd.toFixed(2):'—'],['Avg Loss$',mfx.avgLossUsd?'-$'+Math.abs(mfx.avgLossUsd).toFixed(2):'—']]
