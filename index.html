@@ -2523,8 +2523,10 @@ function expandRow(idx) {
   td.innerHTML = buildFichaHTML(s, idx);
   tr.appendChild(td);
   dataRow.insertAdjacentElement('afterend', tr);
-  if ((s.overviewData && s.overviewData.monthlyData && s.overviewData.monthlyData.length > 0) || s.mt5Data) {
-    setTimeout(() => renderOverviewChart(s.overviewData ? s.overviewData.monthlyData : null, s.mt5Data, 'ov-chart-' + idx), 50);
+  const liveForBot = (window.LIVE && s.magic) ? window.LIVE[String(s.magic)] : null;
+  const mfxForChart = s.mt5Data || liveForBot;
+  if ((s.overviewData && s.overviewData.monthlyData && s.overviewData.monthlyData.length > 0) || mfxForChart) {
+    setTimeout(() => renderOverviewChart(s.overviewData ? s.overviewData.monthlyData : null, mfxForChart, 'ov-chart-' + idx), 50);
   }
 }
 
