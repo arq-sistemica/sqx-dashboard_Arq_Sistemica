@@ -64,7 +64,7 @@ Vuelve al inicio con mejor versión
 - ✅ PF < 1.0 con >= 10 trades → alerta ambar en dashboard
 - ✅ Bot inactivo (sin trades en 7+ días) → alerta info
 - ⬜ Estación desfavorable → sugerencia de pausa (cruzar con estacionalidad.html)
-- ⬜ Correlación peligrosa entre bots → aviso en portfolio.html
+- ✅ Correlación peligrosa entre bots → aviso en portfolio.html (Pearson + niveles ALTA/MED-ALTA)
 - ⬜ Canal externo: email, WhatsApp, Telegram
 
 ---
