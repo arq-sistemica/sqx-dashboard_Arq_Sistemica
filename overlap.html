@@ -243,7 +243,7 @@
       <button onclick="refreshData()" title="Recargar bots y trades desde Supabase">↺ Recargar</button>
       <button onclick="window.open('portfolio.html','_blank')" title="Portfolio Builder — equity combinada de múltiples bots">💼 Portfolio</button>
       <button onclick="window.open('estacionalidad.html','_blank')" title="Estacionalidad anual — 28 pares forex">📅 Estacionalidad</button>
-      <button onclick="window.close()" title="Cerrar esta pestaña">← Volver</button>
+      <button onclick="window.opener?window.close():window.location.href='index.html'" title="Volver al dashboard">← Volver</button>
     </div>
   </div>
 

@@ -352,7 +352,7 @@
     <div class="topbar-right">
       <span id="sync-info" style="font-size:11px;color:var(--text3)"></span>
       <button class="t-btn t-btn-accent" onclick="refreshData()">↺ Actualizar</button>
-      <button class="t-btn" onclick="window.close()">← Volver</button>
+      <button class="t-btn" onclick="window.opener?window.close():window.location.href='index.html'">← Volver</button>
     </div>
   </div>
 
