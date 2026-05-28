@@ -721,6 +721,7 @@
       <button class="fbtn" onclick="setF('csv',this)">Desde CSV</button>
       <button class="fbtn" onclick="setF('manual',this)">Manual</button>
       <button class="fbtn" onclick="setF('passed',this)">SQX PASSED</button>
+      <button class="fbtn" onclick="setF('live',this)" title="Solo bots con datos live de MT5">📊 Con live</button>
     </div>
     <div class="table-scroll">
 
@@ -2396,6 +2397,10 @@ function getFiltered() {
     if (filt === 'csv') return s.source === 'csv';
     if (filt === 'manual') return s.source !== 'csv';
     if (filt === 'passed') return s.sqxFilter === 'PASSED';
+    if (filt === 'live') {
+      const lv = window.LIVE || {};
+      return !!(s.mt5Data || (s.magic && lv[String(s.magic)]));
+    }
     return true;
   });
 }
