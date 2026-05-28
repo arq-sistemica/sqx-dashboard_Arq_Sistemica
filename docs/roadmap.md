@@ -103,19 +103,34 @@ PASO 4 — Todo fluye automáticamente
 **Implementado:** Archivo en `docs/TradeCapture_v3_historial_completo.mq5`.
 **Pendiente:** Instalar en ambos VPS (reemplazar archivo en MetaEditor, compilar, reiniciar EA).
 
-### 3. Duplicados fed26_ — limpieza
-**Qué es:** SQL que fusiona bots `fed26_` con sus pares SQX y elimina los duplicados.
-**Por qué:** Base de datos limpia antes de construir features nuevas.
+### 3. Duplicados fed26_ — limpieza ✅ (implementado 2026-05-28)
+**Qué es:** `repairDuplicateBots()` corre automáticamente al login desde Supabase.
+**Implementado:** `authGrant()` fusiona y guarda a Supabase si encuentra duplicados.
+**Manual:** Botón "🧹 Limpiar duplicados" en ⚙ Configuración con reporte de cambios.
 
-### 4. Detección de duplicados en import CSV
+### 4. overlap.html — migrar a Supabase ✅ (implementado 2026-05-28)
+**Implementado:** `loadAndRender()` async con 3 niveles: localStorage → Supabase → pantalla bienvenida.
+**Nueva función:** `_botsToOverlapFormat(remoteBots, liveByMagic)` convierte bots de Supabase al formato DNA.
+
+### 5. estacionalidad.html — conectar via Supabase ✅ (implementado 2026-05-28)
+**Implementado:** `loadDashboard()` usa `sb.getBots()` si hay sesión, fallback a `bot_meta.json`.
+
+### 6. Detección de duplicados en import CSV ⬜
 **Qué es:** Al cargar CSV, si el nombre ya existe preguntar: "¿Actualizar o crear nuevo?"
-**Por qué:** Previene que vuelvan a crearse duplicados.
+**Estado:** Postergado — el merge automático actual cubre el caso principal correctamente.
 
-### 5. overlap.html — migrar a Supabase
-**Qué es:** Cargar bots directo de Supabase (hoy depende de localStorage).
-
-### 6. Histórico de trades — importación masiva
+### 7. Histórico de trades — importación masiva ⬜
 **Qué es:** Script para importar trades anteriores a la instalación del EA.
+**Estado:** Cubierto por TradeCapture_v3 v3.10 con historial completo desde año 2000.
+
+---
+
+## Mejoras UI implementadas (2026-05-28)
+- **Columna PF⚡**: Profit Factor live en tabla principal, clickeable para ordenar
+- **Filtro "Con live"**: Botón en barra de filtros para ver solo bots monitoreados
+- **Stat "Con datos live"**: Tarjeta en el resumen muestra coverage (X / Total)
+- **Orphan magics**: Panel vinculación muestra magic numbers sin bot asignado
+- **supabase.js**: `getMyTrades()` incluye campo `comment` para auto-sugerencias
 
 ---
 
@@ -155,6 +170,11 @@ PASO 4 — Todo fluye automáticamente
 | 2026-05-28 | TradeCapture_v3.mq5 — EA envía trades directo a Supabase |
 | 2026-05-28 | Edge Function `record-trade` deployada |
 | 2026-05-28 | Métricas live automáticas por magic number |
+| 2026-05-28 | Panel vinculación magic numbers con sugerencias automáticas |
+| 2026-05-28 | TradeCapture_v3 v3.10 — historial completo en primera ejecución |
+| 2026-05-28 | overlap.html + estacionalidad.html migradas a Supabase |
+| 2026-05-28 | Limpieza automática duplicados fed26_ en login |
+| 2026-05-28 | Columna PF Live en tabla principal + filtro "Con live" |
 | 2026-05-28 | ranking.html usa trades de Supabase |
 | 2026-05-28 | Token EA visible en Config del dashboard |
 | 2026-05-28 | Carpeta docs/ creada con arquitectura y roadmap |
