@@ -538,6 +538,12 @@
       </div>
     </div>
 
+    <!-- Selector de cuenta MT5 -->
+    <div class="tb-dropdown" id="account-dd" style="display:none">
+      <button onclick="toggleAccountMenu(event)" id="account-dd-btn" style="font-size:12px;font-weight:600;color:var(--accent)">📊 MT5: Todas ▾</button>
+      <div class="tb-dropdown-menu" id="account-menu" style="min-width:240px"></div>
+    </div>
+
     <!-- Nav tabs -->
     <button class="tb-nav-btn" onclick="toggleDnaSection()" title="Overlap de Indicadores">📊 Overlap</button>
     <button class="tb-nav-btn" onclick="openRanking()" title="Ranking live de bots">🏆 Ranking</button>
@@ -1389,11 +1395,18 @@ async function authGrant() {
   try {
     const trades = await sb.getMyTrades();
     window._lastTrades = trades;
+    window._selectedAccount = null;        // reset al (re)login
     window.LIVE = computeLiveMetrics(trades);
     window._magicSummary = buildMagicSummary(trades);
   } catch(e) {
     window.LIVE = {};
     window._magicSummary = {};
+  }
+  try {
+    const accounts = await sb.getMyAccounts();
+    renderAccountSelector(accounts);
+  } catch(e) {
+    console.warn('No se pudieron cargar las cuentas MT5:', e.message);
   }
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('btn-save').disabled = false;
@@ -4320,6 +4333,67 @@ function closeSettingsMenu() {
 document.addEventListener('click', function(e) {
   const dd = document.getElementById('settings-dd');
   if (dd && !dd.contains(e.target)) closeSettingsMenu();
+});
+
+// ── SELECTOR DE CUENTA MT5 ────────────────────────────────────
+window._selectedAccount = null;
+window._accounts = [];
+
+function renderAccountSelector(accounts) {
+  window._accounts = accounts || [];
+  const dd   = document.getElementById('account-dd');
+  const menu = document.getElementById('account-menu');
+  if (!dd || !menu) return;
+  if (!accounts || accounts.length === 0) { dd.style.display = 'none'; return; }
+  dd.style.display = 'block';
+  const sel = window._selectedAccount;
+  let html = `<button onclick="selectAccount(null)" style="${!sel ? 'font-weight:700;color:var(--accent)' : ''}">📊 Todas las cuentas</button>`;
+  for (const acc of accounts) {
+    const label   = acc.label && acc.label !== 'Principal' ? acc.label : '#' + acc.id;
+    const broker  = acc.broker ? `<span style="font-size:10px;color:var(--text3);margin-left:4px">${acc.broker}</span>` : '';
+    const active  = String(sel) === String(acc.id);
+    html += `<button onclick="selectAccount('${acc.id}')" style="${active ? 'font-weight:700;color:var(--accent)' : ''}">
+      ${label}${broker}
+    </button>`;
+  }
+  menu.innerHTML = html;
+}
+
+function selectAccount(id) {
+  window._selectedAccount = id || null;
+  const allTrades = window._lastTrades || [];
+  const trades    = id
+    ? allTrades.filter(t => String(t.account_id) === String(id))
+    : allTrades;
+  window.LIVE          = computeLiveMetrics(trades);
+  window._magicSummary = buildMagicSummary(trades);
+  // Actualizar label del botón
+  const btn = document.getElementById('account-dd-btn');
+  if (btn) {
+    if (id) {
+      const acc = (window._accounts || []).find(a => String(a.id) === String(id));
+      const lbl = acc && acc.label && acc.label !== 'Principal' ? acc.label : '#' + id;
+      btn.textContent = `📊 ${lbl} ▾`;
+    } else {
+      btn.textContent = '📊 MT5: Todas ▾';
+    }
+  }
+  renderAccountSelector(window._accounts);
+  closeAccountMenu();
+  render();
+  renderAlerts();
+}
+
+function toggleAccountMenu(e) {
+  e.stopPropagation();
+  document.getElementById('account-menu').classList.toggle('open');
+}
+function closeAccountMenu() {
+  document.getElementById('account-menu').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('account-dd');
+  if (dd && !dd.contains(e.target)) closeAccountMenu();
 });
 
 function openRanking() {
