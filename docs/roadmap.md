@@ -42,11 +42,14 @@ Vuelve al inicio con mejor versión
 - Conectar bots activos con calendario estacional
 - "Este par históricamente cae en Q1 — pausar bots de XAUUSD"
 
-### Capa 3 — Portfolio e inteligencia ⬜ (diseñado, no implementado)
+### Capa 3 — Portfolio e inteligencia ✅ (implementado 2026-05-28)
 ¿Qué bots conviven bien juntos?
-- Correlación en tiempo real entre bots activos
-- Equity curve combinada
-- Evitar exposición concentrada en el mismo activo/lógica
+- ✅ Equity curve combinada desde trades reales (portfolio.html)
+- ✅ Métricas del conjunto: PF, DD, WR, Net P&L, periodo
+- ✅ Concentración por activo — warning si > 60% en un solo par
+- ✅ Ranking de bots del portfolio ordenados por PF
+- ✅ Checklist con chips — selección interactiva
+- ⬜ Correlación matemática en tiempo real entre bots activos
 
 ### Capa 4 — Optimización ⬜ (visión)
 ¿Cómo mejorar los bots existentes?
@@ -143,11 +146,12 @@ PASO 4 — Todo fluye automáticamente
 - Mostrar: "Los bots con 3+ indicadores tienen WR menor que los de 1-2"
 - Generar sugerencias por bot: qué cambiar para mejorar
 
-### Portfolio Builder
-- Selección de bots con checklist
-- Equity curve combinada desde trades reales
-- Métricas del conjunto: PF, DD, correlación
-- "Este portfolio tiene 70% de exposición en XAUUSD — diversificar"
+### Portfolio Builder ✅ (implementado 2026-05-28)
+- ✅ Selección de bots con checklist + chips
+- ✅ Equity curve combinada desde trades reales (SVG)
+- ✅ Métricas del conjunto: PF, DD, WR, Net P&L
+- ✅ Concentración por activo con warning automático
+- ⬜ Correlación matemática entre equity curves individuales
 
 ### Alertas y notificaciones
 - DD elevado en un bot activo
@@ -178,3 +182,5 @@ PASO 4 — Todo fluye automáticamente
 | 2026-05-28 | ranking.html usa trades de Supabase |
 | 2026-05-28 | Token EA visible en Config del dashboard |
 | 2026-05-28 | Carpeta docs/ creada con arquitectura y roadmap |
+| 2026-05-28 | buildMt5Block: Net P&L en lugar de Gain% para bots Supabase |
+| 2026-05-28 | portfolio.html — Portfolio Builder (Capa 3) con equity combinada |
