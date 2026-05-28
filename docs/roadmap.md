@@ -1,69 +1,159 @@
 # Roadmap — Pendientes y Próximos Pasos
 
-## Pendientes prioritarios
+---
 
-### 1. Magic numbers sin asignar
-**Problema:** Bots sin campo `magic` no muestran datos live automáticamente.
-**Solución:** UI o SQL para asignar el magic number a cada bot.
-**Impacto:** Alto — desbloquea datos live para todos los bots.
+## Visión del producto
 
-### 2. Duplicados fed26_
-**Problema:** El sistema viejo creaba bots duplicados (fed26_ + SQX) porque MT5 truncaba el nombre a 31 chars.
-**Solución:** SQL que fusione: copia mt5Data del fed26_ al SQX correspondiente, borra el fed26_.
-**Impacto:** Alto — limpia la base de datos.
+**"Un sistema de mejora continua para traders algorítmicos."**
 
-### 3. Detección de duplicados en import
-**Problema:** Al cargar un CSV nuevo, si el bot ya existe se crea otro duplicado.
-**Solución:** Al importar CSV, detectar nombre similar y preguntar: "¿Actualizar existente o crear nuevo?"
-**Impacto:** Alto — previene futuros duplicados.
+No es solo ver cómo van los bots. Es un ciclo completo:
 
-### 4. overlap.html — migrar a Supabase
-**Problema:** Depende de localStorage populado por index.html. Si se abre directo, no funciona.
-**Solución:** Cargar bots directo de Supabase como hace ranking.html.
-**Impacto:** Medio.
+```
+SQX genera bot
+    ↓
+Dashboard lo sigue (trades live)
+    ↓
+Overlap cruza lógica + resultados
+    ↓
+Sistema sugiere qué cambiar
+    ↓
+Usuario mejora el bot en SQX
+    ↓
+Vuelve al inicio con mejor versión
+```
 
-### 5. Histórico de trades
-**Problema:** Trades anteriores a la instalación del EA (TradeCapture_v3) no están en Supabase.
-**Solución:** Script de importación o carga manual de historial MT5.
-**Impacto:** Medio — mejora las métricas históricas.
+**Propuesta de valor:**
+> "Sabés qué bots tenés, cuándo correrlos, cuáles combinan bien,
+> y el sistema te avisa cuando algo sale mal."
 
-### 6. estacionalidad.html — conectar bots activos via Supabase
-**Problema:** Los bots activos se leen desde localStorage, no desde Supabase.
-**Solución:** Cargar bots activos desde Supabase para marcar los pares en la tabla estacional.
-**Impacto:** Bajo.
+---
+
+## Las 4 capas del producto
+
+### Capa 1 — Seguimiento ✅ (implementado)
+¿Cómo está funcionando cada bot?
+- Backtest vs live, PF, DD, WR en tiempo real
+- Trades desde MT5 via TradeCapture_v3
+- Métricas automáticas por magic number
+
+### Capa 2 — Contexto ⚠️ (existe, mejorar)
+¿En qué condiciones opera mejor cada bot?
+- Estacionalidad por activo → saber cuándo activar o pausar
+- Conectar bots activos con calendario estacional
+- "Este par históricamente cae en Q1 — pausar bots de XAUUSD"
+
+### Capa 3 — Portfolio e inteligencia ⬜ (diseñado, no implementado)
+¿Qué bots conviven bien juntos?
+- Correlación en tiempo real entre bots activos
+- Equity curve combinada
+- Evitar exposición concentrada en el mismo activo/lógica
+
+### Capa 4 — Optimización ⬜ (visión)
+¿Cómo mejorar los bots existentes?
+- **Overlap inteligente**: cruzar pseudocódigo + resultados live
+- Identificar qué indicadores/combinaciones correlacionan con buen PF
+- Identificar qué combinaciones correlacionan con alto DD
+- Sugerencias concretas: "Bot X usa Bollinger en XAUUSD → históricamente bajo en este período"
+- Ciclo de feedback: dashboard → SQX → bot mejorado → dashboard
+
+### Capa 5 — Alertas ⬜ (futuro)
+¿Qué está pasando ahora mismo?
+- Bot fuera de parámetros históricos
+- Drawdown elevado → notificación
+- Estación desfavorable → sugerencia de pausa
+- Correlación peligrosa entre bots activos → aviso
+
+---
+
+## Flujo de onboarding (producto vendible)
+
+```
+PASO 1 — Cargar CSV de SQX
+  → Bots creados con métricas de backtest
+  → Estado: "Sin vincular"
+
+PASO 2 — Instalar TradeCapture_v3 en MT5
+  → Trades llegan a Supabase (historial completo + nuevos)
+  → Estado: "Trades esperando vinculación"
+
+PASO 3 — Vincular bots con magic numbers (una sola vez)
+  → Dashboard sugiere matches por nombre similar
+  → Usuario confirma con un clic
+  → Vinculado para siempre
+
+PASO 4 — Todo fluye automáticamente
+  → Nuevos trades → métricas actualizadas
+  → Overview y pseudocódigo → enriquecimiento opcional
+```
+
+**Regla del producto:** CSV primero, EA después. Sin bots creados, los trades no tienen donde aterrizar.
+
+---
+
+## Pendientes técnicos prioritarios
+
+### 1. Pantalla de vinculación magic numbers
+**Qué es:** UI que muestra bots sin magic + magic numbers vistos en trades + sugerencias automáticas por nombre.
+**Por qué:** Desbloquea datos live para todos los bots con un flujo simple.
+**Cómo:** Comparar nombre del bot vs comment del trade (primeros 31 chars).
+
+### 2. TradeCapture_v3 — historial completo
+**Qué es:** En la primera ejecución del EA, enviar TODO el historial desde el inicio de la cuenta.
+**Por qué:** Las métricas live son inútiles si solo tienen datos de los últimos días.
+**Cómo:** Cambiar `from = now - 86400` por `from = D'2000.01.01'` en el primer scan.
+
+### 3. Duplicados fed26_ — limpieza
+**Qué es:** SQL que fusiona bots `fed26_` con sus pares SQX y elimina los duplicados.
+**Por qué:** Base de datos limpia antes de construir features nuevas.
+
+### 4. Detección de duplicados en import CSV
+**Qué es:** Al cargar CSV, si el nombre ya existe preguntar: "¿Actualizar o crear nuevo?"
+**Por qué:** Previene que vuelvan a crearse duplicados.
+
+### 5. overlap.html — migrar a Supabase
+**Qué es:** Cargar bots directo de Supabase (hoy depende de localStorage).
+
+### 6. Histórico de trades — importación masiva
+**Qué es:** Script para importar trades anteriores a la instalación del EA.
 
 ---
 
 ## Features futuras
 
+### Overlap inteligente (Capa 4)
+- Leer pseudocódigo de cada bot → extraer indicadores y condiciones de entrada
+- Cruzar con performance real (trades) → encontrar patrones
+- Mostrar: "Los bots con RSI en H4 tienen PF promedio 1.4 en los últimos 90 días"
+- Mostrar: "Los bots con 3+ indicadores tienen WR menor que los de 1-2"
+- Generar sugerencias por bot: qué cambiar para mejorar
+
 ### Portfolio Builder
-Página `portfolio.html` para construir y analizar carteras de bots.
 - Selección de bots con checklist
-- Equity curve combinada (suma de trades reales)
-- Métricas del conjunto: PF, DD, correlación entre bots
-- Fuente: tabla `trades` de Supabase
+- Equity curve combinada desde trades reales
+- Métricas del conjunto: PF, DD, correlación
+- "Este portfolio tiene 70% de exposición en XAUUSD — diversificar"
 
-### Correlación SQX vs Live
-Comparar backtest vs performance real por bot.
-- PF backtest vs PF live
-- Equity curve backtest superpuesta con equity live
-- Detectar divergencia entre lo prometido y lo real
+### Alertas y notificaciones
+- DD elevado en un bot activo
+- Bot con estación desfavorable activo
+- Correlación peligrosa entre bots del portfolio
+- Canal: email, WhatsApp, o dashboard interno
 
-### Multi-usuario / Producto vendible
-- Cada usuario tiene sus propios bots y trades (RLS ya implementado)
-- Token EA personal (ya implementado)
-- Manual de instrucciones para onboarding
-- Posibilidad de vincular/desvincular cuentas MT5 entre usuarios
+### Multi-usuario
+- RLS ya implementado en Supabase
+- Token EA personal ya implementado
+- Falta: manual de onboarding, plan de precios, soporte
 
 ---
 
-## Historial de cambios importantes
+## Historial de cambios
 
 | Fecha | Cambio |
 |---|---|
-| 2026-05-28 | Migración completa a Supabase (abandono GitHub API + localStorage) |
+| 2026-05-28 | Migración completa a Supabase |
 | 2026-05-28 | TradeCapture_v3.mq5 — EA envía trades directo a Supabase |
 | 2026-05-28 | Edge Function `record-trade` deployada |
-| 2026-05-28 | Métricas live automáticas por magic number en index.html |
-| 2026-05-28 | ranking.html usa trades de Supabase directamente |
-| 2026-05-28 | Token EA visible en ⚙ Config del dashboard |
+| 2026-05-28 | Métricas live automáticas por magic number |
+| 2026-05-28 | ranking.html usa trades de Supabase |
+| 2026-05-28 | Token EA visible en Config del dashboard |
+| 2026-05-28 | Carpeta docs/ creada con arquitectura y roadmap |
