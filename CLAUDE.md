@@ -21,11 +21,14 @@ Dashboard web personal para analizar bots de trading de StrategyQuant X (SQX) co
 ## Archivos principales
 | Archivo | Rol |
 |---|---|
-| `index.html` | Dashboard principal — tabla de bots, fichas, métricas |
+| `index.html` | Dashboard principal — tabla de bots, fichas, métricas, alertas live |
 | `ranking.html` | Ranking live de bots por performance real |
-| `overlap.html` | Análisis de correlación entre bots |
+| `overlap.html` | Análisis de correlación entre bots + intelligence panel (Capa 4) |
+| `portfolio.html` | Portfolio Builder — equity combinada, métricas de conjunto (Capa 3) |
+| `estacionalidad.html` | Estacionalidad anual por par/activo — carga bots desde Supabase |
 | `supabase.js` | Cliente REST Supabase (sin librerías) |
 | `CLAUDE.md` | Este archivo |
+| `docs/TradeCapture_v3_historial_completo.mq5` | EA v3.10 — envía historial completo en primera ejecución |
 
 ## Backend — Supabase
 - **URL**: `https://ofrbktacgwbwsgpftoky.supabase.co`
@@ -82,14 +85,27 @@ sb.getMyTrades()         // todos los trades del usuario (orden close_time)
 ```js
 render()                    // re-renderiza tabla completa — llamar siempre al modificar DB
 getVD(bot, view)            // métricas según vista IS/OOS/Full
-computeLiveMetrics(trades)  // agrupa trades por magic → {pf, ddPct, winRate, tradeList}
+computeLiveMetrics(trades)  // agrupa trades por magic → {pf, ddPct, winRate, tradeList, netProfit}
 buildMagicSummary(trades)   // trades → {magic: {topComment, count, symbols}} para sugerencias
 renderMagicLinking()        // muestra panel de vinculación si hay bots sin magic
+renderAlerts()              // panel Alertas Live: DD > 20%, PF < 1.0, inactividad > 7 días
 applyOneMagic(botId)        // asigna magic a un bot desde el panel y guarda en DB local
 saveAllMagics()             // guarda todos los magics del panel a Supabase
-authGrant()                 // post-login: carga bots + trades, activa render + panel vinculación
+authGrant()                 // post-login: carga bots + trades, activa render + alertas + vinculación
 saveToSupabase()            // upsert de DB completo a Supabase
 markDirty()                 // marca cambios sin guardar
+dismissAlerts()             // cierra panel de alertas por sesión (sessionStorage)
+```
+
+## portfolio.html — funciones clave
+```js
+initPortfolio()             // auth check → carga bots + trades → render lista
+computeLiveByMagic(trades)  // igual que computeLiveMetrics pero solo PF, DD, WR, netProfit
+toggleBot(magic)            // agrega/quita bot de la selección → re-renderiza análisis
+renderAnalysis()            // equity curve + KPIs + concentración + ranking del portfolio
+renderEquityCurve(trades)   // SVG combinado de todos los trades seleccionados
+renderConcentration(trades) // barras por activo + warning si concentración > 60%
+renderKPIs(metrics)         // tarjetas PF, DD, WR, Net P&L, periodo
 ```
 
 ## Variables globales post-login
@@ -119,6 +135,7 @@ window._magicSummary // {[magic]: {topComment, count, symbols}} — buildMagicSu
 5. git add → commit → push al terminar cada feature
 
 ## Pendiente / Próximos pasos
-1. **overlap.html** — actualizar para usar trades de Supabase
-3. **Histórico** — importar trades anteriores a la instalación del EA
-4. **Portfolio Builder** — equity combinada de múltiples bots
+1. **Instalar TradeCapture_v3 v3.10 en ambos VPS** — reemplazar archivo en MetaEditor, compilar, reiniciar EA, borrar GlobalVariables tc3_*
+2. **Asignar magic numbers** — usar el panel "🔗 Vincular Magic Numbers" en el dashboard al hacer login
+3. **Correlación matemática** — en portfolio.html, agregar correlación entre equity curves individuales
+4. **Alertas externas** — Telegram/email/WhatsApp para alertas críticas (Capa 5 completa)
