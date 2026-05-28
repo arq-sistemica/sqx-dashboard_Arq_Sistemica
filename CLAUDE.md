@@ -1,5 +1,10 @@
 # SQX Dashboard — Arquitectura Sistémica
 
+## Documentación del proyecto
+- [`docs/arquitectura.md`](docs/arquitectura.md) — mapa completo del ecosistema y módulos
+- [`docs/roadmap.md`](docs/roadmap.md) — pendientes y features futuras
+- [`docs/convenciones.md`](docs/convenciones.md) — reglas de trabajo y convenciones
+
 ## Descripción
 Dashboard web personal para analizar bots de trading de StrategyQuant X (SQX) con datos live de MT5 via Supabase.
 
