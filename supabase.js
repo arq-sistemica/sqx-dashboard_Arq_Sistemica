@@ -109,4 +109,14 @@ const sb = {
     );
     if (!r.ok) throw new Error(`Error ${r.status} al eliminar bot`);
   },
+
+  // ── USER TOKENS ───────────────────────────────────────────────
+  async getMyTokens() {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/user_tokens?select=token,label,last_used&order=created_at`,
+      { headers: _sbHeaders(sb.getToken()) }
+    );
+    if (!r.ok) return [];
+    return r.json();
+  },
 };
