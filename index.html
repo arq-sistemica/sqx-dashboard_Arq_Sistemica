@@ -778,6 +778,7 @@
             <th onclick="sort('direction')">Dir</th>
             <th onclick="sort('sqxFilter')">SQX</th>
             <th onclick="sort('pf')">PF</th>
+            <th onclick="sort('pf_live')" title="Profit Factor calculado desde trades reales MT5">PF⚡</th>
             <th onclick="sort('cagr')">Ann.Ret%</th>
             <th onclick="sort('wr')">W/L</th>
             <th onclick="sort('trades')"># Trades</th>
@@ -2390,12 +2391,21 @@ function render() {
     document.getElementById('t-sub').textContent = 'Sin datos cargados';
   }
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">Sin resultados. Arrastrá un CSV de SQX o agregá manualmente.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="12">Sin resultados. Arrastrá un CSV de SQX o agregá manualmente.</td></tr>`;
     updateBotDropdown(); return;
   }
+  const _getLivePf = s => {
+    const live = window.LIVE && s.magic ? window.LIVE[String(s.magic)] : null;
+    return live?.pf ?? s.mt5Data?.pf ?? null;
+  };
   let sorted = [...rows];
   if (sk) {
     sorted.sort((a,b) => {
+      if (sk === 'pf_live') {
+        const av = _getLivePf(a) ?? (sd===1?-Infinity:Infinity);
+        const bv = _getLivePf(b) ?? (sd===1?-Infinity:Infinity);
+        return (av - bv) * sd;
+      }
       const da=getVD(a),db=getVD(b);
       const av=da[sk]??a[sk]??(sd===1?-Infinity:Infinity);
       const bv=db[sk]??b[sk]??(sd===1?-Infinity:Infinity);
@@ -2417,6 +2427,10 @@ function render() {
     const hasPsc = s.pseudocodigoData ? ' 📝' : '';
     const dirCell = s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':s.direction==='Both'?'<span class="dir-both">BOTH</span>':'<span style="color:#c0c4ce">—</span>';
     const seasonChip = getSeasonChip(s.symbol);
+    const livePf = _getLivePf(s);
+    const livePfCell = livePf !== null
+      ? `<td class="${pfCls(livePf)}" title="PF real MT5 (${window.LIVE?.[String(s.magic)]?.trades??'?'} trades)">${f(livePf)}</td>`
+      : `<td style="color:var(--text3);text-align:center;font-size:11px">—</td>`;
     return `<tr id="datarow-${idx}" class="data-row" onclick="toggleRow(${idx})">
       <td class="left name-cell" title="${s.name}">${nm}${srcT}${hasOv}${hasMfx}${hasPsc}</td>
       <td class="left">${s.symbol||'—'}${seasonChip}</td>
@@ -2424,6 +2438,7 @@ function render() {
       <td style="text-align:center">${dirCell}</td>
       <td>${sqxB}</td>
       <td class="${pfCls(d.pf)}">${f(d.pf)}</td>
+      ${livePfCell}
       <td class="${cls('cagr',d.cagr)}">${d.cagr!==null?f(d.cagr)+'%':'—'}</td>
       <td class="${cls('wr',d.wr)}">${f(d.wr)}</td>
       <td class="${cls('trades',d.trades)}">${d.trades!==null?d.trades:'—'}</td>
@@ -2463,7 +2478,7 @@ function expandRow(idx) {
   const tr = document.createElement('tr');
   tr.id = 'expanded-' + idx; tr.className = 'expanded-row';
   const td = document.createElement('td');
-  td.colSpan = 11; td.style.padding = '0'; td.style.borderBottom = '2px solid #6366f1';
+  td.colSpan = 12; td.style.padding = '0'; td.style.borderBottom = '2px solid #6366f1';
   td.innerHTML = buildFichaHTML(s, idx);
   tr.appendChild(td);
   dataRow.insertAdjacentElement('afterend', tr);
