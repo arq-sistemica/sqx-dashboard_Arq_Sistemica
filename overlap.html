@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Overlap de Indicadores — SQX Dashboard</title>
+<script src="supabase.js"></script>
 <style>
   :root {
     --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
@@ -843,6 +844,12 @@ function loadAndRender() {
   const ts      = localStorage.getItem(STORAGE_KEY_TS);
 
   if (!auth || auth !== '1' || !botsRaw) {
+    // Si hay sesión Supabase activa, redirigir a index.html para que
+    // cargue los bots y llene el localStorage antes de volver acá
+    if (typeof sb !== 'undefined' && sb.isAuthenticated()) {
+      window.location.href = 'index.html';
+      return;
+    }
     document.getElementById('no-data-screen').style.display = 'flex';
     document.getElementById('app').style.display = 'none';
     return;

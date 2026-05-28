@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ranking Live — SQX Dashboard</title>
+<script src="supabase.js"></script>
 <style>
   :root {
     --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
@@ -768,30 +769,65 @@ function refreshData() {
 // ════════════════════════════════════════════
 // INICIALIZACIÓN
 // ════════════════════════════════════════════
-(function init() {
-  const botsRaw = localStorage.getItem(STORAGE_KEY_BOTS);
-  if (!botsRaw) {
-    document.getElementById('no-data-screen').style.display = 'flex';
-    return;
-  }
-  let bots;
-  try {
-    bots = JSON.parse(botsRaw);
-    if (!Array.isArray(bots)) throw new Error('not array');
-  } catch(e) {
-    document.getElementById('no-data-screen').style.display = 'flex';
-    return;
-  }
-
+function showApp(bots) {
   RANKING_SOURCE = bots;
   document.getElementById('no-data-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-
   wrUpdateLabel();
   wrRefreshHistorySelect();
   wrRender(wrGetBots());
   updateSyncLabel();
-})();
+}
+
+async function initRanking() {
+  // 1. Intentar localStorage primero (camino rápido)
+  const botsRaw = localStorage.getItem(STORAGE_KEY_BOTS);
+  if (botsRaw) {
+    try {
+      const bots = JSON.parse(botsRaw);
+      if (Array.isArray(bots) && bots.length) { showApp(bots); return; }
+    } catch(e) {}
+  }
+
+  // 2. Sin localStorage — verificar sesión Supabase
+  if (typeof sb === 'undefined' || !sb.isAuthenticated()) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  // 3. Autenticado pero sin localStorage → cargar desde Supabase
+  try {
+    document.getElementById('no-data-screen').style.display = 'flex';
+    const remoteBots = await sb.getBots();
+    const rankingBots = remoteBots
+      .filter(b => b.mt5Data)
+      .map(b => ({
+        name:   b.name   || '—',
+        magic:  b.magic  || '—',
+        symbol: b.symbol || '—',
+        dpf:    b.dpf    ?? null,
+        estado: b.estado || b.phase || '—',
+        mfx: {
+          pf:        b.mt5Data.pf        ?? null,
+          ddPct:     b.mt5Data.ddPct     ?? null,
+          winRate:   b.mt5Data.winRate   ?? null,
+          tradeList: b.mt5Data.tradeList || [],
+        },
+      }));
+    if (rankingBots.length) {
+      localStorage.setItem(STORAGE_KEY_BOTS, JSON.stringify(rankingBots));
+      localStorage.setItem(STORAGE_KEY_TS, Date.now().toString());
+      showApp(rankingBots);
+    } else {
+      document.getElementById('no-data-screen').style.display = 'flex';
+    }
+  } catch(e) {
+    console.warn('Supabase load failed en ranking:', e.message);
+    document.getElementById('no-data-screen').style.display = 'flex';
+  }
+}
+
+initRanking();
 
 // Auto-refresh cuando el dashboard actualiza sqx_ranking_bots desde otra pestaña
 window.addEventListener('storage', function(e) {
