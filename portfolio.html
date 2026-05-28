@@ -705,7 +705,7 @@ function renderKPIs(m) {
     </div>
     <div class="kpi-card">
       <div class="kpi-card-top">Net P&amp;L</div>
-      <div class="kpi-card-val" style="color:${npColor}">${(m.netProfit>=0?'+':'')}${fmt(m.netProfit)}</div>
+      <div class="kpi-card-val" style="color:${npColor}">${(m.netProfit>=0?'+':'-')}${fmt(m.netProfit)}</div>
       <div class="kpi-card-sub">Sin leverage</div>
     </div>
     <div class="kpi-card">
@@ -775,7 +775,7 @@ function renderEquityCurve(trades) {
     <path d="${fillPath}" fill="${fillColor}"/>
     <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="1.8" stroke-linejoin="round"/>
     <circle cx="${xs(points.length-1).toFixed(1)}" cy="${ys(finalVal).toFixed(1)}" r="3" fill="${lineColor}"/>
-    <text x="${(xs(points.length-1)+6).toFixed(1)}" y="${(ys(finalVal)+4).toFixed(1)}" font-size="9" font-weight="700" fill="${lineColor}">${(finalVal>=0?'+':'')}${fmt(finalVal)}</text>
+    <text x="${(xs(points.length-1)+6).toFixed(1)}" y="${(ys(finalVal)+4).toFixed(1)}" font-size="9" font-weight="700" fill="${lineColor}">${(finalVal>=0?'+':'-')}${fmt(finalVal)}</text>
   `;
 }
 
@@ -819,7 +819,7 @@ function renderConcentration(trades) {
         <div class="conc-bar" style="width:${pct}%;background:${color}"></div>
         <span class="conc-pct">${pct}%</span>
       </div>
-      <div class="conc-count" style="color:${npColor};font-weight:600">${(data.profit>=0?'+':'')}${fmt(data.profit)}</div>
+      <div class="conc-count" style="color:${npColor};font-weight:600">${(data.profit>=0?'+':'-')}${fmt(data.profit)}</div>
     </div>`;
   }).join('');
 }
@@ -848,7 +848,7 @@ function renderBotRanks(selectedBots) {
           <td style="padding:5px 8px;color:var(--text3)">${i+1}</td>
           <td style="padding:5px 8px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(b.name)}">${esc(b.name)}</td>
           <td style="padding:5px 8px;text-align:center;font-weight:700;color:${pfColor}">${b.pf?b.pf.toFixed(2):'—'}</td>
-          <td style="padding:5px 8px;text-align:right;color:${npColor};font-weight:600">${(b.netProfit>=0?'+':'')}${fmt(b.netProfit)}</td>
+          <td style="padding:5px 8px;text-align:right;color:${npColor};font-weight:600">${(b.netProfit>=0?'+':'-')}${fmt(b.netProfit)}</td>
           <td style="padding:5px 8px;text-align:right;color:var(--text2)">${b.winRate}%</td>
         </tr>`;
       }).join('')}
