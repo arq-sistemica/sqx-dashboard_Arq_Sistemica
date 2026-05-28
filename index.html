@@ -1340,10 +1340,67 @@ async function authGrant() {
   } catch(e) {
     console.warn('Supabase load failed, using local DB.', e.message);
   }
+  try {
+    const trades = await sb.getMyTrades();
+    window.LIVE = computeLiveMetrics(trades);
+  } catch(e) {
+    window.LIVE = {};
+  }
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('btn-save').disabled = false;
   render();
   updateRankingCache();
+}
+
+function computeLiveMetrics(trades) {
+  const byMagic = {};
+  for (const t of trades) {
+    const m = String(t.magic || '');
+    if (!m || m === '0') continue;
+    if (!byMagic[m]) byMagic[m] = [];
+    byMagic[m].push(t);
+  }
+  const result = {};
+  for (const [magic, list] of Object.entries(byMagic)) {
+    list.sort((a, b) => new Date(a.close_time) - new Date(b.close_time));
+    const netPs = list.map(t => +((t.profit||0)+(t.commission||0)+(t.swap||0)).toFixed(2));
+    const wins  = netPs.filter(p => p > 0);
+    const losses= netPs.filter(p => p < 0);
+    const gW = wins.reduce((a,b)=>a+b,0);
+    const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
+    const pf = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
+    const winRate = list.length ? +(wins.length/list.length*100).toFixed(1) : 0;
+    let peak=0,eq=0,maxDD=0;
+    netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+    let cum=0;
+    const tradeList = list.map(t => {
+      const np = +((t.profit||0)+(t.commission||0)+(t.swap||0)).toFixed(2);
+      cum=+(cum+np).toFixed(2);
+      return {
+        openDate:  t.open_time  ? t.open_time.slice(0,16).replace('T',' ')  : '—',
+        closeDate: t.close_time ? t.close_time.slice(0,16).replace('T',' ') : '—',
+        symbol:    t.symbol||'—',
+        action:    t.type==='buy'?'Buy':'Sell',
+        lots:      t.lots,
+        openPrice: t.open_price,
+        closePrice:t.close_price,
+        pips:      null,
+        netProfit: np,
+        gainPct:   null,
+        cumProfit: cum,
+      };
+    });
+    result[magic] = {
+      pf, ddPct: +(maxDD*100).toFixed(2), winRate, gain: null,
+      trades: list.length, balance: null, sharpe: null, zProb: null,
+      avgWinUsd:  wins.length   ? +(gW/wins.length).toFixed(2)   : null,
+      avgLossUsd: losses.length ? +(gL/losses.length).toFixed(2) : null,
+      netProfit:  +netPs.reduce((a,b)=>a+b,0).toFixed(2),
+      tradeList,
+      source: 'supabase',
+    };
+  }
+  return result;
 }
 
 function authShowRegister(e) {
@@ -2138,7 +2195,7 @@ function render() {
     const srcT = `<span class="src-tag">${s.source==='csv'?'CSV':'Manual'}</span>`;
     const nm = s.name.length>28?s.name.slice(0,28)+'…':s.name;
     const hasOv = s.overviewData ? ' 📋' : '';
-    const hasMfx = s.mt5Data ? ' 📊' : '';
+    const hasMfx = (s.mt5Data || (window.LIVE && s.magic && window.LIVE[String(s.magic)])) ? ' 📊' : '';
     const hasPsc = s.pseudocodigoData ? ' 📝' : '';
     const dirCell = s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':s.direction==='Both'?'<span class="dir-both">BOTH</span>':'<span style="color:#c0c4ce">—</span>';
     const seasonChip = getSeasonChip(s.symbol);
@@ -2205,7 +2262,7 @@ function buildFichaHTML(s, idx) {
   const stLabel = st==='ok'?'✓':st==='warn'?'◑':'✗';
   const badgeCls = st==='ok'?'badge-ok':st==='warn'?'badge-warn':'badge-fail';
   const ov = s.overviewData;
-  const mfx = s.mt5Data;
+  const mfx = s.mt5Data || (window.LIVE && s.magic ? window.LIVE[String(s.magic)] : null);
   const psc = s.pseudocodigoData;
 
   // Metrics comparison table

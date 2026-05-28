@@ -119,4 +119,13 @@ const sb = {
     if (!r.ok) return [];
     return r.json();
   },
+
+  async getMyTrades() {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/trades?select=magic,profit,commission,swap,open_time,close_time,ticket,symbol,lots,type,open_price,close_price&order=close_time`,
+      { headers: _sbHeaders(sb.getToken()) }
+    );
+    if (!r.ok) return [];
+    return r.json();
+  },
 };
