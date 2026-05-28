@@ -58,12 +58,14 @@ Vuelve al inicio con mejor versión
 - ⬜ Sugerencias concretas por bot: "Bot X usa Bollinger → avg PF 0.98 en tu portfolio"
 - ⬜ Ciclo de feedback: dashboard → SQX → bot mejorado → dashboard
 
-### Capa 5 — Alertas ⬜ (futuro)
+### Capa 5 — Alertas ⚠️ (parcialmente implementado)
 ¿Qué está pasando ahora mismo?
-- Bot fuera de parámetros históricos
-- Drawdown elevado → notificación
-- Estación desfavorable → sugerencia de pausa
-- Correlación peligrosa entre bots activos → aviso
+- ✅ DD elevado (> 20%) → alerta roja en dashboard
+- ✅ PF < 1.0 con >= 10 trades → alerta ambar en dashboard
+- ✅ Bot inactivo (sin trades en 7+ días) → alerta info
+- ⬜ Estación desfavorable → sugerencia de pausa (cruzar con estacionalidad.html)
+- ⬜ Correlación peligrosa entre bots → aviso en portfolio.html
+- ⬜ Canal externo: email, WhatsApp, Telegram
 
 ---
 
@@ -184,3 +186,4 @@ PASO 4 — Todo fluye automáticamente
 | 2026-05-28 | buildMt5Block: Net P&L en lugar de Gain% para bots Supabase |
 | 2026-05-28 | portfolio.html — Portfolio Builder (Capa 3) con equity combinada |
 | 2026-05-28 | overlap.html — panel Indicadores × Performance Live (Capa 4 parcial) |
+| 2026-05-28 | index.html — panel Alertas Live: DD crítico, PF negativo, inactividad (Capa 5 parcial) |
