@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
 //| TradeCapture_v3.mq5 — Envía trades cerrados a Supabase           |
-//| v3.1 — Historial completo en primera ejecución                   |
+//| v3.11 — Agrega broker, server y currency para auto-registro       |
 //+------------------------------------------------------------------+
 #property copyright "Arquitectura Sistemica"
-#property version   "3.10"
+#property version   "3.11"
 
 input string UserToken    = "";           // Token personal (copiar desde el dashboard)
 input string AccountLabel = "Principal";  // Nombre de esta cuenta MT5
@@ -121,14 +121,25 @@ bool SendTrade(ulong ticket) {
    // Escapar comillas en comment
    StringReplace(comment, "\"", "'");
 
+   // Datos de la cuenta para auto-registro
+   string broker   = AccountInfoString(ACCOUNT_COMPANY);
+   string server   = AccountInfoString(ACCOUNT_SERVER);
+   string currency = AccountInfoString(ACCOUNT_CURRENCY);
+
+   // Escapar comillas en broker/server por si acaso
+   StringReplace(broker, "\"", "'");
+   StringReplace(server, "\"", "'");
+
    string json = StringFormat(
       "{\"token\":\"%s\",\"ticket\":%I64u,\"account_id\":\"%s\",\"account_label\":\"%s\","
+      "\"account_broker\":\"%s\",\"account_server\":\"%s\",\"account_currency\":\"%s\","
       "\"magic\":%I64d,\"symbol\":\"%s\",\"type\":\"%s\","
       "\"open_time\":\"%s\",\"close_time\":\"%s\","
       "\"lots\":%.2f,\"open_price\":%.5f,\"close_price\":%.5f,"
       "\"sl\":0,\"tp\":0,\"profit\":%.2f,\"commission\":%.2f,\"swap\":%.2f,"
       "\"comment\":\"%s\"}",
       UserToken, ticket, accountId, AccountLabel,
+      broker, server, currency,
       magic, symbol,
       (dealType == DEAL_TYPE_BUY ? "buy" : "sell"),
       TimeToString(openTime,  TIME_DATE|TIME_SECONDS),
