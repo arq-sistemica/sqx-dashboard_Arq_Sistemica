@@ -49,7 +49,7 @@ Vuelve al inicio con mejor versión
 - ✅ Concentración por activo — warning si > 60% en un solo par
 - ✅ Ranking de bots del portfolio ordenados por PF
 - ✅ Checklist con chips — selección interactiva
-- ⬜ Correlación matemática en tiempo real entre bots activos
+- ✅ Correlación matemática (Pearson) entre equity curves diarias de bots seleccionados
 
 ### Capa 4 — Optimización ⚠️ (parcialmente implementado)
 ¿Cómo mejorar los bots existentes?
@@ -152,7 +152,7 @@ PASO 4 — Todo fluye automáticamente
 - ✅ Equity curve combinada desde trades reales (SVG)
 - ✅ Métricas del conjunto: PF, DD, WR, Net P&L
 - ✅ Concentración por activo con warning automático
-- ⬜ Correlación matemática entre equity curves individuales
+- ✅ Correlación de Pearson sobre retornos diarios — pares con r ≥ 0.5 mostrados con niveles
 
 ### Alertas y notificaciones
 - DD elevado en un bot activo
@@ -187,3 +187,4 @@ PASO 4 — Todo fluye automáticamente
 | 2026-05-28 | portfolio.html — Portfolio Builder (Capa 3) con equity combinada |
 | 2026-05-28 | overlap.html — panel Indicadores × Performance Live (Capa 4 parcial) |
 | 2026-05-28 | index.html — panel Alertas Live: DD crítico, PF negativo, inactividad (Capa 5 parcial) |
+| 2026-05-28 | portfolio.html — correlación de Pearson entre bots, detección de alta correlación |
