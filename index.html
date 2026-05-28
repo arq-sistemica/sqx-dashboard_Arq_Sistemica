@@ -1369,6 +1369,7 @@ async function authLogin() {
 }
 
 async function authGrant() {
+  sessionStorage.removeItem('sqx_alerts_dismissed'); // reset al hacer login
   document.getElementById('auth-hint').textContent = 'Cargando bots desde Supabase...';
   try {
     const remoteBots = await sb.getBots();
