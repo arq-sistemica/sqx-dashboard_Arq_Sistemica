@@ -80,33 +80,45 @@ sb.getMyTrades()         // todos los trades del usuario (orden close_time)
 
 ## Funciones clave — index.html
 ```js
-render()                 // re-renderiza tabla completa — llamar siempre al modificar DB
-getVD(bot, view)         // métricas según vista IS/OOS/Full
-computeLiveMetrics(trades) // agrupa trades por magic → {pf, ddPct, winRate, tradeList}
-authGrant()              // post-login: carga bots + trades, activa render
-saveToSupabase()         // upsert de DB completo a Supabase
-markDirty()              // marca cambios sin guardar
+render()                    // re-renderiza tabla completa — llamar siempre al modificar DB
+getVD(bot, view)            // métricas según vista IS/OOS/Full
+computeLiveMetrics(trades)  // agrupa trades por magic → {pf, ddPct, winRate, tradeList}
+buildMagicSummary(trades)   // trades → {magic: {topComment, count, symbols}} para sugerencias
+renderMagicLinking()        // muestra panel de vinculación si hay bots sin magic
+applyOneMagic(botId)        // asigna magic a un bot desde el panel y guarda en DB local
+saveAllMagics()             // guarda todos los magics del panel a Supabase
+authGrant()                 // post-login: carga bots + trades, activa render + panel vinculación
+saveToSupabase()            // upsert de DB completo a Supabase
+markDirty()                 // marca cambios sin guardar
+```
+
+## Variables globales post-login
+```js
+window.LIVE          // {[magic]: {pf, ddPct, winRate, tradeList}} — computeLiveMetrics(trades)
+window._lastTrades   // array crudo de trades (para re-computar LIVE sin fetch)
+window._magicSummary // {[magic]: {topComment, count, symbols}} — buildMagicSummary(trades)
 ```
 
 ## Vinculación MT5 ↔ Bots
 - Campo clave: `bot.magic` (número mágico MT5)
-- `window.LIVE = computeLiveMetrics(trades)` — disponible globalmente post-login
-- Acceso: `window.LIVE[String(bot.magic)]` → {pf, ddPct, winRate, tradeList}
+- Panel "🔗 Vincular Magic Numbers" aparece al login si hay bots sin magic
+- Auto-sugiere magic por similitud de nombre (`_normName()` normaliza ambos)
+- `window.LIVE[String(bot.magic)]` → datos live del bot
 - Si el bot no tiene `magic` asignado, no muestra datos live automáticamente
 
 ## Colores del sistema
-- Verde: `#1a7f4b` | Amarillo: `#d97706` | Rojo: `#b91c1c`
-- CSS vars: `--bg`, `--text`, `--text2`, `--border`, `--border2`, `--radius`
+- Verde: `#1a7f4b` | Amarillo: `#92400e` | Rojo: `#b91c1c`
+- CSS vars: `--bg`, `--text`, `--text2`, `--text3`, `--border`, `--border2`, `--radius`
+- CSS vars color: `--green`, `--green-bg`, `--red`, `--red-bg`, `--amber`, `--amber-bg`
 
 ## Reglas para modificar código
-1. Leer solo el rango de líneas necesario (archivos ~4000+ líneas)
+1. Leer solo el rango de líneas necesario (archivos ~4500+ líneas)
 2. No agregar librerías externas
 3. No romper el parser CSV existente (`parseCSV`, `parseOverview`)
 4. `render()` siempre al final de cambios que afecten la tabla
 5. git add → commit → push al terminar cada feature
 
 ## Pendiente / Próximos pasos
-1. **Magic numbers** — asignar `magic` a bots que no lo tienen (UI o SQL)
-2. **overlap.html** — actualizar para usar trades de Supabase
+1. **overlap.html** — actualizar para usar trades de Supabase
 3. **Histórico** — importar trades anteriores a la instalación del EA
 4. **Portfolio Builder** — equity combinada de múltiples bots

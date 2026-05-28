@@ -92,15 +92,16 @@ PASO 4 — Todo fluye automáticamente
 
 ## Pendientes técnicos prioritarios
 
-### 1. Pantalla de vinculación magic numbers
-**Qué es:** UI que muestra bots sin magic + magic numbers vistos en trades + sugerencias automáticas por nombre.
-**Por qué:** Desbloquea datos live para todos los bots con un flujo simple.
-**Cómo:** Comparar nombre del bot vs comment del trade (primeros 31 chars).
+### 1. Pantalla de vinculación magic numbers ✅ (implementado 2026-05-28)
+**Qué es:** Sección colapsable en index.html que muestra bots sin magic + sugerencias automáticas.
+**Implementado:** `buildMagicSummary(trades)` + `suggestMagicForBot()` + `renderMagicLinking()` en index.html.
+**Flujo:** Se abre al login si hay bots sin magic. Sugiere por similitud de nombre (comment MT5 = 31 chars del nombre).
+**Funciones clave:** `applyOneMagic(botId)`, `saveAllMagics()`, `toggleMagicPanel()`.
 
-### 2. TradeCapture_v3 — historial completo
-**Qué es:** En la primera ejecución del EA, enviar TODO el historial desde el inicio de la cuenta.
-**Por qué:** Las métricas live son inútiles si solo tienen datos de los últimos días.
-**Cómo:** Cambiar `from = now - 86400` por `from = D'2000.01.01'` en el primer scan.
+### 2. TradeCapture_v3 — historial completo ✅ (desarrollado 2026-05-28)
+**Qué es:** EA v3.10 que en la primera ejecución envía TODO el historial desde el año 2000.
+**Implementado:** Archivo en `docs/TradeCapture_v3_historial_completo.mq5`.
+**Pendiente:** Instalar en ambos VPS (reemplazar archivo en MetaEditor, compilar, reiniciar EA).
 
 ### 3. Duplicados fed26_ — limpieza
 **Qué es:** SQL que fusiona bots `fed26_` con sus pares SQX y elimina los duplicados.
