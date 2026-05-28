@@ -1474,9 +1474,10 @@ function _magicScore(botName, tradeComment) {
   return common >= 8 ? Math.round(common / Math.max(b.length, c.length) * 80) : 0;
 }
 
-function suggestMagicForBot(bot, magicSummary) {
+function suggestMagicForBot(bot, magicSummary, usedMagics) {
   let best = null, bestScore = 0;
   for (const [magic, info] of Object.entries(magicSummary)) {
+    if (usedMagics && usedMagics.has(magic)) continue; // ya asignado a otro bot
     const score = _magicScore(bot.name, info.topComment);
     if (score > bestScore) { bestScore = score; best = { magic, info, score }; }
   }
@@ -1494,8 +1495,11 @@ function renderMagicLinking() {
     unlinked.length + ' bot' + (unlinked.length !== 1 ? 's' : '') + ' sin vincular';
   card.style.display = '';
 
+  // Set de magic numbers ya asignados a bots (para excluirlos de sugerencias)
+  const usedMagics = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
+
   const tbody = unlinked.map(bot => {
-    const sug = suggestMagicForBot(bot, ms);
+    const sug = suggestMagicForBot(bot, ms, usedMagics);
     const sugMagic   = sug ? sug.magic : '';
     const sugComment = sug ? sug.info.topComment : '';
     const sugCount   = sug ? sug.info.count : 0;
@@ -1525,6 +1529,28 @@ function renderMagicLinking() {
     </tr>`;
   }).join('');
 
+  // Magic numbers en trades que no están vinculados a ningún bot
+  const orphanMagics = Object.entries(ms)
+    .filter(([magic]) => !usedMagics.has(magic))
+    .sort((a,b) => b[1].count - a[1].count);
+  const orphanHtml = orphanMagics.length
+    ? `<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">
+          Magic numbers sin bot asignado (${orphanMagics.length})
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${orphanMagics.map(([magic, info]) =>
+            `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px">
+              <strong>${magic}</strong>
+              ${info.topComment ? `<span style="color:var(--text3)"> — "${info.topComment}"</span>` : ''}
+              <span style="color:var(--text3);margin-left:4px">${info.count} trades · ${info.symbols.slice(0,2).join('/')||'—'}</span>
+            </div>`
+          ).join('')}
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px">Estos magic numbers tienen trades pero no están vinculados a ningún bot del dashboard. Cargá su CSV para vincularlos.</div>
+      </div>`
+    : '';
+
   document.getElementById('magic-link-table').innerHTML = `
     <table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr style="border-bottom:2px solid var(--border2)">
@@ -1535,7 +1561,8 @@ function renderMagicLinking() {
         <th style="padding:6px 8px"></th>
       </tr></thead>
       <tbody>${tbody}</tbody>
-    </table>`;
+    </table>
+    ${orphanHtml}`;
 }
 
 function toggleMagicPanel() {
