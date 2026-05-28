@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Estacionalidad — SQX Dashboard</title>
+<script src="supabase.js"></script>
 <style>
   :root {
     --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
@@ -234,30 +235,49 @@ async function loadSeasonality() {
 }
 
 async function loadDashboard() {
-  try {
-    const r  = await fetch('bot_meta.json?t=' + Date.now());
-    const db = await r.json();
-    activeBots = {};
-    botMeta    = {};
+  activeBots = {};
+  botMeta    = {};
+  let db = null;
 
-    db.forEach(bot => {
-      if (!bot.symbol) return;
-      const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
-
-      let dir = null;
-      if (bot.direction === 'Long')       dir = 'long';
-      else if (bot.direction === 'Short') dir = 'short';
-      else if (bot.direction === 'Both')  dir = 'mixed';
-
-      if (!activeBots[sym]) activeBots[sym] = [];
-      if (dir && !activeBots[sym].includes(dir)) activeBots[sym].push(dir);
-
-      if (!botMeta[sym]) botMeta[sym] = [];
-      if (dir) botMeta[sym].push({ dir, name: bot.name || sym, magic: bot.magic || '', tf: bot.tf || '' });
-    });
-  } catch(e) {
-    console.warn('Dashboard no disponible, continuando sin bots:', e);
+  // 1. Intentar Supabase si hay sesión activa
+  if (typeof sb !== 'undefined' && sb.isAuthenticated()) {
+    try {
+      db = await sb.getBots();
+    } catch(e) {
+      console.warn('Estacionalidad: error al cargar bots de Supabase:', e);
+    }
   }
+
+  // 2. Fallback: archivo estático bot_meta.json
+  if (!db) {
+    try {
+      const r = await fetch('bot_meta.json?t=' + Date.now());
+      db = await r.json();
+    } catch(e) {
+      console.warn('bot_meta.json no disponible, continuando sin bots');
+      return;
+    }
+  }
+
+  if (!Array.isArray(db)) return;
+
+  db.forEach(bot => {
+    if (!bot.symbol) return;
+    const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
+
+    // Leer dirección desde 'direction' (bot_meta.json) o pseudocodigoData (Supabase)
+    let rawDir = bot.direction || bot.pseudocodigoData?.parsed?.entradaTipo || '';
+    let dir = null;
+    if (/long/i.test(rawDir) && !/sell|short/i.test(rawDir)) dir = 'long';
+    else if (/sell|short/i.test(rawDir) && !/long/i.test(rawDir)) dir = 'short';
+    else if (/both|buy.*sell|sell.*buy/i.test(rawDir)) dir = 'mixed';
+
+    if (!activeBots[sym]) activeBots[sym] = [];
+    if (dir && !activeBots[sym].includes(dir)) activeBots[sym].push(dir);
+
+    if (!botMeta[sym]) botMeta[sym] = [];
+    if (dir) botMeta[sym].push({ dir, name: bot.name || sym, magic: bot.magic || '', tf: bot.tf || '' });
+  });
 }
 
 // ── HELPERS ──
@@ -512,12 +532,12 @@ function applyFilters() {
 
 // ── AUTO-REFRESH ──
 function startAutoRefresh() {
-  // Recarga dashboard cada 60s para detectar nuevos bots automáticamente
+  // Recarga bots cada 5 minutos para detectar cambios
   setInterval(async () => {
     await loadDashboard();
     renderTable();
     renderExceptional();
-  }, 60000);
+  }, 300000);
 
   // Escucha cambios en localStorage desde otras pestañas del dashboard
   window.addEventListener('storage', async (e) => {
