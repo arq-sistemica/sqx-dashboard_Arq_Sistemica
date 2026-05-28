@@ -313,6 +313,13 @@
         </div>
       </div>
 
+      <!-- PERFORMANCE × INDICADOR (Capa 4 — solo si hay bots con datos live) -->
+      <div id="perf-ind-section" style="display:none">
+        <div class="dna-section-title">📈 Indicadores × Performance Live — ¿cuáles correlacionan con mejor PF?</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">PF promedio de bots live que usan cada indicador. Mínimo 2 bots. Solo indicativo — correlación, no causalidad.</div>
+        <div class="dna-rank-grid" id="perf-ind-grid" style="margin-bottom:1.5rem"></div>
+      </div>
+
       <!-- CLUSTERS -->
       <div class="dna-section-title">Familias de estrategias — bots que comparten indicadores clave</div>
       <div class="dna-cluster-grid" id="dna-clusters"></div>
@@ -527,6 +534,83 @@ function dnaInit(allBots) {
         <div class="dna-rbar-bg"><div class="dna-rbar" style="width:${pct}%;background:var(--blue)"></div></div>
       </div>`;
   });
+
+  // PERFORMANCE × INDICADOR (Capa 4 — inteligencia live)
+  const perfSection = document.getElementById('perf-ind-section');
+  const perfGrid = document.getElementById('perf-ind-grid');
+  if (perfSection && perfGrid) {
+    const liveBots = allBots.filter(b => b.pf !== null && b.pf !== undefined);
+    if (liveBots.length >= 2) {
+      // Aggregate PF and DD by indicator
+      const perfByInd = {};
+      liveBots.forEach(bot => {
+        bot.inds.forEach(ind => {
+          if (!perfByInd[ind]) perfByInd[ind] = { pfs: [], dds: [], names: [] };
+          perfByInd[ind].pfs.push(bot.pf);
+          if (bot.ddPct !== null && bot.ddPct !== undefined) perfByInd[ind].dds.push(bot.ddPct);
+          perfByInd[ind].names.push(bot.id);
+        });
+      });
+
+      const perfList = Object.entries(perfByInd)
+        .filter(([_, d]) => d.pfs.length >= 2)
+        .map(([ind, d]) => ({
+          ind,
+          n:     d.pfs.length,
+          avgPf: +(d.pfs.reduce((a,b)=>a+b,0) / d.pfs.length).toFixed(2),
+          avgDd: d.dds.length ? +(d.dds.reduce((a,b)=>a+b,0) / d.dds.length).toFixed(1) : null,
+          names: d.names,
+        }))
+        .sort((a,b) => b.avgPf - a.avgPf);
+
+      if (perfList.length) {
+        const maxPf = perfList[0].avgPf || 1;
+        const nc2 = ['dna-rnum-1','dna-rnum-2','dna-rnum-3'];
+
+        // Split into two columns: PF ranking + DD ranking
+        const pfList = perfList.slice(0,10);
+        const ddList = [...perfList].filter(x => x.avgDd !== null).sort((a,b) => a.avgDd - b.avgDd).slice(0,10);
+
+        const renderPerfRow = (item, i, mode) => {
+          const val = mode === 'pf' ? item.avgPf : item.avgDd;
+          const pct = mode === 'pf'
+            ? Math.round(item.avgPf / maxPf * 100)
+            : Math.round((1 - item.avgDd / 30) * 100);
+          const color = mode === 'pf'
+            ? (item.avgPf >= 1.3 ? 'var(--green)' : item.avgPf >= 1.1 ? '#d97706' : 'var(--red)')
+            : (item.avgDd <= 5 ? 'var(--green)' : item.avgDd <= 15 ? '#d97706' : 'var(--red)');
+          const barColor = mode === 'pf'
+            ? (item.avgPf >= 1.3 ? '#1a7f4b' : item.avgPf >= 1.1 ? '#d97706' : '#b91c1c')
+            : (item.avgDd <= 5 ? '#1a7f4b' : item.avgDd <= 15 ? '#d97706' : '#b91c1c');
+          const label = mode === 'pf' ? `PF avg: ${val.toFixed(2)}` : `DD avg: ${val.toFixed(1)}%`;
+          return `<div class="dna-rank-row">
+            <div class="dna-rnum ${nc2[i]||''}">${i+1}</div>
+            <div>
+              <div style="font-weight:600">${item.ind} <span style="font-size:10px;color:var(--text3);font-weight:400">· ${DNA_IND_FAM[item.ind]||'Otro'}</span></div>
+              <div class="dna-rtags"><span class="dna-tag-a">${item.n} bots live</span></div>
+            </div>
+            <div style="font-size:12px;font-weight:700;text-align:right;color:${color}">${label}</div>
+            <div class="dna-rbar-bg"><div class="dna-rbar" style="width:${Math.max(4,pct)}%;background:${barColor}"></div></div>
+          </div>`;
+        };
+
+        perfGrid.innerHTML = `
+          <div class="dna-rank-card">
+            <div class="dna-rank-header">📈 Por PF promedio — indicadores de los mejores bots</div>
+            ${pfList.map((item,i) => renderPerfRow(item,i,'pf')).join('')}
+          </div>
+          <div class="dna-rank-card">
+            <div class="dna-rank-header">🛡 Por DD promedio — indicadores más seguros (menor DD)</div>
+            ${ddList.length
+              ? ddList.map((item,i) => renderPerfRow(item,i,'dd')).join('')
+              : '<div style="font-size:11px;color:var(--text3);padding:8px 0">Sin datos de DD suficientes.</div>'
+            }
+          </div>`;
+
+        perfSection.style.display = 'block';
+      }
+    }
+  }
 
   // CLUSTERS
   const clusters = [
@@ -826,8 +910,10 @@ function _updateCounter() {
 }
 
 function _clearPanels() {
-  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid']
+  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid','perf-ind-grid']
     .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  const perfSec = document.getElementById('perf-ind-section');
+  if (perfSec) perfSec.style.display = 'none';
 }
 
 function removeBot(botId) {
