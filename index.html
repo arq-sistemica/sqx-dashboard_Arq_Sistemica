@@ -1654,12 +1654,14 @@ function _isTpSlComment(comment) {
 // Crea bots stub automáticamente para magic numbers con trades pero sin bot asignado
 // Solo para orphans con nombre real (ignora [tp/sl])
 function autoCreateStubs() {
-  const ms        = window._magicSummary || {};
-  const usedMagics = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
+  const ms             = window._magicSummary || {};
+  const usedMagics     = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
+  const ambiguousMagics = new Set((window._magicAmbiguous || []).map(a => a.magic));
   let created = 0;
 
   for (const [magic, info] of Object.entries(ms)) {
     if (usedMagics.has(magic)) continue;              // ya tiene bot
+    if (ambiguousMagics.has(magic)) continue;         // pendiente de resolución por usuario
     if (_isTpSlComment(info.topComment)) continue;    // comment de sistema, ignorar
     if (!info.topComment) continue;
 
@@ -1783,7 +1785,7 @@ function autoMatchMagics() {
   return { autoLinked, ambiguous: ambiguous.length };
 }
 
-function resolveAmbiguity(magic, botId) {
+async function resolveAmbiguity(magic, botId) {
   const bot = DB.find(b => b.id === botId);
   if (!bot) return;
   bot.magic        = Number(magic);
@@ -1795,6 +1797,13 @@ function resolveAmbiguity(magic, botId) {
   renderMagicLinking();
   renderAlerts();
   render();
+  // Guardar automáticamente en Supabase para que persista al recargar
+  try {
+    await sb.upsertBots(DB);
+    setSyncStatus('✓ Guardado', '#1a7f4b');
+  } catch(e) {
+    console.warn('No se pudo guardar resolución:', e);
+  }
   alertOk(`✓ Magic ${magic} asignado a "${bot.name.slice(0, 40)}"`);
 }
 
