@@ -131,7 +131,7 @@ const sb = {
 
   async getMyAccounts() {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/accounts?select=id,label,broker,server,currency&order=id`,
+      `${SUPABASE_URL}/rest/v1/accounts?select=*&order=id`,
       { headers: _sbHeaders(sb.getToken()) }
     );
     if (!r.ok) return [];
