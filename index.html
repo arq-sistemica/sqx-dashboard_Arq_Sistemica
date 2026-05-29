@@ -1511,6 +1511,14 @@ async function authGrant() {
     window.LIVE = {};
     window._magicSummary = {};
   }
+  // Cargar labels de cuentas para mostrar nombres amigables en los checkboxes
+  try {
+    const accounts = await sb.getMyAccounts();
+    window._accountLabels = {};
+    for (const a of (accounts || [])) window._accountLabels[String(a.id)] = a.label || String(a.id);
+  } catch(e) {
+    window._accountLabels = {};
+  }
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('btn-save').disabled = false;
   renderAccountCheckboxes();
@@ -4461,37 +4469,41 @@ function renderAccountCheckboxes() {
   const container = document.getElementById('account-filters');
   if (!container) return;
 
-  // Detectar cuentas únicas desde los trades (auto-descubrimiento)
-  const labels = [...new Set(trades.map(t => t.account_label).filter(Boolean))].sort();
+  // Detectar cuentas únicas por account_id (account_label puede ser null)
+  const ids = [...new Set(trades.map(t => String(t.account_id)).filter(Boolean))].sort();
 
   // Solo mostrar si hay 2 o más cuentas
-  if (labels.length < 2) { container.style.display = 'none'; return; }
+  if (ids.length < 2) { container.style.display = 'none'; return; }
   container.style.display = '';
 
-  const sel = window._selectedAccounts;
-  const countByLabel = {};
+  const sel      = window._selectedAccounts;
+  const lblMap   = window._accountLabels || {};
+  const countById = {};
   for (const t of trades) {
-    if (t.account_label) countByLabel[t.account_label] = (countByLabel[t.account_label] || 0) + 1;
+    const id = String(t.account_id);
+    if (id) countById[id] = (countById[id] || 0) + 1;
   }
 
   container.innerHTML = `<div class="acct-filters">
     <span class="acct-filters-lbl">📊 Cuenta MT5:</span>
-    ${labels.map(lbl => `
-      <label class="acct-cb-label${sel.has(lbl) ? ' checked' : ''}"
-             onclick="toggleAccountFilter('${lbl}')">
+    ${ids.map(id => {
+      const lbl = lblMap[id] || id;
+      return `<label class="acct-cb-label${sel.has(id) ? ' checked' : ''}"
+               onclick="toggleAccountFilter('${id}')">
         ${lbl}
-        <span style="font-size:10px;color:inherit;opacity:0.7">${countByLabel[lbl] || 0} trades</span>
-      </label>`).join('')}
+        <span style="font-size:10px;color:inherit;opacity:0.7">${countById[id] || 0} trades</span>
+      </label>`;
+    }).join('')}
     ${sel.size > 0
       ? `<button class="acct-cb-clear" onclick="clearAccountFilter()">✕ Ver todas</button>`
       : ''}
   </div>`;
 }
 
-function toggleAccountFilter(label) {
+function toggleAccountFilter(id) {
   const sel = window._selectedAccounts;
-  if (sel.has(label)) sel.delete(label);
-  else sel.add(label);
+  if (sel.has(id)) sel.delete(id);
+  else sel.add(id);
   _applyAccountFilter();
 }
 
@@ -4504,7 +4516,7 @@ function _applyAccountFilter() {
   const allTrades = window._lastTrades || [];
   const sel       = window._selectedAccounts;
   const trades    = sel.size > 0
-    ? allTrades.filter(t => sel.has(t.account_label))
+    ? allTrades.filter(t => sel.has(String(t.account_id)))
     : allTrades;
   window.LIVE          = computeLiveMetrics(trades);
   window._magicSummary = buildMagicSummary(trades);
