@@ -1518,12 +1518,23 @@ async function authGrant() {
 }
 
 function computeLiveMetrics(trades) {
-  const byMagic = {};
+  // Paso 1: agrupar por magic → por cuenta
+  const byMagicAccount = {};
   for (const t of trades) {
     const m = String(t.magic || '');
     if (!m || m === '0') continue;
-    if (!byMagic[m]) byMagic[m] = [];
-    byMagic[m].push(t);
+    const acct = t.account_label || String(t.account_id) || 'unknown';
+    if (!byMagicAccount[m]) byMagicAccount[m] = {};
+    if (!byMagicAccount[m][acct]) byMagicAccount[m][acct] = [];
+    byMagicAccount[m][acct].push(t);
+  }
+  // Paso 2: para cada magic, elegir la cuenta con más trades (nunca sumar dos cuentas)
+  const byMagic = {};
+  const winnerAccount = {}; // magic → account_label ganador
+  for (const [magic, byAccount] of Object.entries(byMagicAccount)) {
+    const sorted = Object.entries(byAccount).sort((a, b) => b[1].length - a[1].length);
+    byMagic[magic] = sorted[0][1];
+    winnerAccount[magic] = sorted[0][0];
   }
   const result = {};
   for (const [magic, list] of Object.entries(byMagic)) {
@@ -1563,6 +1574,7 @@ function computeLiveMetrics(trades) {
       netProfit:  +netPs.reduce((a,b)=>a+b,0).toFixed(2),
       tradeList,
       source: 'supabase',
+      account: winnerAccount[magic] || null,  // cuenta ganadora (más historial)
     };
   }
   return result;
