@@ -3,22 +3,13 @@
   const W_EXP = 220;
   const W_COL = 52;
 
-  // Inyectar CSS dinámico (más robusto que inline styles)
-  function injectStyles() {
-    const s = document.createElement('style');
-    s.textContent =
-      // Sin transición durante init (evita flash)
-      '.sb-no-trans .topbar,.sb-no-trans .main,.sb-no-trans .page-wrap,.sb-no-trans .sidebar{transition:none!important}' +
-      // Márgenes cuando está colapsado — !important gana sobre cualquier CSS de la página
-      '.sb-col .topbar,.sb-col .main,.sb-col .page-wrap{margin-left:' + W_COL + 'px!important}' +
-      // Transición suave en contenido
-      '.topbar,.main,.page-wrap{transition:margin-left .25s ease}' +
-      // Ocultar botón de toggle interno (reemplazado por flotante)
-      '.sidebar-toggle{display:none!important}';
-    document.head.appendChild(s);
+  function setMargins(w) {
+    // setProperty con 'important' gana sobre cualquier CSS de la página
+    document.querySelectorAll('.topbar, .main, .page-wrap').forEach(function(el) {
+      el.style.setProperty('margin-left', w + 'px', 'important');
+    });
   }
 
-  // Botón flotante en el borde del sidebar, centrado verticalmente
   function createFloatBtn() {
     const fb = document.createElement('button');
     fb.id = 'sb-float';
@@ -33,12 +24,12 @@
       'display:flex;align-items:center;justify-content:center;' +
       'transition:left 0.25s ease,background 0.12s,color 0.12s;' +
       'font-family:inherit;line-height:1;';
-    fb.addEventListener('mouseenter', () => {
+    fb.addEventListener('mouseenter', function() {
       fb.style.background = '#eef2ff';
       fb.style.color = '#4f46e5';
       fb.style.borderColor = '#c7d2fe';
     });
-    fb.addEventListener('mouseleave', () => {
+    fb.addEventListener('mouseleave', function() {
       fb.style.background = '#fff';
       fb.style.color = '#9098a8';
       fb.style.borderColor = '#c8cdd5';
@@ -47,38 +38,47 @@
     return fb;
   }
 
-  function applyState(col, fb) {
+  function applyState(col, animate) {
     const sidebar = document.querySelector('.sidebar');
-    document.body.classList.toggle('sb-col', col);
+    const fb = document.getElementById('sb-float');
+    const w = col ? W_COL : W_EXP;
+
     if (sidebar) sidebar.classList.toggle('collapsed', col);
+
+    if (!animate) {
+      // Sin transición: ocultar .sidebar-toggle interno también
+      var s = document.createElement('style');
+      s.textContent = '.sidebar-toggle{display:none!important}' +
+        '.topbar,.main,.page-wrap{transition:margin-left .25s ease}' +
+        '.sidebar{transition:width .25s ease}';
+      document.head.appendChild(s);
+    }
+
+    setMargins(w);
+
     if (fb) {
-      fb.style.left = (col ? W_COL : W_EXP) + 'px';
+      fb.style.left = w + 'px';
       fb.textContent = col ? '▶' : '◀';
     }
   }
 
-  window.toggleSidebar = function () {
-    const col = !document.body.classList.contains('sb-col');
+  window.toggleSidebar = function() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    const col = !sidebar.classList.contains('collapsed');
     localStorage.setItem('sqx_sidebar', col ? '1' : '0');
-    applyState(col, document.getElementById('sb-float'));
+    applyState(col, true);
   };
 
   function init() {
-    injectStyles();
     const fb = createFloatBtn();
 
-    // Deshabilitar transiciones durante el estado inicial
-    document.body.classList.add('sb-no-trans');
-
-    // Por defecto: colapsado (a menos que el usuario lo haya expandido explícitamente)
+    // Estado inicial sin animación
     const saved = localStorage.getItem('sqx_sidebar');
-    const col = saved === null ? true : saved === '1';
-    applyState(col, fb);
+    const col = (saved === null) ? true : (saved === '1');
 
-    // Re-habilitar transiciones después de 2 frames (garantiza que no hay flash)
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.body.classList.remove('sb-no-trans');
-    }));
+    // Aplicar inmediatamente antes del primer paint
+    applyState(col, false);
   }
 
   if (document.readyState === 'loading') {
