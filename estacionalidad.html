@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Estacionalidad — SQX Dashboard</title>
 <script src="supabase.js"></script>
+<script src="sidebar.js"></script>
 <style>
   :root {
     --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
@@ -18,13 +19,23 @@
   body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,-apple-system,sans-serif; font-size:13px; line-height:1.5; min-height:100vh; }
 
   /* ── SIDEBAR ── */
-  .sidebar{width:220px;height:100vh;background:var(--bg);border-right:1px solid var(--border);position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:200;overflow-y:auto}
-  .sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
-  .nav-section-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:1rem 1rem 0.4rem;display:block}
-  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;font-size:13px;color:var(--text2);cursor:pointer;border:none;background:transparent;width:calc(100% - 16px);text-align:left;text-decoration:none;transition:all 0.12s;font-family:inherit;font-weight:500}
+  .sidebar{width:220px;height:100vh;background:var(--bg);border-right:1px solid var(--border);position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:200;overflow:hidden;transition:width 0.25s ease}
+  .sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;min-width:220px}
+  .sidebar-logo-text{flex:1;min-width:0}
+  .sidebar-toggle{flex-shrink:0;width:26px;height:26px;padding:0;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text3);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s;margin-left:8px;margin-top:2px;font-family:inherit}
+  .sidebar-toggle:hover{background:var(--bg3);color:var(--text)}
+  .nav-section-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:1rem 1rem 0.4rem;display:block;white-space:nowrap}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;font-size:13px;color:var(--text2);cursor:pointer;border:none;background:transparent;width:calc(100% - 16px);text-align:left;text-decoration:none;transition:all 0.12s;font-family:inherit;font-weight:500;white-space:nowrap}
   .nav-item:hover{background:var(--bg3);color:var(--text)}
   .nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
-  .sidebar-footer{padding:1rem;border-top:1px solid var(--border);margin-top:auto}
+  .sidebar-footer{padding:1rem;border-top:1px solid var(--border);margin-top:auto;min-width:220px}
+  .sidebar.collapsed .nl{display:none}
+  .sidebar.collapsed .nav-section-lbl{opacity:0;height:0;padding:0;overflow:hidden}
+  .sidebar.collapsed .sidebar-logo-text{display:none}
+  .sidebar.collapsed .sidebar-logo{justify-content:center;padding:1rem 0;min-width:52px}
+  .sidebar.collapsed .sidebar-footer{display:none}
+  .sidebar.collapsed .nav-item{justify-content:center;padding:8px 0;margin:1px 4px;width:calc(100% - 8px)}
+  .topbar,.page-wrap{transition:margin-left 0.25s ease}
   /* TOPBAR */
   .topbar { background:var(--bg); border-bottom:1px solid var(--border); padding:0 1.5rem; height:52px; display:flex; align-items:center; justify-content:flex-end; position:sticky; top:0; z-index:100; margin-left:220px; }
   .logo { font-size:16px; font-weight:700; letter-spacing:-0.3px; color:var(--text); }
@@ -146,17 +157,20 @@
 <!-- ── SIDEBAR ── -->
 <div class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo">SQX<span>.</span>Dashboard</div>
-    <span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid #c7d2fe;font-weight:600;margin-top:8px;display:inline-block">Arq. Sistémica</span>
+    <div class="sidebar-logo-text">
+      <div class="logo">SQX<span>.</span>Dashboard</div>
+      <span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid #c7d2fe;font-weight:600;margin-top:8px;display:inline-block">Arq. Sistémica</span>
+    </div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Colapsar menú">◀</button>
   </div>
   <nav style="flex:1">
     <span class="nav-section-lbl">Análisis</span>
-    <a class="nav-item" href="index.html">📋 Incubación</a>
-    <a class="nav-item" href="portfolio.html">💼 Portfolio</a>
-    <a class="nav-item" href="ranking.html">🏆 Ranking</a>
+    <a class="nav-item" href="index.html" title="Incubación"><span>📋</span><span class="nl"> Incubación</span></a>
+    <a class="nav-item" href="portfolio.html" title="Portfolio"><span>💼</span><span class="nl"> Portfolio</span></a>
+    <a class="nav-item" href="ranking.html" title="Ranking"><span>🏆</span><span class="nl"> Ranking</span></a>
     <span class="nav-section-lbl">Inteligencia</span>
-    <a class="nav-item" href="overlap.html">📊 Overlap</a>
-    <a class="nav-item active" href="estacionalidad.html">📅 Estacionalidad</a>
+    <a class="nav-item" href="overlap.html" title="Overlap"><span>📊</span><span class="nl"> Overlap</span></a>
+    <a class="nav-item active" href="estacionalidad.html" title="Estacionalidad"><span>📅</span><span class="nl"> Estacionalidad</span></a>
   </nav>
   <div class="sidebar-footer">
     <span style="font-size:11px;color:var(--text3)">📅 Estacionalidad</span>
