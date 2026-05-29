@@ -1720,9 +1720,11 @@ function renderMagicLinking() {
 
 function toggleMagicPanel() {
   const body = document.getElementById('magic-body');
+  const head = document.getElementById('magic-head');
   const chev = document.getElementById('chev-magic');
-  const open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : '';
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  head.classList.toggle('open', !open);
   chev.textContent = open ? '▶' : '▼';
 }
 
