@@ -40,7 +40,17 @@
   .tb-dropdown-menu .dd-sep{height:1px;background:var(--border);margin:5px 0}
   .tb-nav-btn{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);transition:all 0.12s}
   .tb-nav-btn:hover{background:var(--accent);color:#fff}
-  .main{padding:1.5rem 2rem;max-width:1500px;margin:0 auto}
+  /* ── SIDEBAR ── */
+  .sidebar{width:220px;height:100vh;background:var(--bg);border-right:1px solid var(--border);position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:200;overflow-y:auto}
+  .sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+  .nav-section-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:1rem 1rem 0.4rem;display:block}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:var(--radius);font-size:13px;color:var(--text2);cursor:pointer;border:none;background:transparent;width:calc(100% - 16px);text-align:left;text-decoration:none;transition:all 0.12s;font-family:inherit;font-weight:500}
+  .nav-item:hover{background:var(--bg3);color:var(--text);border-color:transparent}
+  .nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+  .nav-item.active:hover{background:var(--accent-light);border-color:transparent}
+  .sidebar-footer{padding:1rem;border-top:1px solid var(--border);margin-top:auto}
+  .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:flex-end;position:sticky;top:0;z-index:100;margin-left:220px}
+  .main{padding:1.5rem 2rem;margin-left:220px}
   button{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:all 0.12s}
   button:hover{background:var(--bg3);color:var(--text);border-color:#adb5bd}
   .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -151,9 +161,10 @@
   details summary{font-size:12px;color:var(--text2);cursor:pointer;padding:8px 0;list-style:none;display:flex;align-items:center;gap:6px;user-select:none}
   details summary:hover{color:var(--text)}
   @media(max-width:700px){
+    .sidebar{display:none}
+    .topbar{margin-left:0;padding:0 1rem}
+    .main{margin-left:0;padding:1rem}
     .summary-grid{grid-template-columns:repeat(2,1fr)}
-    .main{padding:1rem}
-    .topbar{padding:0 1rem}
     .criteria-bar{display:grid;grid-template-columns:repeat(3,1fr)}
   }
 
@@ -511,14 +522,37 @@
   </div>
 </div>
 
-<div class="topbar">
-  <div style="display:flex;align-items:center">
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <div class="sidebar-logo">
     <div class="logo">SQX<span>.</span>Dashboard</div>
-    <span class="module-tag">Arq. Sistémica</span>
+    <span class="module-tag" style="margin-left:0;margin-top:8px;display:inline-block">Arq. Sistémica</span>
   </div>
+  <nav style="flex:1">
+    <span class="nav-section-lbl">Análisis</span>
+    <a class="nav-item active" href="index.html">📋 Incubación</a>
+    <a class="nav-item" href="portfolio.html">💼 Portfolio</a>
+    <a class="nav-item" href="ranking.html">🏆 Ranking</a>
+    <span class="nav-section-lbl">Inteligencia</span>
+    <a class="nav-item" href="overlap.html">📊 Overlap</a>
+    <a class="nav-item" href="estacionalidad.html">📅 Estacionalidad</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="nav-item" onclick="authLogout()" style="color:var(--text3);font-size:12px">⎋ Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
   <div class="topbar-right">
     <span id="db-count" style="font-size:11px;color:var(--text3);margin-right:4px">24 bots guardados</span>
     <span id="sync-status" style="font-size:11px;margin-right:4px;color:rgb(217,119,6);">⏳ Guardando...</span>
+
+    <!-- Selector de cuenta MT5 -->
+    <div class="tb-dropdown" id="account-dd" style="display:none">
+      <button onclick="toggleAccountMenu(event)" id="account-dd-btn" style="font-size:12px;font-weight:600;color:var(--accent)">📊 MT5: Todas ▾</button>
+      <div class="tb-dropdown-menu" id="account-menu" style="min-width:240px"></div>
+    </div>
 
     <!-- Dropdown Ajustes -->
     <div class="tb-dropdown" id="settings-dd">
@@ -537,18 +571,6 @@
         <button onclick="authLogout()">⎋ Salir</button>
       </div>
     </div>
-
-    <!-- Selector de cuenta MT5 -->
-    <div class="tb-dropdown" id="account-dd" style="display:none">
-      <button onclick="toggleAccountMenu(event)" id="account-dd-btn" style="font-size:12px;font-weight:600;color:var(--accent)">📊 MT5: Todas ▾</button>
-      <div class="tb-dropdown-menu" id="account-menu" style="min-width:240px"></div>
-    </div>
-
-    <!-- Nav tabs -->
-    <button class="tb-nav-btn" onclick="toggleDnaSection()" title="Overlap de Indicadores">📊 Overlap</button>
-    <button class="tb-nav-btn" onclick="openRanking()" title="Ranking live de bots">🏆 Ranking</button>
-    <button class="tb-nav-btn" onclick="window.open('portfolio.html','_blank')" title="Portfolio Builder — equity combinada de múltiples bots">💼 Portfolio</button>
-    <button class="tb-nav-btn" onclick="window.open('estacionalidad.html','_blank')" title="Estacionalidad anual — 28 pares">📅 Estacionalidad</button>
   </div>
 </div>
 

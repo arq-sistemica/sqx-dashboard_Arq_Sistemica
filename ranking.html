@@ -26,18 +26,27 @@
     min-height: 100vh;
   }
 
+  /* ── SIDEBAR ── */
+  .sidebar{width:220px;height:100vh;background:var(--bg);border-right:1px solid var(--border);position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:200;overflow-y:auto}
+  .sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+  .nav-section-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:1rem 1rem 0.4rem;display:block}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;font-size:13px;color:var(--text2);cursor:pointer;border:none;background:transparent;width:calc(100% - 16px);text-align:left;text-decoration:none;transition:all 0.12s;font-family:inherit;font-weight:500}
+  .nav-item:hover{background:var(--bg3);color:var(--text)}
+  .nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+  .sidebar-footer{padding:1rem;border-top:1px solid var(--border);margin-top:auto}
   /* ── TOPBAR ── */
   .topbar {
     background: var(--bg);
     border-bottom: 1px solid var(--border);
-    padding: 0 2rem;
+    padding: 0 1.5rem;
     height: 52px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     position: sticky;
     top: 0;
     z-index: 100;
+    margin-left: 220px;
   }
   .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
   .logo span { color: var(--accent); }
@@ -103,7 +112,7 @@
   .nd-btn:hover { background: #4338ca; }
 
   /* ── MAIN ── */
-  .main { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+  .main { padding: 1.5rem 2rem; margin-left: 220px; }
 
   /* ── PANEL ── */
   #ranking-panel {
@@ -256,17 +265,30 @@
 <!-- ── APP PRINCIPAL ── -->
 <div id="app" style="display:none">
 
-  <div class="topbar">
-    <div style="display:flex;align-items:center">
-      <span class="logo">SQX<span>Dashboard</span></span>
-      <span class="module-tag">🏆 RANKING LIVE</span>
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo">SQX<span>.</span>Dashboard</div>
+      <span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid #c7d2fe;font-weight:600;margin-top:8px;display:inline-block">Arq. Sistémica</span>
     </div>
+    <nav style="flex:1">
+      <span class="nav-section-lbl">Análisis</span>
+      <a class="nav-item" href="index.html">📋 Incubación</a>
+      <a class="nav-item" href="portfolio.html">💼 Portfolio</a>
+      <a class="nav-item active" href="ranking.html">🏆 Ranking</a>
+      <span class="nav-section-lbl">Inteligencia</span>
+      <a class="nav-item" href="overlap.html">📊 Overlap</a>
+      <a class="nav-item" href="estacionalidad.html">📅 Estacionalidad</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span style="font-size:11px;color:var(--text3)">🏆 Ranking Live</span>
+    </div>
+  </div>
+
+  <div class="topbar">
     <div class="topbar-right">
       <span class="sync-info" id="sync-info"></span>
-      <button class="t-btn t-btn-accent" onclick="refreshData()">↺ ACTUALIZAR</button>
-      <button class="t-btn" onclick="window.open('portfolio.html','_blank')">💼 Portfolio</button>
-      <button class="t-btn" onclick="window.open('estacionalidad.html','_blank')">📅 ESTACIONALIDAD</button>
-      <button class="t-btn" onclick="window.opener?window.close():window.location.href='index.html'">← VOLVER</button>
+      <button class="t-btn t-btn-accent" onclick="refreshData()">↺ Actualizar</button>
     </div>
   </div>
 
