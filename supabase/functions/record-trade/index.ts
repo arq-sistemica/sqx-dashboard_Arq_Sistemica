@@ -103,6 +103,7 @@ Deno.serve(async (req: Request) => {
         commission:   body.commission,
         swap:         body.swap,
         comment:      body.comment,  // contiene [tp] / [sl] / texto EA
+        account_label: accountLabel, // label amigable de la cuenta
       },
       {
         onConflict:       "ticket,account_id",
