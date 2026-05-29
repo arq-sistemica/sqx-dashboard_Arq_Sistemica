@@ -3,56 +3,23 @@
   const W_EXP = 220;
   const W_COL = 52;
 
-  function contentEls() {
-    return document.querySelectorAll('.topbar, .main, .page-wrap');
+  // Inyectar CSS dinámico (más robusto que inline styles)
+  function injectStyles() {
+    const s = document.createElement('style');
+    s.textContent =
+      // Sin transición durante init (evita flash)
+      '.sb-no-trans .topbar,.sb-no-trans .main,.sb-no-trans .page-wrap,.sb-no-trans .sidebar{transition:none!important}' +
+      // Márgenes cuando está colapsado — !important gana sobre cualquier CSS de la página
+      '.sb-col .topbar,.sb-col .main,.sb-col .page-wrap{margin-left:' + W_COL + 'px!important}' +
+      // Transición suave en contenido
+      '.topbar,.main,.page-wrap{transition:margin-left .25s ease}' +
+      // Ocultar botón de toggle interno (reemplazado por flotante)
+      '.sidebar-toggle{display:none!important}';
+    document.head.appendChild(s);
   }
 
-  function apply(w, animate) {
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
-    const collapsed = w === W_COL;
-
-    if (!animate) {
-      sidebar.style.transition = 'none';
-      contentEls().forEach(el => el.style.transition = 'none');
-    }
-
-    sidebar.classList.toggle('collapsed', collapsed);
-    contentEls().forEach(el => el.style.marginLeft = w + 'px');
-
-    // Mover botón flotante
-    const fb = document.getElementById('sb-float');
-    if (fb) {
-      if (!animate) fb.style.transition = 'none';
-      fb.style.left = w + 'px';
-      fb.textContent = collapsed ? '▶' : '◀';
-      if (!animate) requestAnimationFrame(() => { fb.style.transition = 'left 0.25s ease,background 0.12s,color 0.12s'; });
-    }
-
-    if (!animate) {
-      requestAnimationFrame(() => {
-        sidebar.style.transition = '';
-        contentEls().forEach(el => el.style.transition = '');
-      });
-    }
-  }
-
-  window.toggleSidebar = function () {
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
-    const collapsed = sidebar.classList.contains('collapsed');
-    const next = collapsed ? W_EXP : W_COL;
-    localStorage.setItem('sqx_sidebar', next === W_COL ? '1' : '0');
-    apply(next, true);
-  };
-
-  function init() {
-    // Ocultar botón de toggle interno (reemplazado por botón flotante)
-    const style = document.createElement('style');
-    style.textContent = '.sidebar-toggle{display:none!important}';
-    document.head.appendChild(style);
-
-    // Crear botón flotante en el borde izquierdo, centrado verticalmente
+  // Botón flotante en el borde del sidebar, centrado verticalmente
+  function createFloatBtn() {
     const fb = document.createElement('button');
     fb.id = 'sb-float';
     fb.onclick = window.toggleSidebar;
@@ -77,11 +44,41 @@
       fb.style.borderColor = '#c8cdd5';
     });
     document.body.appendChild(fb);
+    return fb;
+  }
 
-    // Estado inicial: colapsado por defecto salvo que el usuario lo haya expandido
+  function applyState(col, fb) {
+    const sidebar = document.querySelector('.sidebar');
+    document.body.classList.toggle('sb-col', col);
+    if (sidebar) sidebar.classList.toggle('collapsed', col);
+    if (fb) {
+      fb.style.left = (col ? W_COL : W_EXP) + 'px';
+      fb.textContent = col ? '▶' : '◀';
+    }
+  }
+
+  window.toggleSidebar = function () {
+    const col = !document.body.classList.contains('sb-col');
+    localStorage.setItem('sqx_sidebar', col ? '1' : '0');
+    applyState(col, document.getElementById('sb-float'));
+  };
+
+  function init() {
+    injectStyles();
+    const fb = createFloatBtn();
+
+    // Deshabilitar transiciones durante el estado inicial
+    document.body.classList.add('sb-no-trans');
+
+    // Por defecto: colapsado (a menos que el usuario lo haya expandido explícitamente)
     const saved = localStorage.getItem('sqx_sidebar');
     const col = saved === null ? true : saved === '1';
-    apply(col ? W_COL : W_EXP, false);
+    applyState(col, fb);
+
+    // Re-habilitar transiciones después de 2 frames (garantiza que no hay flash)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.body.classList.remove('sb-no-trans');
+    }));
   }
 
   if (document.readyState === 'loading') {
