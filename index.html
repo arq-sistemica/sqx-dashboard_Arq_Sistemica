@@ -1521,6 +1521,10 @@ async function authGrant() {
   }
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('btn-save').disabled = false;
+  // Motor de auto-matching: vincula silenciosamente, detecta ambigüedades
+  const matchResult = autoMatchMagics();
+  if (matchResult.autoLinked > 0)
+    console.log(`Auto-match: ${matchResult.autoLinked} bots vinculados automáticamente`);
   renderAccountCheckboxes();
   render();
   renderMagicLinking();
@@ -1635,6 +1639,82 @@ function suggestMagicForBot(bot, magicSummary, usedMagics) {
   return bestScore >= 50 ? best : null;
 }
 
+// ── AUTO-MATCHING MAGIC → BOT ─────────────────────────────────
+// Corre al login. Vincula silenciosamente cuando hay match claro.
+// Solo deja al usuario intervenir en casos ambiguos.
+function autoMatchMagics() {
+  const ms = window._magicSummary || {};
+  if (!Object.keys(ms).length) return { autoLinked: 0, ambiguous: 0 };
+
+  // Bots ya locked no se tocan nunca más
+  const lockedMagics = new Set(
+    DB.filter(b => b.magic && b.magic_locked).map(b => String(b.magic))
+  );
+  const freshLocked = new Set(lockedMagics);
+
+  let autoLinked = 0;
+  const ambiguous = [];
+
+  // Procesar magics de mayor a menor cantidad de trades (más confiables primero)
+  const magicEntries = Object.entries(ms).sort((a, b) => b[1].count - a[1].count);
+
+  for (const [magic, info] of magicEntries) {
+    if (freshLocked.has(magic)) continue;
+    if (!info.topComment) continue;
+
+    // Bots disponibles: sin magic_locked y sin magic ya asignado en este ciclo
+    const available = DB.filter(b =>
+      !b.magic_locked && !freshLocked.has(String(b.magic || ''))
+    );
+
+    const candidates = available
+      .map(bot => ({ bot, score: _magicScore(bot.name, info.topComment) }))
+      .filter(x => x.score >= 80)
+      .sort((a, b) => b.score - a.score);
+
+    if (candidates.length === 0) continue;
+
+    const top    = candidates[0];
+    const second = candidates[1];
+
+    // Ambigüedad: dos candidatos con exactamente la misma puntuación
+    if (second && top.score === second.score) {
+      ambiguous.push({ magic, info, candidates: candidates.slice(0, 4).map(x => x.bot) });
+      continue;
+    }
+
+    // Ganador claro → vincular silenciosamente y bloquear
+    top.bot.magic        = Number(magic);
+    top.bot.magic_locked = true;
+    freshLocked.add(magic);
+    autoLinked++;
+  }
+
+  if (autoLinked > 0) {
+    markDirty();
+    window.LIVE = computeLiveMetrics(window._lastTrades || []);
+  }
+
+  window._magicAmbiguous  = ambiguous;
+  window._magicAutoLinked = autoLinked;
+  return { autoLinked, ambiguous: ambiguous.length };
+}
+
+function resolveAmbiguity(magic, botId) {
+  const bot = DB.find(b => b.id === botId);
+  if (!bot) return;
+  bot.magic        = Number(magic);
+  bot.magic_locked = true;
+  // Quitar de la lista de ambiguos
+  window._magicAmbiguous = (window._magicAmbiguous || []).filter(a => a.magic !== magic);
+  if (window._lastTrades) window.LIVE = computeLiveMetrics(window._lastTrades);
+  markDirty();
+  renderMagicLinking();
+  renderAlerts();
+  render();
+  alertOk(`✓ Magic ${magic} asignado a "${bot.name.slice(0, 40)}"`);
+}
+
 // ── ALERTAS LIVE (Capa 5) ───────────────────────────────────────
 function renderAlerts() {
   const panel = document.getElementById('alerts-panel');
@@ -1727,82 +1807,78 @@ function dismissAlerts() {
 function renderMagicLinking() {
   const card = document.getElementById('magic-link-card');
   if (!card) return;
-  const unlinked = DB.filter(b => !b.magic);
-  const ms = window._magicSummary || {};
-  if (!unlinked.length || !Object.keys(ms).length) { card.style.display = 'none'; return; }
 
-  document.getElementById('magic-pending-count').textContent =
-    unlinked.length + ' bot' + (unlinked.length !== 1 ? 's' : '') + ' sin vincular';
-  card.style.display = '';
+  const ambiguous  = window._magicAmbiguous  || [];
+  const autoLinked = window._magicAutoLinked || 0;
+  const ms         = window._magicSummary || {};
 
-  // Set de magic numbers ya asignados a bots (para excluirlos de sugerencias)
-  const usedMagics = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
-
-  const tbody = unlinked.map(bot => {
-    const sug = suggestMagicForBot(bot, ms, usedMagics);
-    const sugMagic   = sug ? sug.magic : '';
-    const sugComment = sug ? sug.info.topComment : '';
-    const sugCount   = sug ? sug.info.count : 0;
-    const sugSymbols = sug ? sug.info.symbols.slice(0,2).join(', ') : '';
-    const sugScore   = sug ? sug.score : 0;
-    const confBadge  = sugScore >= 90
-      ? `<span style="color:var(--green);font-size:10px">● Alta</span>`
-      : sugScore >= 70
-        ? `<span style="color:var(--amber);font-size:10px">● Media</span>`
-        : `<span style="color:#d97706;font-size:10px">● Baja</span>`;
-    return `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:7px 8px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${bot.name}">${bot.name}</td>
-      <td style="padding:7px 8px;font-size:11px;color:var(--text2)">${bot.symbol||'—'}</td>
-      <td style="padding:7px 8px;font-size:11px">
-        ${sugMagic
-          ? `<strong>${sugMagic}</strong> &mdash; <span style="color:var(--text2)">"${sugComment}"</span><br>
-             <span style="color:var(--text3);font-size:10px">${sugCount} trades · ${sugSymbols} · ${confBadge}</span>`
-          : `<span style="color:var(--text3)">Sin sugerencia</span>`}
-      </td>
-      <td style="padding:7px 8px">
-        <input type="number" id="magic-input-${bot.id}" value="${sugMagic}" placeholder="ej. 1234567"
-          style="width:110px;font-size:12px;padding:4px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--bg);color:var(--text)">
-      </td>
-      <td style="padding:7px 8px">
-        <button onclick="applyOneMagic('${bot.id}')" style="font-size:11px;padding:3px 10px">Vincular</button>
-      </td>
-    </tr>`;
-  }).join('');
-
-  // Magic numbers en trades que no están vinculados a ningún bot
+  // Ocultar panel si no hay ambigüedades ni orphans
+  const usedMagics  = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
   const orphanMagics = Object.entries(ms)
     .filter(([magic]) => !usedMagics.has(magic))
-    .sort((a,b) => b[1].count - a[1].count);
-  const orphanHtml = orphanMagics.length
-    ? `<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">
-          Magic numbers sin bot asignado (${orphanMagics.length})
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${orphanMagics.map(([magic, info]) =>
-            `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px">
-              <strong>${magic}</strong>
-              ${info.topComment ? `<span style="color:var(--text3)"> — "${info.topComment}"</span>` : ''}
-              <span style="color:var(--text3);margin-left:4px">${info.count} trades · ${info.symbols.slice(0,2).join('/')||'—'}</span>
-            </div>`
-          ).join('')}
-        </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:6px">Estos magic numbers tienen trades pero no están vinculados a ningún bot del dashboard. Cargá su CSV para vincularlos.</div>
-      </div>`
-    : '';
+    .sort((a, b) => b[1].count - a[1].count);
 
-  document.getElementById('magic-link-table').innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead><tr style="border-bottom:2px solid var(--border2)">
-        <th style="text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px">Bot</th>
-        <th style="text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px">Símbolo</th>
-        <th style="text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px">Sugerencia automática</th>
-        <th style="text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px">Magic Number</th>
-        <th style="padding:6px 8px"></th>
-      </tr></thead>
-      <tbody>${tbody}</tbody>
-    </table>
-    ${orphanHtml}`;
+  if (!ambiguous.length && !orphanMagics.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  // Título del panel
+  const pendingLabel = ambiguous.length
+    ? `⚠️ ${ambiguous.length} caso${ambiguous.length > 1 ? 's' : ''} requieren tu atención`
+    : `✓ Vinculación automática completa`;
+  document.getElementById('magic-pending-count').textContent = pendingLabel;
+  card.style.display = '';
+
+  // Tabla de ambigüedades
+  const ambiguousHtml = ambiguous.length ? `
+    <div style="margin-bottom:1rem">
+      <div style="font-size:12px;color:var(--amber);font-weight:600;margin-bottom:10px">
+        ⚠️ Los siguientes trades podrían pertenecer a más de un bot — elegí cuál es el correcto:
+      </div>
+      ${ambiguous.map(({ magic, info, candidates }) => `
+        <div style="border:1px solid var(--amber-border);border-radius:var(--radius-lg);padding:12px;margin-bottom:8px;background:var(--amber-bg)">
+          <div style="font-size:12px;font-weight:700;margin-bottom:6px">
+            Magic <strong>${magic}</strong>
+            — comment: <em>"${info.topComment}"</em>
+            <span style="font-size:10px;color:var(--text3);margin-left:6px">${info.count} trades · ${info.symbols.slice(0,2).join('/')}</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${candidates.map(bot => `
+              <button onclick="resolveAmbiguity('${magic}','${bot.id}')"
+                style="font-size:12px;padding:5px 14px;border-color:var(--amber-border);background:#fff">
+                ${bot.name.slice(0, 50)}
+              </button>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
+  // Orphans: magics con trades pero sin bot
+  const orphanHtml = orphanMagics.length ? `
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">
+        Magic numbers sin bot asignado (${orphanMagics.length})
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${orphanMagics.map(([magic, info]) =>
+          `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px">
+            <strong>${magic}</strong>
+            ${info.topComment ? `<span style="color:var(--text3)"> — "${info.topComment}"</span>` : ''}
+            <span style="color:var(--text3);margin-left:4px">${info.count} trades · ${info.symbols.slice(0,2).join('/')||'—'}</span>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:6px">
+        Estos magic numbers tienen trades pero no están vinculados a ningún bot. Cargá su CSV para vincularlos.
+      </div>
+    </div>` : '';
+
+  // Stats de auto-linking
+  const statsHtml = autoLinked > 0 ? `
+    <div style="font-size:12px;color:var(--green);margin-bottom:12px">
+      ✓ ${autoLinked} bot${autoLinked > 1 ? 's' : ''} vinculado${autoLinked > 1 ? 's' : ''} automáticamente
+    </div>` : '';
+
+  document.getElementById('magic-link-table').innerHTML = statsHtml + ambiguousHtml + orphanHtml;
 }
 
 function toggleMagicPanel() {
@@ -1821,8 +1897,8 @@ function applyOneMagic(botId) {
   if (!val || val <= 0) { alertErr('Ingresá un magic number válido (número entero positivo).'); return; }
   const bot = DB.find(b => b.id === botId);
   if (!bot) return;
-  bot.magic = val;
-  // También refrescar LIVE para incluir este bot
+  bot.magic        = val;
+  bot.magic_locked = true; // no se toca más por el motor automático
   if (window._lastTrades) window.LIVE = computeLiveMetrics(window._lastTrades);
   markDirty();
   renderMagicLinking();
