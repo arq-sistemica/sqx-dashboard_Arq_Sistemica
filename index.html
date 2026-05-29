@@ -2512,6 +2512,7 @@ async function mergeAndCleanDuplicates() {
 
   console.log(`=== FUSIÓN DE DUPLICADOS (${dupes.length} grupos) ===`);
   let merged = 0;
+  const toDelete = []; // IDs a borrar físicamente de Supabase
 
   dupes.forEach(group => {
     // Ordenar por score desc → el primero es el ganador
@@ -2533,7 +2534,9 @@ async function mergeAndCleanDuplicates() {
         winner.mt5Data = loser.mt5Data;
         console.log(`  → mt5Data transferido`);
       }
-      // Eliminar el perdedor
+      // Registrar ID para eliminar de Supabase
+      if (loser.id) toDelete.push(loser.id);
+      // Eliminar del array local
       const idx = DB.indexOf(loser);
       if (idx > -1) DB.splice(idx, 1);
       merged++;
@@ -2549,10 +2552,12 @@ async function mergeAndCleanDuplicates() {
   // Guardar en Supabase
   try {
     await sb.upsertBots(DB);
-    // Eliminar físicamente los bots huérfanos en Supabase
-    // (upsertBots con merge-duplicates no elimina, necesitamos delete explícito)
+    // Eliminar físicamente los bots fusionados de Supabase
+    for (const id of toDelete) {
+      try { await sb.deleteBot(id); } catch(e) { console.warn('No se pudo borrar bot', id, e); }
+    }
     setSyncStatus('✓ Guardado', '#1a7f4b');
-    alertOk(`✓ Fusión completa: ${merged} duplicado(s) eliminado(s) y guardado en Supabase.\nRevisar consola para el detalle.`);
+    alertOk(`✓ Fusión completa: ${merged} duplicado(s) eliminado(s) de Supabase.\nRevisar consola para el detalle.`);
   } catch(e) {
     alertErr('Error guardando: ' + e.message);
   }
