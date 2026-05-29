@@ -503,6 +503,15 @@
 }
 /* fin WEEKLY RANKING CSS */
 
+/* ── FILTRO DE CUENTAS MT5 ── */
+.acct-filters { display:flex; align-items:center; gap:8px; margin-bottom:1rem; flex-wrap:wrap; padding:10px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); }
+.acct-filters-lbl { font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; }
+.acct-cb-label { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); cursor:pointer; padding:4px 12px; border:1px solid var(--border); border-radius:20px; transition:all 0.12s; user-select:none; }
+.acct-cb-label:hover { border-color:var(--accent); color:var(--accent); }
+.acct-cb-label.checked { background:var(--accent-light); border-color:var(--accent); color:var(--accent); font-weight:600; }
+.acct-cb-clear { font-size:11px; color:var(--text3); padding:3px 10px; border:none; background:transparent; cursor:pointer; }
+.acct-cb-clear:hover { color:var(--red); background:transparent; }
+
 /* ── TABS INCUBACION / LIVE / FONDEO ── */
 .tabs-bar {
   display: flex;
@@ -604,11 +613,7 @@
     <span id="db-count" style="font-size:11px;color:var(--text3);margin-right:4px">24 bots guardados</span>
     <span id="sync-status" style="font-size:11px;margin-right:4px;color:rgb(217,119,6);">⏳ Guardando...</span>
 
-    <!-- Selector de cuenta MT5 -->
-    <div class="tb-dropdown" id="account-dd" style="display:none">
-      <button onclick="toggleAccountMenu(event)" id="account-dd-btn" style="font-size:12px;font-weight:600;color:var(--accent)">📊 MT5: Todas ▾</button>
-      <div class="tb-dropdown-menu" id="account-menu" style="min-width:240px"></div>
-    </div>
+    <!-- Selector de cuenta MT5 — reemplazado por checkboxes en panel INCUBACION -->
 
     <!-- Dropdown Ajustes -->
     <div class="tb-dropdown" id="settings-dd">
@@ -804,6 +809,9 @@
     <div class="stat"><div class="stat-lbl">Desde CSV</div><div class="stat-val blue" id="s-csv">24</div></div>
     <div class="stat" title="Bots con datos live de MT5 (magic number vinculado)"><div class="stat-lbl">Con datos live 📊</div><div class="stat-val" id="s-live" style="color:var(--green)">—</div></div>
   </div>
+
+  <!-- FILTRO DE CUENTAS MT5 -->
+  <div id="account-filters" style="display:none"></div>
 
   <!-- TABLE -->
   <div class="table-card">
@@ -1496,21 +1504,16 @@ async function authGrant() {
   try {
     const trades = await sb.getMyTrades();
     window._lastTrades = trades;
-    window._selectedAccount = null;        // reset al (re)login
+    window._selectedAccounts = new Set();  // reset filtro al (re)login
     window.LIVE = computeLiveMetrics(trades);
     window._magicSummary = buildMagicSummary(trades);
   } catch(e) {
     window.LIVE = {};
     window._magicSummary = {};
   }
-  try {
-    const accounts = await sb.getMyAccounts();
-    renderAccountSelector(accounts);
-  } catch(e) {
-    console.warn('No se pudieron cargar las cuentas MT5:', e.message);
-  }
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('btn-save').disabled = false;
+  renderAccountCheckboxes();
   render();
   renderMagicLinking();
   renderAlerts();
@@ -4450,66 +4453,65 @@ document.addEventListener('click', function(e) {
   if (dd && !dd.contains(e.target)) closeSettingsMenu();
 });
 
-// ── SELECTOR DE CUENTA MT5 ────────────────────────────────────
-window._selectedAccount = null;
-window._accounts = [];
+// ── FILTRO DE CUENTAS MT5 (checkboxes) ───────────────────────
+window._selectedAccounts = new Set(); // vacío = mostrar todas
 
-function renderAccountSelector(accounts) {
-  window._accounts = accounts || [];
-  const dd   = document.getElementById('account-dd');
-  const menu = document.getElementById('account-menu');
-  if (!dd || !menu) return;
-  if (!accounts || accounts.length === 0) { dd.style.display = 'none'; return; }
-  dd.style.display = 'block';
-  const sel = window._selectedAccount;
-  let html = `<button onclick="selectAccount(null)" style="${!sel ? 'font-weight:700;color:var(--accent)' : ''}">📊 Todas las cuentas</button>`;
-  for (const acc of accounts) {
-    const label   = acc.label && acc.label !== 'Principal' ? acc.label : '#' + acc.id;
-    const broker  = acc.broker ? `<span style="font-size:10px;color:var(--text3);margin-left:4px">${acc.broker}</span>` : '';
-    const active  = String(sel) === String(acc.id);
-    html += `<button onclick="selectAccount('${acc.id}')" style="${active ? 'font-weight:700;color:var(--accent)' : ''}">
-      ${label}${broker}
-    </button>`;
+function renderAccountCheckboxes() {
+  const trades    = window._lastTrades || [];
+  const container = document.getElementById('account-filters');
+  if (!container) return;
+
+  // Detectar cuentas únicas desde los trades (auto-descubrimiento)
+  const labels = [...new Set(trades.map(t => t.account_label).filter(Boolean))].sort();
+
+  // Solo mostrar si hay 2 o más cuentas
+  if (labels.length < 2) { container.style.display = 'none'; return; }
+  container.style.display = '';
+
+  const sel = window._selectedAccounts;
+  const countByLabel = {};
+  for (const t of trades) {
+    if (t.account_label) countByLabel[t.account_label] = (countByLabel[t.account_label] || 0) + 1;
   }
-  menu.innerHTML = html;
+
+  container.innerHTML = `<div class="acct-filters">
+    <span class="acct-filters-lbl">📊 Cuenta MT5:</span>
+    ${labels.map(lbl => `
+      <label class="acct-cb-label${sel.has(lbl) ? ' checked' : ''}"
+             onclick="toggleAccountFilter('${lbl}')">
+        ${lbl}
+        <span style="font-size:10px;color:inherit;opacity:0.7">${countByLabel[lbl] || 0} trades</span>
+      </label>`).join('')}
+    ${sel.size > 0
+      ? `<button class="acct-cb-clear" onclick="clearAccountFilter()">✕ Ver todas</button>`
+      : ''}
+  </div>`;
 }
 
-function selectAccount(id) {
-  window._selectedAccount = id || null;
+function toggleAccountFilter(label) {
+  const sel = window._selectedAccounts;
+  if (sel.has(label)) sel.delete(label);
+  else sel.add(label);
+  _applyAccountFilter();
+}
+
+function clearAccountFilter() {
+  window._selectedAccounts.clear();
+  _applyAccountFilter();
+}
+
+function _applyAccountFilter() {
   const allTrades = window._lastTrades || [];
-  const trades    = id
-    ? allTrades.filter(t => String(t.account_id) === String(id))
+  const sel       = window._selectedAccounts;
+  const trades    = sel.size > 0
+    ? allTrades.filter(t => sel.has(t.account_label))
     : allTrades;
   window.LIVE          = computeLiveMetrics(trades);
   window._magicSummary = buildMagicSummary(trades);
-  // Actualizar label del botón
-  const btn = document.getElementById('account-dd-btn');
-  if (btn) {
-    if (id) {
-      const acc = (window._accounts || []).find(a => String(a.id) === String(id));
-      const lbl = acc && acc.label && acc.label !== 'Principal' ? acc.label : '#' + id;
-      btn.textContent = `📊 ${lbl} ▾`;
-    } else {
-      btn.textContent = '📊 MT5: Todas ▾';
-    }
-  }
-  renderAccountSelector(window._accounts);
-  closeAccountMenu();
+  renderAccountCheckboxes();
   render();
   renderAlerts();
 }
-
-function toggleAccountMenu(e) {
-  e.stopPropagation();
-  document.getElementById('account-menu').classList.toggle('open');
-}
-function closeAccountMenu() {
-  document.getElementById('account-menu').classList.remove('open');
-}
-document.addEventListener('click', function(e) {
-  const dd = document.getElementById('account-dd');
-  if (dd && !dd.contains(e.target)) closeAccountMenu();
-});
 
 function openRanking() {
   try {
