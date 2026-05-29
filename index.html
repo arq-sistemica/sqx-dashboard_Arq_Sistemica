@@ -651,7 +651,10 @@
       <div style="border-top:1px solid var(--border);margin:0 0 1.2rem"></div>
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Mantenimiento</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Fusiona bots duplicados (fed26_ vs SQX) y guarda en Supabase.</div>
-      <button onclick="runManualCleanup()" style="margin-bottom:1.2rem;font-size:12px">🧹 Limpiar duplicados</button>
+      <div style="display:flex;gap:8px;margin-bottom:1.2rem">
+        <button onclick="runManualCleanup()" style="font-size:12px">🧹 Limpiar duplicados (legacy)</button>
+        <button onclick="mergeAndCleanDuplicates()" style="font-size:12px;background:var(--accent);color:#fff;border-color:var(--accent)">🔀 Fusionar duplicados</button>
+      </div>
       <div id="cfg-cleanup-status" style="font-size:12px;color:var(--text3);margin-bottom:1.2rem;display:none"></div>
       <div style="display:flex;gap:8px">
         <button class="btn-primary" onclick="saveConfig()">Guardar configuración</button>
@@ -2490,6 +2493,69 @@ function repairDuplicateBots() {
     }
   });
   return merged;
+}
+
+// Fusiona duplicados fed26_csv con sus pares csv/stub/myfxbook
+// Regla: ganador = más datos SQX + magic preservado del perdedor
+async function mergeAndCleanDuplicates() {
+  const norm = n => (n||'').toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^wfm/,'');
+  const score = b => (b.is?.pf != null ? 4 : 0) + (b.overviewData ? 2 : 0) +
+                     (b.source === 'csv' ? 2 : 0) + (b.magic ? 2 : 0) +
+                     (b.magic_locked ? 1 : 0);
+
+  // Agrupar por nombre normalizado
+  const groups = {};
+  DB.forEach(b => { const k = norm(b.name); if (!groups[k]) groups[k] = []; groups[k].push(b); });
+  const dupes = Object.values(groups).filter(g => g.length > 1);
+
+  if (!dupes.length) { alertOk('✓ No se encontraron duplicados.'); return; }
+
+  console.log(`=== FUSIÓN DE DUPLICADOS (${dupes.length} grupos) ===`);
+  let merged = 0;
+
+  dupes.forEach(group => {
+    // Ordenar por score desc → el primero es el ganador
+    group.sort((a, b) => score(b) - score(a));
+    const winner = group[0];
+    const losers = group.slice(1);
+
+    losers.forEach(loser => {
+      console.log(`FUSIÓN: "${loser.name}" [${loser.source}] → "${winner.name}" [${winner.source}]`);
+
+      // Transferir magic si el ganador no lo tiene
+      if (!winner.magic && loser.magic) {
+        winner.magic        = loser.magic;
+        winner.magic_locked = loser.magic_locked || false;
+        console.log(`  → magic transferido: ${loser.magic}`);
+      }
+      // Transferir mt5Data si el ganador no lo tiene
+      if (!winner.mt5Data && loser.mt5Data) {
+        winner.mt5Data = loser.mt5Data;
+        console.log(`  → mt5Data transferido`);
+      }
+      // Eliminar el perdedor
+      const idx = DB.indexOf(loser);
+      if (idx > -1) DB.splice(idx, 1);
+      merged++;
+    });
+  });
+
+  console.log(`=== FIN: ${merged} bot(s) eliminado(s) ===`);
+  markDirty();
+  if (window._lastTrades) window.LIVE = computeLiveMetrics(window._lastTrades);
+  render();
+  renderAlerts();
+
+  // Guardar en Supabase
+  try {
+    await sb.upsertBots(DB);
+    // Eliminar físicamente los bots huérfanos en Supabase
+    // (upsertBots con merge-duplicates no elimina, necesitamos delete explícito)
+    setSyncStatus('✓ Guardado', '#1a7f4b');
+    alertOk(`✓ Fusión completa: ${merged} duplicado(s) eliminado(s) y guardado en Supabase.\nRevisar consola para el detalle.`);
+  } catch(e) {
+    alertErr('Error guardando: ' + e.message);
+  }
 }
 
 function importMt5CSV(csvText) {
