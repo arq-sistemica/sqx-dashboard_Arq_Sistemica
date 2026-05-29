@@ -1641,12 +1641,20 @@ function suggestMagicForBot(bot, magicSummary, usedMagics) {
 
 // ── AUTO-MATCHING MAGIC → BOT ─────────────────────────────────
 // Corre al login. Vincula silenciosamente cuando hay match claro.
-// Solo deja al usuario intervenir en casos ambiguos.
+// Distingue duplicados de formato (resuelve solo) de ambigüedades reales.
+
+// Elige el mejor bot entre duplicados de formato (mismo nombre normalizado)
+function _pickBestDuplicate(bots) {
+  return bots.slice().sort((a, b) => {
+    const s = x => (x.is?.pf != null ? 4 : 0) + (x.overviewData ? 2 : 0) + (x.source === 'csv' ? 1 : 0);
+    return s(b) - s(a);
+  })[0];
+}
+
 function autoMatchMagics() {
   const ms = window._magicSummary || {};
   if (!Object.keys(ms).length) return { autoLinked: 0, ambiguous: 0 };
 
-  // Bots ya locked no se tocan nunca más
   const lockedMagics = new Set(
     DB.filter(b => b.magic && b.magic_locked).map(b => String(b.magic))
   );
@@ -1655,14 +1663,12 @@ function autoMatchMagics() {
   let autoLinked = 0;
   const ambiguous = [];
 
-  // Procesar magics de mayor a menor cantidad de trades (más confiables primero)
   const magicEntries = Object.entries(ms).sort((a, b) => b[1].count - a[1].count);
 
   for (const [magic, info] of magicEntries) {
     if (freshLocked.has(magic)) continue;
     if (!info.topComment) continue;
 
-    // Bots disponibles: sin magic_locked y sin magic ya asignado en este ciclo
     const available = DB.filter(b =>
       !b.magic_locked && !freshLocked.has(String(b.magic || ''))
     );
@@ -1677,17 +1683,49 @@ function autoMatchMagics() {
     const top    = candidates[0];
     const second = candidates[1];
 
-    // Ambigüedad: dos candidatos con exactamente la misma puntuación
-    if (second && top.score === second.score) {
-      ambiguous.push({ magic, info, candidates: candidates.slice(0, 4).map(x => x.bot) });
+    if (!second || top.score > second.score) {
+      // Ganador claro → vincular silenciosamente
+      top.bot.magic        = Number(magic);
+      top.bot.magic_locked = true;
+      freshLocked.add(magic);
+      autoLinked++;
       continue;
     }
 
-    // Ganador claro → vincular silenciosamente y bloquear
-    top.bot.magic        = Number(magic);
-    top.bot.magic_locked = true;
-    freshLocked.add(magic);
-    autoLinked++;
+    // Hay empate → analizar el tipo
+    const tied     = candidates.filter(x => x.score === top.score);
+    const tiedNorms = tied.map(x => _normName(x.bot.name));
+
+    // TIPO 1 — Duplicado de formato: todos los empatados tienen el mismo nombre normalizado
+    if (tiedNorms.every(n => n === tiedNorms[0])) {
+      const winner = _pickBestDuplicate(tied.map(x => x.bot));
+      winner.magic        = Number(magic);
+      winner.magic_locked = true;
+      freshLocked.add(magic);
+      autoLinked++;
+      continue;
+    }
+
+    // TIPO 2 — Empate por prefijo truncado: elegir el que tiene sufijo más corto
+    if (top.score === 90) {
+      const commentNorm = _normName(info.topComment);
+      const withExtra = tied.map(x => ({
+        bot:      x.bot,
+        extraLen: _normName(x.bot.name).length - commentNorm.length,
+      })).sort((a, b) => a.extraLen - b.extraLen);
+
+      if (withExtra[0].extraLen < withExtra[1].extraLen) {
+        // Uno claramente más corto → ganador por proximidad
+        withExtra[0].bot.magic        = Number(magic);
+        withExtra[0].bot.magic_locked = true;
+        freshLocked.add(magic);
+        autoLinked++;
+        continue;
+      }
+    }
+
+    // TIPO 3 — Ambigüedad real: bots genuinamente distintos → usuario elige
+    ambiguous.push({ magic, info, candidates: tied.map(x => x.bot) });
   }
 
   if (autoLinked > 0) {
