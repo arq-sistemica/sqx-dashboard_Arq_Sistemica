@@ -1525,6 +1525,9 @@ async function authGrant() {
   const matchResult = autoMatchMagics();
   if (matchResult.autoLinked > 0)
     console.log(`Auto-match: ${matchResult.autoLinked} bots vinculados automáticamente`);
+  const stubsCreated = autoCreateStubs();
+  if (stubsCreated > 0)
+    console.log(`Auto-stubs: ${stubsCreated} bots creados sin CSV`);
   renderAccountCheckboxes();
   render();
   renderMagicLinking();
@@ -1637,6 +1640,48 @@ function suggestMagicForBot(bot, magicSummary, usedMagics) {
     if (score > bestScore) { bestScore = score; best = { magic, info, score }; }
   }
   return bestScore >= 50 ? best : null;
+}
+
+// ── BOT STUB — helpers ────────────────────────────────────────
+// Detecta si un comment es un mensaje de cierre de MT5 ([tp xxx] / [sl xxx])
+// y NO un nombre de estrategia real
+function _isTpSlComment(comment) {
+  if (!comment) return true;
+  const c = comment.trim().toLowerCase();
+  return c.startsWith('[tp') || c.startsWith('[sl') || c.startsWith('[so');
+}
+
+// Crea bots stub automáticamente para magic numbers con trades pero sin bot asignado
+// Solo para orphans con nombre real (ignora [tp/sl])
+function autoCreateStubs() {
+  const ms        = window._magicSummary || {};
+  const usedMagics = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
+  let created = 0;
+
+  for (const [magic, info] of Object.entries(ms)) {
+    if (usedMagics.has(magic)) continue;              // ya tiene bot
+    if (_isTpSlComment(info.topComment)) continue;    // comment de sistema, ignorar
+    if (!info.topComment) continue;
+
+    // Crear stub
+    const stub = {
+      id:          'stub_' + magic,
+      name:        info.topComment.replace(/_/g, ' '), // humanizar underscores
+      magic:       Number(magic),
+      magic_locked: true,
+      source:      'stub',
+      symbol:      info.symbols[0] || '',
+      tf:          '',
+      added:       new Date().toISOString().slice(0, 10),
+      notes:       '',
+    };
+    DB.push(stub);
+    usedMagics.add(magic);
+    created++;
+  }
+
+  if (created > 0) markDirty();
+  return created;
 }
 
 // ── AUTO-MATCHING MAGIC → BOT ─────────────────────────────────
@@ -2312,13 +2357,16 @@ function processFile(file) {
         // Normalizar: strip non-alnum + strip prefijo wfm (igual que fed26_parser.py)
         const _nN = n => { const r = (n||'').toLowerCase().replace(/[^a-z0-9]/g,''); return r.startsWith('wfm') ? r.slice(3) : r; };
         const mergeSQX = (existing, s) => {
+          const wasStub = existing.source === 'stub';
           existing.is = s.is; existing.oos = s.oos;
           existing.sqxFilter = s.sqxFilter;
           existing.symbol = existing.symbol || s.symbol;
           existing.tf = existing.tf || s.tf;
           existing.source = 'csv';
-          // Si es un bot fed26_ (MT5), adoptar el nombre completo de SQX
-          if (existing.id && existing.id.startsWith('fed26_')) existing.name = s.name;
+          // Si era stub o fed26_: adoptar nombre completo del CSV
+          if (wasStub || (existing.id && existing.id.startsWith('fed26_')))
+            existing.name = s.name;
+          // magic y magic_locked se preservan (no se tocan)
         };
 
         parsed.forEach(s => {
@@ -2817,7 +2865,9 @@ function render() {
     const st = fails.length===0?'ok':fails.length<=2?'warn':'fail';
     const badge = st==='ok'?'<span class="badge badge-ok" title="OK">✓</span>':st==='warn'?'<span class="badge badge-warn" title="Parcial">◑</span>':'<span class="badge badge-fail" title="Descartar">✗</span>';
     const sqxB = s.sqxFilter==='PASSED'?'<span class="sqx-ok">PASSED</span>':s.sqxFilter?`<span class="sqx-fail">${s.sqxFilter}</span>`:'—';
-    const srcT = `<span class="src-tag">${s.source==='csv'?'CSV':'Manual'}</span>`;
+    const srcT = s.source === 'stub'
+      ? `<span class="src-tag" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border)" title="Sin CSV — solo datos live">📥</span>`
+      : `<span class="src-tag">${s.source==='csv'?'CSV':'MANUAL'}</span>`;
     const nm = s.name.length>28?s.name.slice(0,28)+'…':s.name;
     const hasOv = s.overviewData ? ' 📋' : '';
     const hasMfx = (s.mt5Data || (window.LIVE && s.magic && window.LIVE[String(s.magic)])) ? ' 📊' : '';
