@@ -121,9 +121,10 @@ const sb = {
   },
 
   async getMyTrades() {
+    const headers = { ..._sbHeaders(sb.getToken()), 'Range': '0-9999', 'Range-Unit': 'items' };
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/trades?select=magic,profit,commission,swap,open_time,close_time,ticket,symbol,lots,type,open_price,close_price,comment,account_id,account_label&order=close_time&limit=10000`,
-      { headers: _sbHeaders(sb.getToken()) }
+      `${SUPABASE_URL}/rest/v1/trades?select=magic,profit,commission,swap,open_time,close_time,ticket,symbol,lots,type,open_price,close_price,comment,account_id,account_label&order=close_time`,
+      { headers }
     );
     if (!r.ok) return [];
     return r.json();
