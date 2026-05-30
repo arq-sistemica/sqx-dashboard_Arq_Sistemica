@@ -121,13 +121,19 @@ const sb = {
   },
 
   async getMyTrades() {
-    const headers = { ..._sbHeaders(sb.getToken()), 'Range': '0-9999', 'Range-Unit': 'items' };
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/trades?select=magic,profit,commission,swap,open_time,close_time,ticket,symbol,lots,type,open_price,close_price,comment,account_id,account_label&order=close_time`,
-      { headers }
-    );
-    if (!r.ok) return [];
-    return r.json();
+    const url = `${SUPABASE_URL}/rest/v1/trades?select=magic,profit,commission,swap,open_time,close_time,ticket,symbol,lots,type,open_price,close_price,comment,account_id,account_label&order=close_time`;
+    const batch = 1000;
+    let all = [], from = 0;
+    while (true) {
+      const headers = { ..._sbHeaders(sb.getToken()), 'Range': `${from}-${from+batch-1}`, 'Range-Unit': 'items' };
+      const r = await fetch(url, { headers });
+      if (!r.ok) break;
+      const data = await r.json();
+      all = all.concat(data);
+      if (data.length < batch) break;
+      from += batch;
+    }
+    return all;
   },
 
   async getMyAccounts() {
