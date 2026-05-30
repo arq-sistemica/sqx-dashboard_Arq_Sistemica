@@ -2901,6 +2901,12 @@ function getFiltered() {
       const lv = window.LIVE || {};
       return !!(s.mt5Data || (s.magic && lv[String(s.magic)]));
     }
+    // Filtro de cuenta activo: mostrar solo bots con trades en la cuenta seleccionada
+    const sel = window._selectedAccounts;
+    if (sel && sel.size > 0 && s.magic) {
+      const lv = window.LIVE || {};
+      if (!lv[String(s.magic)]) return false;
+    }
     return true;
   });
 }
