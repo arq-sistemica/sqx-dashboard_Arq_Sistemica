@@ -1668,6 +1668,22 @@ function autoCreateStubs() {
     if (_isTpSlComment(info.topComment)) continue;    // comment de sistema, ignorar
     if (!info.topComment) continue;
 
+    // Antes de crear stub, buscar fed26 sin magic con nombre similar al topComment
+    const normComment = _normName(info.topComment);
+    const fed26Match = DB.find(b =>
+      b.source === 'fed26_csv' && !b.magic &&
+      _normName(b.name) === normComment
+    );
+    if (fed26Match) {
+      fed26Match.magic        = Number(magic);
+      fed26Match.magic_locked = true;
+      usedMagics.add(magic);
+      created++;
+      markDirty();
+      console.log(`Auto-match fed26: ${fed26Match.name} → magic ${magic}`);
+      continue;
+    }
+
     // Crear stub
     const stub = {
       id:          'stub_' + magic,
