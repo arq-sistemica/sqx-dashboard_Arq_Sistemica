@@ -2896,7 +2896,7 @@ function getFiltered() {
     const sel = window._selectedAccounts;
     if (sel && sel.size > 0) {
       const lv = window.LIVE || {};
-      if (!(s.magic && lv[String(s.magic)])) return false;
+      if (!(s.mt5Data || (s.magic && lv[String(s.magic)]))) return false;
     }
     if (filt === 'all') return true;
     if (['ok','warn','fail'].includes(filt)) return st === filt;
