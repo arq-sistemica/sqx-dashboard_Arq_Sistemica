@@ -2892,6 +2892,12 @@ function getFiltered() {
     const st = fails.length === 0 ? 'ok' : fails.length <= 2 ? 'warn' : 'fail';
     const ms = !q || s.name.toLowerCase().includes(q) || (s.symbol||'').toLowerCase().includes(q);
     if (!ms) return false;
+    // Filtro de cuenta activo: tiene precedencia sobre cualquier otro filtro
+    const sel = window._selectedAccounts;
+    if (sel && sel.size > 0) {
+      const lv = window.LIVE || {};
+      if (!(s.magic && lv[String(s.magic)])) return false;
+    }
     if (filt === 'all') return true;
     if (['ok','warn','fail'].includes(filt)) return st === filt;
     if (filt === 'csv') return s.source === 'csv';
@@ -2900,12 +2906,6 @@ function getFiltered() {
     if (filt === 'live') {
       const lv = window.LIVE || {};
       return !!(s.mt5Data || (s.magic && lv[String(s.magic)]));
-    }
-    // Filtro de cuenta activo: mostrar solo bots con trades en la cuenta seleccionada
-    const sel = window._selectedAccounts;
-    if (sel && sel.size > 0) {
-      const lv = window.LIVE || {};
-      return !!(s.magic && lv[String(s.magic)]);
     }
     return true;
   });
