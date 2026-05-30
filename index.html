@@ -2903,9 +2903,9 @@ function getFiltered() {
     }
     // Filtro de cuenta activo: mostrar solo bots con trades en la cuenta seleccionada
     const sel = window._selectedAccounts;
-    if (sel && sel.size > 0 && s.magic) {
+    if (sel && sel.size > 0) {
       const lv = window.LIVE || {};
-      if (!lv[String(s.magic)]) return false;
+      return !!(s.magic && lv[String(s.magic)]);
     }
     return true;
   });
