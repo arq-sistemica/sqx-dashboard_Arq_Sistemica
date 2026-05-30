@@ -1598,6 +1598,69 @@ function computeLiveMetrics(trades) {
       account: winnerAccount[magic] || null,  // cuenta ganadora (más historial)
     };
   }
+  // Paso 3: merge con mt5Data histórico para bots que no tienen trades en Supabase
+  // o que tienen historial previo al primer trade de Supabase
+  const _parseDate = s => {
+    if (!s || s === '—') return 0;
+    return new Date(s.replace(/\./g, '-').replace(' ', 'T')).getTime();
+  };
+
+  for (const bot of (window.DB || DB)) {
+    if (!bot.magic || !bot.mt5Data?.tradeList?.length) continue;
+    const m = String(bot.magic);
+    const mt5List = bot.mt5Data.tradeList;
+
+    if (!result[m]) {
+      // Bot sin trades en Supabase — usar mt5Data completo
+      const netPs = mt5List.map(t => +(t.netProfit||0));
+      const wins   = netPs.filter(p => p > 0);
+      const losses = netPs.filter(p => p < 0);
+      const gW = wins.reduce((a,b)=>a+b,0);
+      const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
+      const pf = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
+      const winRate = mt5List.length ? +(wins.length/mt5List.length*100).toFixed(1) : 0;
+      let peak=0,eq=0,maxDD=0;
+      netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+      let cum=0;
+      const tradeList = mt5List.map(t => ({ ...t, cumProfit: (cum=+(cum+(t.netProfit||0)).toFixed(2)) }));
+      result[m] = {
+        pf, ddPct: +(maxDD*100).toFixed(2), winRate, gain: null,
+        trades: mt5List.length, balance: null, sharpe: null, zProb: null,
+        avgWinUsd:  wins.length   ? +(gW/wins.length).toFixed(2)   : null,
+        avgLossUsd: losses.length ? +(gL/losses.length).toFixed(2) : null,
+        netProfit:  +netPs.reduce((a,b)=>a+b,0).toFixed(2),
+        tradeList, source: 'mt5data', account: null,
+      };
+    } else {
+      // Bot con trades en Supabase — prepend mt5Data anterior al primer trade de Supabase
+      const sbList = result[m].tradeList;
+      const firstSbDate = sbList.length ? _parseDate(sbList[0].openDate) : Infinity;
+      const olderMt5 = mt5List.filter(t => _parseDate(t.closeDate) < firstSbDate);
+      if (olderMt5.length) {
+        const combined = [...olderMt5, ...sbList];
+        const netPs = combined.map(t => +(t.netProfit||0));
+        const wins   = netPs.filter(p => p > 0);
+        const losses = netPs.filter(p => p < 0);
+        const gW = wins.reduce((a,b)=>a+b,0);
+        const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
+        let peak=0,eq=0,maxDD=0,cum=0;
+        netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+        const tradeList = combined.map(t => ({ ...t, cumProfit: (cum=+(cum+(t.netProfit||0)).toFixed(2)) }));
+        result[m] = {
+          ...result[m],
+          pf:        gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0,
+          ddPct:     +(maxDD*100).toFixed(2),
+          winRate:   combined.length ? +(wins.length/combined.length*100).toFixed(1) : 0,
+          trades:    combined.length,
+          netProfit: +netPs.reduce((a,b)=>a+b,0).toFixed(2),
+          avgWinUsd:  wins.length   ? +(gW/wins.length).toFixed(2)   : null,
+          avgLossUsd: losses.length ? +(gL/losses.length).toFixed(2) : null,
+          tradeList,
+        };
+      }
+    }
+  }
+
   return result;
 }
 
