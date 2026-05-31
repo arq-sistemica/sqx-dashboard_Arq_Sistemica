@@ -134,6 +134,18 @@ window._magicSummary // {[magic]: {topComment, count, symbols}} — buildMagicSu
 4. `render()` siempre al final de cambios que afecten la tabla
 5. git add → commit → push al terminar cada feature
 
+## Reglas de eficiencia (ahorro de tokens)
+- **Contexto primero**: leer archivos relevantes antes de escribir código. Si falta contexto, preguntar.
+- **Edit, nunca Write** en archivos existentes salvo que el cambio sea >80% del archivo.
+- **No releer** archivos ya leídos en la misma conversación.
+- **Leer solo lo necesario**: usar `offset` y `limit` — nunca leer el archivo completo si solo se necesita una sección.
+- **Paralelizar tool calls**: leer múltiples archivos independientes en un solo mensaje.
+- **Validar antes de declarar hecho**: verificar que funciona antes de decir "listo".
+- **Soluciones mínimas**: implementar solo lo pedido. Sin abstracciones, helpers ni features extra.
+- **Sin narración**: no describir el plan antes de ejecutar ni copiar código editado en la respuesta.
+- **Sin charla**: no usar "Excelente", "Perfecto", "Gran idea". Ir directo al trabajo.
+- **Grep/Read antes que Agent**: Agent solo para búsquedas amplias o tareas complejas.
+
 ## Pendiente / Próximos pasos
 1. **Instalar TradeCapture_v3 v3.10 en ambos VPS** — reemplazar archivo en MetaEditor, compilar, reiniciar EA, borrar GlobalVariables tc3_*
 2. **Asignar magic numbers** — usar el panel "🔗 Vincular Magic Numbers" en el dashboard al hacer login
