@@ -346,6 +346,7 @@
               <th>#</th>
               <th onclick="wrSort('name')">ESTRATEGIA</th>
               <th onclick="wrSort('symbol')">SÍMBOLO</th>
+              <th onclick="wrSort('estac')">ESTAC. ↕</th>
               <th onclick="wrSort('magic')">MAGIC</th>
               <th onclick="wrSort('pf_live')" id="th-pf">PF ↕</th>
               <th onclick="wrSort('dd_live')">DD % ↕</th>
@@ -580,7 +581,7 @@ function wrRender(bots) {
   const tbody = document.getElementById('wr-tbody');
   if (!tbody) return;
   if (!bots || bots.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" class="wr-empty">SIN DATOS — cargá los CSVs desde el dashboard</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" class="wr-empty">SIN DATOS — cargá los CSVs desde el dashboard</td></tr>`;
     return;
   }
 
@@ -633,6 +634,7 @@ function wrRender(bots) {
       <td><span class="wr-pos ${posClass}">${inactive ? '—' : '#' + pos}</span></td>
       <td><div class="wr-name" title="${b.name}">${b.name}</div></td>
       <td class="wr-symbol">${b.symbol}</td>
+      <td>${getSeasonChip(b.symbol)}</td>
       <td class="wr-magic">${b.magic}</td>
       <td class="${pfClass}">${b.pf_live != null ? b.pf_live.toFixed(2) : '—'}</td>
       <td style="${ddStyle}">${b.dd_live != null ? b.dd_live.toFixed(2) + '%' : '—'}</td>
@@ -868,7 +870,31 @@ function computeLiveMetrics(trades) {
   return result;
 }
 
+// ── ESTACIONALIDAD ──────────────────────────────────────────────
+let seasonData = null;
+async function loadSeasonData() {
+  try {
+    const r = await fetch('seasonality_data.json?t=' + Date.now());
+    if (r.ok) seasonData = await r.json();
+  } catch(e) { /* opcional */ }
+}
+
+function getSeasonChip(sym) {
+  if (!seasonData || !sym) return '';
+  const clean = sym.toUpperCase().replace(/[^A-Z]/g, '');
+  const pair  = (seasonData.forex || {})[clean];
+  if (!pair) return '';
+  const month = new Date().getMonth();
+  const pos   = pair.pos && pair.pos[month];
+  if (pos == null) return '';
+  const cat   = (seasonData.categories || []).find(c => pos >= c.min && pos <= c.max);
+  if (!cat) return '';
+  const arrow = pos >= 55 ? '↑' : pos <= 45 ? '↓' : '→';
+  return `<span title="Estacionalidad: ${pos}%" style="font-size:10px;padding:1px 5px;border-radius:3px;font-weight:700;background:${cat.bg};color:${cat.text};margin-left:4px;white-space:nowrap">${pos}%${arrow}</span>`;
+}
+
 async function initRanking() {
+  await loadSeasonData();
   // 1. Si autenticado → siempre cargar frescos de Supabase (bots + trades)
   if (typeof sb !== 'undefined' && sb.isAuthenticated()) {
     try {
