@@ -14,8 +14,34 @@
   }
   document.head.appendChild(styleEl);
 
+  // CSS mobile — inyectado una vez, siempre activo
+  var mobileStyleEl = document.createElement('style');
+  mobileStyleEl.id = 'sb-mobile';
+  mobileStyleEl.textContent =
+    '.mobile-nav{display:none}' +
+    '@media(max-width:700px){' +
+      '.sidebar{display:none!important}' +
+      '#sb-float{display:none!important}' +
+      '.topbar,.main,.page-wrap{margin-left:0!important}' +
+      '.mobile-nav{' +
+        'display:flex!important;position:fixed;bottom:0;left:0;right:0;' +
+        'height:56px;background:var(--bg);border-top:1px solid var(--border);' +
+        'z-index:200;justify-content:space-around;align-items:center' +
+      '}' +
+      '.mobile-nav a{' +
+        'display:flex;flex-direction:column;align-items:center;gap:2px;' +
+        'font-size:10px;font-weight:600;color:var(--text3);text-decoration:none;' +
+        'padding:4px 6px;border-radius:6px;min-width:0;flex:1;text-align:center' +
+      '}' +
+      '.mobile-nav a.active{color:var(--accent)}' +
+      '.mobile-nav a .mn-icon{font-size:18px;line-height:1;display:block}' +
+      '.main,.page-wrap{padding-bottom:70px!important}' +
+      '.tabs-bar{overflow-x:auto;-webkit-overflow-scrolling:touch}' +
+    '}';
+  document.head.appendChild(mobileStyleEl);
+
   function buildCollapsed() {
-    return '.topbar,.main,.page-wrap{margin-left:' + W_COL + 'px!important}' +
+    return '@media(min-width:701px){.topbar,.main,.page-wrap{margin-left:' + W_COL + 'px!important}}' +
       '.sidebar{width:' + W_COL + 'px!important;overflow:hidden!important}' +
       '.sidebar .nl,.sidebar .nav-section-lbl,.sidebar-logo-text,' +
       '.sidebar-footer{display:none!important}' +
@@ -24,11 +50,11 @@
   }
 
   function buildExpanded() {
-    return '.topbar,.main,.page-wrap{margin-left:' + W_EXP + 'px!important}';
+    return '@media(min-width:701px){.topbar,.main,.page-wrap{margin-left:' + W_EXP + 'px!important}}';
   }
 
   var CSS_TRANS =
-    '.topbar,.main,.page-wrap{transition:margin-left .25s ease}' +
+    '@media(min-width:701px){.topbar,.main,.page-wrap{transition:margin-left .25s ease}}' +
     '.sidebar{transition:width .25s ease}';
 
   function applyState(withTransition) {
@@ -88,6 +114,15 @@
       fb.style.borderColor = '#c8cdd5';
     });
     document.body.appendChild(fb);
+
+    // Auto-highlight mobile nav según página activa
+    var page = location.pathname.split('/').pop() || 'index.html';
+    if (!page) page = 'index.html';
+    var links = document.querySelectorAll('.mobile-nav a');
+    for (var i = 0; i < links.length; i++) {
+      var href = links[i].getAttribute('href');
+      if (href === page) links[i].classList.add('active');
+    }
 
     // Agregar transiciones después del primer paint
     requestAnimationFrame(function () {
