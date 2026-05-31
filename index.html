@@ -1524,6 +1524,7 @@ async function authGrant() {
     const trades = await sb.getMyTrades();
     window._lastTrades = trades;
     window._selectedAccounts = new Set();  // reset filtro al (re)login
+    window._filteredMagics   = null;
     window.LIVE = computeLiveMetrics(trades);
     window._magicSummary = buildMagicSummary(trades);
   } catch(e) {
@@ -2971,11 +2972,9 @@ function getFiltered() {
     const st = fails.length === 0 ? 'ok' : fails.length <= 2 ? 'warn' : 'fail';
     const ms = !q || s.name.toLowerCase().includes(q) || (s.symbol||'').toLowerCase().includes(q);
     if (!ms) return false;
-    // Filtro de cuenta activo: tiene precedencia sobre cualquier otro filtro
-    const sel = window._selectedAccounts;
-    if (sel && sel.size > 0) {
-      const lv = window.LIVE || {};
-      if (!(s.magic && lv[String(s.magic)])) return false;
+    // Filtro de cuenta activo: muestra solo bots con magic en la cuenta seleccionada
+    if (window._filteredMagics) {
+      if (!s.magic || !window._filteredMagics.has(String(s.magic))) return false;
     }
     if (filt === 'all') return true;
     if (['ok','warn','fail'].includes(filt)) return st === filt;
@@ -4863,6 +4862,9 @@ function _applyAccountFilter() {
   const trades    = sel.size > 0
     ? allTrades.filter(t => sel.has(String(t.account_id)))
     : allTrades;
+  window._filteredMagics = sel.size > 0
+    ? new Set(trades.map(t => String(t.magic)).filter(m => m && m !== '0'))
+    : null;
   window.LIVE          = computeLiveMetrics(trades, sel.size > 0);
   window._magicSummary = buildMagicSummary(trades);
   renderAccountCheckboxes();
