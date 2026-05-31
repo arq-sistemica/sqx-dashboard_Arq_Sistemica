@@ -1,3 +1,21 @@
+# Datos sensibles — NUNCA commitear
 vps_secrets.py
-db_data_full.json
+fed26_trades_*.csv
+db_data*.json
+db_data_*.json
+myfxbook_output.json
+.json/
+tradecapture/
+*.csv
+
+# Claude Code interno
+.claude/
+
+# Snapshots y backups
+sqx_dashboard_*.json
+*_backup.*
+old_*.html
 *.bak
+
+# Node
+node_modules/
