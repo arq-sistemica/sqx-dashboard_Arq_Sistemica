@@ -919,7 +919,6 @@
             <th onclick="sort('sqxFilter')">SQX</th>
             <th onclick="sort('pf')">PF</th>
             <th onclick="sort('pf_live')" title="Profit Factor calculado desde trades reales MT5">PF⚡</th>
-            <th>DD% Live</th>
             <th>Equity</th>
             <th onclick="sort('cagr')">Ann.Ret%</th>
             <th onclick="sort('wr')">W/L</th>
@@ -3036,7 +3035,7 @@ function render() {
     document.getElementById('t-sub').textContent = 'Sin datos cargados';
   }
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="14">Sin resultados. Arrastrá un CSV de SQX o agregá manualmente.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="13">Sin resultados. Arrastrá un CSV de SQX o agregá manualmente.</td></tr>`;
     updateBotDropdown(); return;
   }
   const _getLivePf = s => {
@@ -3075,12 +3074,6 @@ function render() {
     const dirCell = s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':s.direction==='Both'?'<span class="dir-both">BOTH</span>':'<span style="color:#c0c4ce">—</span>';
     const seasonChip = getSeasonChip(s.symbol);
     const livePf = _getLivePf(s);
-    const liveDDCell = (() => {
-      const lv = window.LIVE?.[String(s.magic)];
-      return lv?.ddPct != null
-        ? `<td style="padding:4px 6px;min-width:70px">${renderDD(lv.ddPct)}</td>`
-        : `<td style="color:var(--text3);text-align:center;font-size:11px">-</td>`;
-    })();
     const liveSparkCell = (() => {
       const lv = window.LIVE?.[String(s.magic)];
       return `<td style="padding:2px 6px">${renderSparkline(lv?.tradeList)}</td>`;
@@ -3096,10 +3089,9 @@ function render() {
       <td>${sqxB}</td>
       <td class="${pfCls(d.pf)}">${f(d.pf)}</td>
       ${livePfCell}
-      ${liveDDCell}
       ${liveSparkCell}
       <td class="${cls('cagr',d.cagr)}">${d.cagr!==null?f(d.cagr)+'%':'—'}</td>
-      <td style="padding:4px 6px;min-width:70px">${renderWR(d.wr)}</td>
+      <td class="${cls('wr',d.wr)}">${f(d.wr)}</td>
       <td class="${cls('trades',d.trades)}">${d.trades!==null?d.trades:'—'}</td>
       <td class="${cls('sharpe',d.sharpe)}">${f(d.sharpe)}</td>
       <td>${badge}</td>
@@ -3244,6 +3236,26 @@ function buildFichaHTML(s, idx) {
       ${s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':s.direction==='Both'?'<span class="dir-both">BOTH</span>':''}
       <span class="badge ${badgeCls}" title="${st==='ok'?'OK':st==='warn'?'Parcial':'Descartar'}">${stLabel}</span>
       <span style="font-size:11px;color:#9098a8">Cargado: ${s.added||'—'}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#9098a8">
+        Magic:
+        <input
+          type="number"
+          value="${s.magic||''}"
+          placeholder="—"
+          onclick="event.stopPropagation()"
+          onchange="(function(el){
+            const bot = DB[${idx}];
+            if (!bot) return;
+            const v = parseInt(el.value);
+            bot.magic = isNaN(v) ? null : v;
+            bot.magic_locked = !!bot.magic;
+            markDirty();
+            saveToSupabase();
+            render();
+          })(this)"
+          style="width:90px;padding:1px 6px;border:1px solid #d0d5dd;border-radius:4px;font-size:11px;color:#111318"
+        />
+      </span>
       <button onclick="event.stopPropagation();deleteBot('${s.id}',${idx})"
         style="margin-left:auto;width:30px;height:30px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#b91c1c;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0"
         title="Eliminar esta estrategia de la base de datos">🗑</button>
