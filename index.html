@@ -1754,6 +1754,36 @@ function _nameScore(nameA, nameB) {
   return Math.max(charScore, jac);
 }
 
+function diagnosticoDuplicados(threshold = 70) {
+  const bySymbol = {};
+  DB.filter(b => b.symbol).forEach(b => {
+    (bySymbol[b.symbol] = bySymbol[b.symbol] || []).push(b);
+  });
+  const rows = [];
+  for (const [symbol, bots] of Object.entries(bySymbol)) {
+    for (let i = 0; i < bots.length; i++) {
+      for (let j = i + 1; j < bots.length; j++) {
+        const score = _nameScore(bots[i].name, bots[j].name);
+        if (score >= threshold) {
+          rows.push({
+            símbolo: symbol,
+            'bot A': bots[i].name,
+            'bot B': bots[j].name,
+            score,
+            'magic A': bots[i].magic ?? '—',
+            'magic B': bots[j].magic ?? '—',
+          });
+        }
+      }
+    }
+  }
+  if (!rows.length) { console.log('Sin duplicados potenciales.'); return; }
+  rows.sort((a, b) => b.score - a.score);
+  console.table(rows);
+  console.log(`${rows.length} pares con score ≥ ${threshold}`);
+  return rows;
+}
+
 function suggestMagicForBot(bot, magicSummary, usedMagics) {
   let best = null, bestScore = 0;
   for (const [magic, info] of Object.entries(magicSummary)) {
