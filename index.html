@@ -3125,15 +3125,20 @@ function renderWR(v) {
 
 function renderSparkline(tradeList) {
   if (!tradeList || tradeList.length < 2) return '<span style="color:var(--text3)">—</span>';
-  const profits = tradeList.map(t => t.cumProfit ?? t.netProfit ?? 0);
+  const sorted = [...tradeList].sort((a, b) => {
+    const da = a.closeDate || a.openDate || '';
+    const db = b.closeDate || b.openDate || '';
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
+  let cum = 0;
+  const profits = sorted.map(t => { cum += t.netProfit ?? 0; return cum; });
   const mn = Math.min(...profits), mx = Math.max(...profits);
   const range = mx - mn || 1;
   const W = 80, H = 28;
   const pts = profits.map((v, i) =>
     `${(i/(profits.length-1)*W).toFixed(1)},${(H - ((v-mn)/range*H)).toFixed(1)}`
   ).join(' ');
-  const isUp = profits[profits.length-1] >= profits[0];
-  const color = isUp ? '#1a7f4b' : '#b91c1c';
+  const color = profits[profits.length-1] >= 0 ? '#1a7f4b' : '#b91c1c';
   return `<svg width="${W}" height="${H}" style="display:block">
     <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/>
   </svg>`;
