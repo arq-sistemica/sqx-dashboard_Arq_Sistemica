@@ -105,10 +105,10 @@
   .btn-row{display:flex;gap:8px;flex-wrap:wrap}
   .form-err{display:none;color:var(--red);font-size:12px;margin-top:8px}
   .save-notice{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--amber);display:none;font-weight:500}
-  .summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:1.25rem}
-  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem}
-  .stat-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:4px}
-  .stat-val{font-size:26px;font-weight:700;line-height:1.1;color:var(--text)}
+  .summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:0.75rem}
+  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem 0.625rem}
+  .stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:2px}
+  .stat-val{font-size:13px;font-weight:700;line-height:1.1;color:var(--text)}
   .stat-val.green{color:var(--green)}.stat-val.amber{color:#d97706}.stat-val.red{color:var(--red)}.stat-val.blue{color:var(--blue)}
   .table-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:clip}
   .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -1556,7 +1556,7 @@ async function authGrant() {
   if (savedSubTab) switchSubTab(savedSubTab);
 }
 
-function computeLiveMetrics(trades) {
+function computeLiveMetrics(trades, skipMt5Merge = false) {
   // Paso 1: agrupar por magic → por cuenta
   const byMagicAccount = {};
   for (const t of trades) {
@@ -1616,6 +1616,7 @@ function computeLiveMetrics(trades) {
       account: winnerAccount[magic] || null,  // cuenta ganadora (más historial)
     };
   }
+  if (!skipMt5Merge) {
   // Paso 3: merge con mt5Data histórico para bots que no tienen trades en Supabase
   // o que tienen historial previo al primer trade de Supabase
   const _parseDate = s => {
@@ -1678,6 +1679,7 @@ function computeLiveMetrics(trades) {
       }
     }
   }
+  } // end if (!skipMt5Merge)
 
   return result;
 }
@@ -2973,7 +2975,7 @@ function getFiltered() {
     const sel = window._selectedAccounts;
     if (sel && sel.size > 0) {
       const lv = window.LIVE || {};
-      if (!(s.mt5Data || (s.magic && lv[String(s.magic)]))) return false;
+      if (!(s.magic && lv[String(s.magic)])) return false;
     }
     if (filt === 'all') return true;
     if (['ok','warn','fail'].includes(filt)) return st === filt;
@@ -4861,7 +4863,7 @@ function _applyAccountFilter() {
   const trades    = sel.size > 0
     ? allTrades.filter(t => sel.has(String(t.account_id)))
     : allTrades;
-  window.LIVE          = computeLiveMetrics(trades);
+  window.LIVE          = computeLiveMetrics(trades, sel.size > 0);
   window._magicSummary = buildMagicSummary(trades);
   renderAccountCheckboxes();
   render();
