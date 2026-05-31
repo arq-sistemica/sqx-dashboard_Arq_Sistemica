@@ -1765,6 +1765,12 @@ function _nameScore(nameA, nameB) {
   return Math.max(charScore, jac);
 }
 
+const _getBotPF   = b => b.is?.pf  ?? b.oos?.pf  ?? b.pf  ?? null;
+const _getBotDD   = b => b.is?.dd  ?? b.oos?.dd  ?? b.dd  ?? null;
+const _hasSQX     = b => !!(b.is || b.oos);
+const _liveCount  = b => window.LIVE?.[String(b.magic)]?.tradeList?.length ?? 0;
+const _tradeCount = b => (b.mt5Data?.tradeList?.length ?? 0) + _liveCount(b);
+
 function diagnosticoDuplicados(threshold = 70) {
   const bySymbol = {};
   DB.filter(b => b.symbol).forEach(b => {
@@ -1774,24 +1780,36 @@ function diagnosticoDuplicados(threshold = 70) {
   for (const [symbol, bots] of Object.entries(bySymbol)) {
     for (let i = 0; i < bots.length; i++) {
       for (let j = i + 1; j < bots.length; j++) {
-        const score = _nameScore(bots[i].name, bots[j].name);
-        if (score >= threshold) {
-          rows.push({
-            símbolo: symbol,
-            'bot A': bots[i].name,
-            'bot B': bots[j].name,
-            score,
-            'magic A': bots[i].magic ?? '—',
-            'magic B': bots[j].magic ?? '—',
-          });
+        const a = bots[i], b = bots[j];
+        const ns = _nameScore(a.name, b.name);
+        if (ns < threshold) continue;
+        const bothSQX = _hasSQX(a) && _hasSQX(b);
+        let caso, confirmado;
+        if (bothSQX) {
+          const pfA = _getBotPF(a), pfB = _getBotPF(b);
+          const ddA = _getBotDD(a), ddB = _getBotDD(b);
+          const metricsOk = pfA != null && pfB != null && ddA != null && ddB != null
+            && Math.abs(pfA - pfB) <= 0.05 && Math.abs(ddA - ddB) <= 0.05;
+          caso = 'A (ambos SQX)'; confirmado = ns >= 90 && metricsOk;
+        } else {
+          caso = 'B (sin SQX)'; confirmado = ns >= 90;
         }
+        rows.push({
+          estado: confirmado ? '✅ CONFIRMADO' : '⚠️ sospechoso',
+          caso, símbolo: symbol,
+          'bot A': a.name, 'bot B': b.name, nameScore: ns,
+          'pf A': _getBotPF(a) ?? '—', 'pf B': _getBotPF(b) ?? '—',
+          'dd A': _getBotDD(a) ?? '—', 'dd B': _getBotDD(b) ?? '—',
+          'magic A': a.magic ?? '—', 'magic B': b.magic ?? '—',
+        });
       }
     }
   }
-  if (!rows.length) { console.log('Sin duplicados potenciales.'); return; }
-  rows.sort((a, b) => b.score - a.score);
+  if (!rows.length) { console.log('Sin duplicados potenciales.'); return []; }
+  rows.sort((a, b) => b.estado.localeCompare(a.estado) || b.nameScore - a.nameScore);
   console.table(rows);
-  console.log(`${rows.length} pares con score ≥ ${threshold}`);
+  const conf = rows.filter(r => r.estado.includes('CONFIRMADO')).length;
+  console.log(`${conf} confirmados, ${rows.length - conf} sospechosos (threshold=${threshold})`);
   return rows;
 }
 
@@ -2675,48 +2693,95 @@ function repairDuplicateBots() {
   return merged;
 }
 
-// Fusiona duplicados fed26_csv con sus pares csv/stub/myfxbook
-// Regla: ganador = más datos SQX + magic preservado del perdedor
-async function mergeAndCleanDuplicates() {
-  const norm = n => (n||'').toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^wfm/,'');
-  const score = b => (b.is?.pf != null ? 4 : 0) + (b.overviewData ? 2 : 0) +
-                     (b.source === 'csv' ? 2 : 0) + (b.magic ? 2 : 0) +
-                     (b.magic_locked ? 1 : 0);
+// Fusiona duplicados detectados con criterio condicional A/B.
+// dryRun=true → solo muestra el plan en consola, sin modificar nada.
+// dryRun=false → aplica la fusión, upsert en Supabase, borra duplicados.
+async function mergeAndCleanDuplicates(dryRun = false) {
+  // ── Detección: mismo symbol + nameScore >= 90 + métricas si ambos tienen SQX ──
+  const isDupe = (a, b) => {
+    if (a.symbol !== b.symbol) return false;
+    if (_nameScore(a.name, b.name) < 90) return false;
+    if (_hasSQX(a) && _hasSQX(b)) {
+      const pfA = _getBotPF(a), pfB = _getBotPF(b);
+      const ddA = _getBotDD(a), ddB = _getBotDD(b);
+      if (pfA != null && pfB != null && Math.abs(pfA - pfB) > 0.05) return false;
+      if (ddA != null && ddB != null && Math.abs(ddA - ddB) > 0.05) return false;
+    }
+    return true;
+  };
 
-  // Agrupar por nombre normalizado
-  const groups = {};
-  DB.forEach(b => { const k = norm(b.name); if (!groups[k]) groups[k] = []; groups[k].push(b); });
-  const dupes = Object.values(groups).filter(g => g.length > 1);
+  // ── Union-Find para agrupar duplicados transitivos ──
+  const parent = new Map(DB.map(b => [b.id, b.id]));
+  const find = id => { while (parent.get(id) !== id) { parent.set(id, parent.get(parent.get(id))); id = parent.get(id); } return id; };
+  const union = (a, b) => parent.set(find(a), find(b));
 
-  if (!dupes.length) { alertOk('✓ No se encontraron duplicados.'); return; }
+  for (let i = 0; i < DB.length; i++)
+    for (let j = i + 1; j < DB.length; j++)
+      if (isDupe(DB[i], DB[j])) union(DB[i].id, DB[j].id);
 
-  console.log(`=== FUSIÓN DE DUPLICADOS (${dupes.length} grupos) ===`);
-  let merged = 0;
-  const toDelete = []; // IDs a borrar físicamente de Supabase
+  const groups = new Map();
+  DB.forEach(b => { const r = find(b.id); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(b); });
+  const dupes = [...groups.values()].filter(g => g.length > 1);
 
+  if (!dupes.length) {
+    console.log('✓ No se encontraron duplicados confirmados.');
+    if (!dryRun) alertOk('✓ No se encontraron duplicados confirmados.');
+    return [];
+  }
+
+  // ── Selección de ganador y plan de fusión ──
+  const plan = [];
   dupes.forEach(group => {
-    // Ordenar por score desc → el primero es el ganador
-    group.sort((a, b) => score(b) - score(a));
+    group.sort((a, b) =>
+      _tradeCount(b) - _tradeCount(a) ||               // más trades → gana
+      (_hasSQX(b) ? 1 : 0) - (_hasSQX(a) ? 1 : 0) || // con SQX → gana
+      DB.indexOf(a) - DB.indexOf(b)                     // primero en DB → gana
+    );
     const winner = group[0];
     const losers = group.slice(1);
+    plan.push({ winner, losers });
+  });
 
+  // ── dryRun: mostrar plan y salir ──
+  if (dryRun) {
+    const report = [];
+    plan.forEach(({ winner, losers }) => losers.forEach(loser => {
+      report.push({
+        ganador: winner.name, perdedor: loser.name,
+        'trades ganador': _tradeCount(winner), 'trades perdedor': _tradeCount(loser),
+        symbol: winner.symbol,
+        caso: (_hasSQX(winner) && _hasSQX(loser)) ? 'A (ambos SQX)' : 'B (sin SQX)',
+      });
+    }));
+    console.log(`=== DRY RUN — ${report.length} fusión(es) pendiente(s) ===`);
+    console.table(report);
+    console.log('Para ejecutar: mergeAndCleanDuplicates(false)');
+    return report;
+  }
+
+  // ── Aplicar fusión ──
+  console.log(`=== FUSIÓN DE DUPLICADOS (${plan.length} grupos) ===`);
+  let merged = 0;
+  const toDelete = [];
+
+  plan.forEach(({ winner, losers }) => {
     losers.forEach(loser => {
-      console.log(`FUSIÓN: "${loser.name}" [${loser.source}] → "${winner.name}" [${winner.source}]`);
-
-      // Transferir magic si el ganador no lo tiene
-      if (!winner.magic && loser.magic) {
-        winner.magic        = loser.magic;
-        winner.magic_locked = loser.magic_locked || false;
-        console.log(`  → magic transferido: ${loser.magic}`);
+      console.log(`FUSIÓN: "${loser.name}" → "${winner.name}"`);
+      // SQX data: transferir si el ganador no lo tiene
+      for (const k of ['is','oos','overviewData','pseudocodigoData'])
+        if (!winner[k] && loser[k]) { winner[k] = loser[k]; console.log(`  → ${k} transferido`); }
+      // mt5Data: del que lo tenga (winner primero)
+      if (!winner.mt5Data && loser.mt5Data) { winner.mt5Data = loser.mt5Data; console.log(`  → mt5Data transferido`); }
+      // magic: del bot con más trades live; si empate o 0 → winner conserva el suyo
+      if (_liveCount(loser) > _liveCount(winner)) {
+        winner.magic = loser.magic; winner.magic_locked = true;
+        console.log(`  → magic transferido: ${loser.magic} (más trades live)`);
+      } else if (loser.magic_locked) {
+        winner.magic_locked = true;
       }
-      // Transferir mt5Data si el ganador no lo tiene
-      if (!winner.mt5Data && loser.mt5Data) {
-        winner.mt5Data = loser.mt5Data;
-        console.log(`  → mt5Data transferido`);
-      }
-      // Registrar ID para eliminar de Supabase
+      // name: humanizar
+      winner.name = winner.name.replace(/_+/g, ' ').trim();
       if (loser.id) toDelete.push(loser.id);
-      // Eliminar del array local
       const idx = DB.indexOf(loser);
       if (idx > -1) DB.splice(idx, 1);
       merged++;
@@ -2729,15 +2794,13 @@ async function mergeAndCleanDuplicates() {
   render();
   renderAlerts();
 
-  // Guardar en Supabase
   try {
     await sb.upsertBots(DB);
-    // Eliminar físicamente los bots fusionados de Supabase
     for (const id of toDelete) {
       try { await sb.deleteBot(id); } catch(e) { console.warn('No se pudo borrar bot', id, e); }
     }
     setSyncStatus('✓ Guardado', '#1a7f4b');
-    alertOk(`✓ Fusión completa: ${merged} duplicado(s) eliminado(s) de Supabase.\nRevisar consola para el detalle.`);
+    alertOk(`✓ Fusión completa: ${merged} duplicado(s) eliminado(s).\nRevisar consola para el detalle.`);
   } catch(e) {
     alertErr('Error guardando: ' + e.message);
   }
