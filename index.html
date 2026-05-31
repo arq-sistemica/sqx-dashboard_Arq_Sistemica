@@ -539,6 +539,15 @@
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
+/* ── SUB-TABS INCUBACION ── */
+.subtab-bar { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:1rem; }
+.subtab-btn { height:32px; padding:0 16px; border:none; border-bottom:2px solid transparent;
+  border-radius:0; background:transparent; color:var(--text3); font-size:12px; font-weight:600;
+  cursor:pointer; margin-bottom:-1px; transition:color 0.15s, border-color 0.15s; }
+.subtab-btn:hover { color:var(--text); }
+.subtab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+.subtab-panel { display:none; }
+.subtab-panel.active { display:block; }
 .tab-placeholder {
   display: flex;
   flex-direction: column;
@@ -794,14 +803,12 @@
     </div>
   </div>
 
-  <!-- ALERTAS LIVE (Capa 5) -->
-  <div id="alerts-panel" style="display:none;margin-bottom:1rem;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--bg)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px">🔔 Alertas Live</span>
-      <button onclick="dismissAlerts()" style="font-size:11px;padding:0 8px;height:22px;border-radius:3px">✕</button>
-    </div>
-    <div id="alerts-list" style="display:flex;flex-direction:column;gap:6px"></div>
+  <!-- SUB-TABS INCUBACION -->
+  <div class="subtab-bar">
+    <button class="subtab-btn active" id="subtab-btn-bots" onclick="switchSubTab('bots')">📋 Bots</button>
+    <button class="subtab-btn" id="subtab-btn-alertas" onclick="switchSubTab('alertas')">🔔 Alertas (0)</button>
   </div>
+  <div id="subtab-bots" class="subtab-panel active">
 
   <!-- SUMMARY -->
   <div class="summary-grid" id="sum-grid" style="display: grid;">
@@ -1459,6 +1466,19 @@ function switchTab(name) {
   if (saved && saved !== 'incubacion') switchTab(saved);
 })();
 
+function switchSubTab(name) {
+  ['bots','alertas'].forEach(t => {
+    document.getElementById('subtab-btn-' + t).classList.toggle('active', t === name);
+    document.getElementById('subtab-' + t).classList.toggle('active', t === name);
+  });
+  sessionStorage.setItem('sqx_incub_subtab', name);
+}
+// Restaurar sub-tab al recargar
+(function() {
+  const saved = sessionStorage.getItem('sqx_incub_subtab');
+  if (saved) switchSubTab(saved);
+})();
+
 // ── AUTH (Supabase) ────────────────────────────────────────────
 async function authInit() {
   if (sb.isAuthenticated()) { authGrant(); return; }
@@ -1487,7 +1507,6 @@ async function authLogin() {
 }
 
 async function authGrant() {
-  sessionStorage.removeItem('sqx_alerts_dismissed'); // reset al hacer login
   document.getElementById('auth-hint').textContent = 'Cargando bots desde Supabase...';
   try {
     const remoteBots = await sb.getBots();
@@ -1891,12 +1910,9 @@ async function resolveAmbiguity(magic, botId) {
 
 // ── ALERTAS LIVE (Capa 5) ───────────────────────────────────────
 function renderAlerts() {
-  const panel = document.getElementById('alerts-panel');
-  const list  = document.getElementById('alerts-list');
-  if (!panel || !list) return;
-
-  // Respeta el dismiss de sesión
-  if (sessionStorage.getItem('sqx_alerts_dismissed')) { panel.style.display = 'none'; return; }
+  const list = document.getElementById('alerts-list');
+  const btn  = document.getElementById('subtab-btn-alertas');
+  if (!list || !btn) return;
 
   const live = window.LIVE || {};
   const lastTrades = window._lastTrades || [];
@@ -1953,7 +1969,12 @@ function renderAlerts() {
     }
   });
 
-  if (!alerts.length) { panel.style.display = 'none'; return; }
+  btn.textContent = `🔔 Alertas (${alerts.length})`;
+
+  if (!alerts.length) {
+    list.innerHTML = '<div style="padding:20px 0;text-align:center;font-size:12px;color:var(--text3)">✓ Sin alertas activas</div>';
+    return;
+  }
 
   const C = {
     red:   { bg:'var(--red-bg)',   bd:'var(--red-border)',   col:'var(--red)'  },
@@ -1968,15 +1989,9 @@ function renderAlerts() {
       <span style="font-size:9px;font-weight:700;color:${c.col};background:${c.bg};border:1px solid ${c.bd};padding:2px 8px;border-radius:3px;flex-shrink:0;letter-spacing:0.3px">${a.badge}</span>
     </div>`;
   }).join('');
-
-  panel.style.display = 'block';
 }
 
-function dismissAlerts() {
-  sessionStorage.setItem('sqx_alerts_dismissed', '1');
-  const panel = document.getElementById('alerts-panel');
-  if (panel) panel.style.display = 'none';
-}
+function dismissAlerts() { switchSubTab('bots'); }
 
 function renderMagicLinking() {
   const card = document.getElementById('magic-link-card');
@@ -5237,6 +5252,10 @@ loadSeasonData();
 <div style="margin-top:3rem;padding:2.5rem 2rem;border-top:1px solid var(--border);background:var(--bg2);text-align:center;min-height:100px;display:flex;align-items:center;justify-content:center">
   <span style="font-size:12px;color:var(--text3);letter-spacing:0.3px">Arquitectura Sistémica — SQX Dashboard</span>
 </div>
+  </div><!-- /subtab-bots -->
+  <div id="subtab-alertas" class="subtab-panel">
+    <div id="alerts-list" style="display:flex;flex-direction:column;gap:6px;padding:4px 0"></div>
+  </div>
   </div><!-- /tab-incubacion -->
 
   <!-- ── PANEL LIVE ── -->
