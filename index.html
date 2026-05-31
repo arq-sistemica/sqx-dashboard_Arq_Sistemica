@@ -1743,6 +1743,17 @@ function _magicScore(botName, tradeComment) {
   return common >= 8 ? Math.round(common / Math.max(b.length, c.length) * 80) : 0;
 }
 
+function _nameScore(nameA, nameB) {
+  const charScore = _magicScore(nameA, nameB);
+  if (charScore >= 90) return charScore;
+  const words = s => new Set((s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(t=>t.length>=3));
+  const wa = words(nameA), wb = words(nameB);
+  const inter = [...wa].filter(t => wb.has(t)).length;
+  const union = new Set([...wa, ...wb]).size;
+  const jac = union > 0 ? Math.round(inter / union * 100) : 0;
+  return Math.max(charScore, jac);
+}
+
 function suggestMagicForBot(bot, magicSummary, usedMagics) {
   let best = null, bestScore = 0;
   for (const [magic, info] of Object.entries(magicSummary)) {
@@ -1776,23 +1787,28 @@ function autoCreateStubs() {
     if (_isTpSlComment(info.topComment)) continue;    // comment de sistema, ignorar
     if (!info.topComment) continue;
 
-    // Antes de crear stub, buscar fed26 sin magic con nombre similar al topComment
+    // Antes de crear stub — buscar cualquier bot sin magic con nombre idéntico (normalizado)
     const normComment = _normName(info.topComment);
-    const fed26Match = DB.find(b =>
-      b.source === 'fed26_csv' && !b.magic &&
-      _normName(b.name) === normComment
-    );
-    if (fed26Match) {
-      fed26Match.magic        = Number(magic);
-      fed26Match.magic_locked = true;
+    const exactMatch = DB.find(b => !b.magic && _normName(b.name) === normComment);
+    if (exactMatch) {
+      exactMatch.magic        = Number(magic);
+      exactMatch.magic_locked = true;
       usedMagics.add(magic);
       created++;
       markDirty();
-      console.log(`Auto-match fed26: ${fed26Match.name} → magic ${magic}`);
+      console.log(`Auto-match exact: ${exactMatch.name} → magic ${magic}`);
       continue;
     }
 
-    // Crear stub
+    // Si hay candidato con alta similitud pero no exacto → diferir al usuario, no crear stub
+    const softMatch = DB.find(b => !b.magic && _nameScore(b.name, info.topComment) >= 80);
+    if (softMatch) {
+      (window._magicAmbiguous = window._magicAmbiguous || []).push({ magic, info, candidates: [softMatch] });
+      console.log(`Soft-match deferred: "${softMatch.name}" ≈ "${info.topComment}" (magic ${magic})`);
+      continue;
+    }
+
+    // Solo si no hay match — crear stub
     const stub = {
       id:          'stub_' + magic,
       name:        info.topComment.replace(/_/g, ' '), // humanizar underscores
@@ -2512,6 +2528,9 @@ function processFile(file) {
             return xNorm === sNorm || xNorm.startsWith(sNorm) || sNorm.startsWith(xNorm);
           });
           if (fuzzyMatch) { mergeSQX(fuzzyMatch, s); merged++; return; }
+          // 3. Token-based fallback (cubre tokens en distinto orden)
+          const tokenMatch = DB.find(x => _nameScore(x.name, s.name) >= 80);
+          if (tokenMatch) { mergeSQX(tokenMatch, s); merged++; return; }
           DB.push(s); added++;
         });
         markDirty(); render(); updateRankingCache();
@@ -3973,7 +3992,13 @@ const nv = id => { const v=parseFloat(g(id)); return isNaN(v)?null:v; };
 const ni = id => { const v=parseInt(g(id)); return isNaN(v)?null:v; };
 
 function addManual() {
-  const name = g('f-name').trim(); if (!name) { showFE('Ingresá un nombre o Magic ID.'); return; } hideFE();
+  const name = g('f-name').trim(); if (!name) { showFE('Ingresá un nombre o Magic ID.'); return; }
+  const nn = _normName(name);
+  const exactDupe = DB.find(b => _normName(b.name) === nn);
+  if (exactDupe) { showFE(`Ya existe un bot con nombre similar: "${exactDupe.name}". Editá el existente o usá otro nombre.`); return; }
+  const softDupe = DB.find(b => _nameScore(b.name, name) >= 80);
+  if (softDupe && !confirm(`Posible duplicado: "${softDupe.name}"\n¿Crear de todas formas?`)) return;
+  hideFE();
   DB.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2), name, symbol:g('f-symbol'), tf:g('f-tf'), phase:g('f-phase'), direction:g('f-dir')||null, source:'manual', sqxFilter:'', added:new Date().toISOString().slice(0,10), notes:g('f-notes'), sqn:nv('f-sqn'), stag:ni('f-stag'), zp:nv('f-zp'), pf:nv('f-pf'), dd:nv('f-dd'), cagr:nv('f-cagr'), wr:nv('f-wr'), retdd:nv('f-retdd'), cagrdd:nv('f-cagrdd'), trades:ni('f-trades'), np:nv('f-np'), sharpe:nv('f-sharpe'), stability:nv('f-stability'), fitness:nv('f-fitness'), is:null, oos:null });
   markDirty(); clearForm(); render();
 }
