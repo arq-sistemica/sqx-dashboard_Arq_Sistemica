@@ -1475,14 +1475,6 @@ function switchSubTab(name) {
   sessionStorage.setItem('sqx_incub_subtab', name);
 }
 
-function applySidebarMargin() {
-  const sb = document.querySelector('.sidebar');
-  if (!sb) return;
-  const w = sb.offsetWidth;
-  document.querySelectorAll('.topbar,.main').forEach(el => el.style.marginLeft = w + 'px');
-}
-document.addEventListener('DOMContentLoaded', applySidebarMargin);
-window.addEventListener('resize', applySidebarMargin);
 
 // ── AUTH (Supabase) ────────────────────────────────────────────
 async function authInit() {
