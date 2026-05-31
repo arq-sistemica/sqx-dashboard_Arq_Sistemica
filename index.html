@@ -1743,11 +1743,22 @@ function _magicScore(botName, tradeComment) {
   return common >= 8 ? Math.round(common / Math.max(b.length, c.length) * 80) : 0;
 }
 
+const _STOP_TOKENS = new Set(['strategy','improved','wfm','sqx','bot','ea','the','and']);
+
 function _nameScore(nameA, nameB) {
   const charScore = _magicScore(nameA, nameB);
   if (charScore >= 90) return charScore;
-  const words = s => new Set((s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(t=>t.length>=3));
-  const wa = words(nameA), wb = words(nameB);
+  // Numeric sequences are the real identifier — if both have them and differ → not similar
+  const nums = s => (s.match(/\d+/g) || []);
+  const na = nums(nameA), nb = nums(nameB);
+  if (na.length && nb.length && na.join(',') !== nb.join(',')) return 0;
+  // Jaccard excluding generic stop words
+  const tokens = s => new Set(
+    (s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/)
+      .filter(t => t.length >= 3 && !_STOP_TOKENS.has(t))
+  );
+  const wa = tokens(nameA), wb = tokens(nameB);
+  if (!wa.size && !wb.size) return charScore;
   const inter = [...wa].filter(t => wb.has(t)).length;
   const union = new Set([...wa, ...wb]).size;
   const jac = union > 0 ? Math.round(inter / union * 100) : 0;
