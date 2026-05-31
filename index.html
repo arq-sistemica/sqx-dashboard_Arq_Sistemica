@@ -919,6 +919,8 @@
             <th onclick="sort('sqxFilter')">SQX</th>
             <th onclick="sort('pf')">PF</th>
             <th onclick="sort('pf_live')" title="Profit Factor calculado desde trades reales MT5">PF⚡</th>
+            <th>DD% Live</th>
+            <th>Equity</th>
             <th onclick="sort('cagr')">Ann.Ret%</th>
             <th onclick="sort('wr')">W/L</th>
             <th onclick="sort('trades')"># Trades</th>
@@ -3034,7 +3036,7 @@ function render() {
     document.getElementById('t-sub').textContent = 'Sin datos cargados';
   }
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="12">Sin resultados. Arrastrá un CSV de SQX o agregá manualmente.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="14">Sin resultados. Arrastrá un CSV de SQX o agregá manualmente.</td></tr>`;
     updateBotDropdown(); return;
   }
   const _getLivePf = s => {
@@ -3073,6 +3075,16 @@ function render() {
     const dirCell = s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':s.direction==='Both'?'<span class="dir-both">BOTH</span>':'<span style="color:#c0c4ce">—</span>';
     const seasonChip = getSeasonChip(s.symbol);
     const livePf = _getLivePf(s);
+    const liveDDCell = (() => {
+      const lv = window.LIVE?.[String(s.magic)];
+      return lv?.ddPct != null
+        ? `<td style="padding:4px 6px;min-width:70px">${renderDD(lv.ddPct)}</td>`
+        : `<td style="color:var(--text3);text-align:center;font-size:11px">-</td>`;
+    })();
+    const liveSparkCell = (() => {
+      const lv = window.LIVE?.[String(s.magic)];
+      return `<td style="padding:2px 6px">${renderSparkline(lv?.tradeList)}</td>`;
+    })();
     const livePfCell = livePf !== null
       ? `<td class="${pfCls(livePf)}" title="PF real MT5 (${window.LIVE?.[String(s.magic)]?.trades??'?'} trades)">${f(livePf)}</td>`
       : `<td style="color:var(--text3);text-align:center;font-size:11px">—</td>`;
@@ -3084,8 +3096,10 @@ function render() {
       <td>${sqxB}</td>
       <td class="${pfCls(d.pf)}">${f(d.pf)}</td>
       ${livePfCell}
+      ${liveDDCell}
+      ${liveSparkCell}
       <td class="${cls('cagr',d.cagr)}">${d.cagr!==null?f(d.cagr)+'%':'—'}</td>
-      <td class="${cls('wr',d.wr)}">${f(d.wr)}</td>
+      <td style="padding:4px 6px;min-width:70px">${renderWR(d.wr)}</td>
       <td class="${cls('trades',d.trades)}">${d.trades!==null?d.trades:'—'}</td>
       <td class="${cls('sharpe',d.sharpe)}">${f(d.sharpe)}</td>
       <td>${badge}</td>
@@ -3096,6 +3110,41 @@ function render() {
     </tr>`;
   }).join('');
   updateBotDropdown();
+}
+
+function renderDD(v) {
+  if (v == null) return '<span style="color:var(--text3)">—</span>';
+  const pct = Math.min(v, 40);
+  const color = v < 10 ? '#1a7f4b' : v < 20 ? '#d97706' : '#b91c1c';
+  return `<div title="${v.toFixed(1)}%" style="width:100%;background:#f0f0f0;border-radius:3px;height:14px;position:relative">
+    <div style="width:${(pct/40)*100}%;background:${color};height:100%;border-radius:3px"></div>
+    <span style="position:absolute;inset:0;font-size:10px;line-height:14px;text-align:center;color:#333">${v.toFixed(1)}%</span>
+  </div>`;
+}
+
+function renderWR(v) {
+  if (v == null) return '<span style="color:var(--text3)">—</span>';
+  const color = v >= 55 ? '#1a7f4b' : v >= 45 ? '#d97706' : '#b91c1c';
+  return `<div title="${v.toFixed(1)}%" style="width:100%;background:#f0f0f0;border-radius:3px;height:14px;position:relative">
+    <div style="width:${v}%;background:${color};height:100%;border-radius:3px"></div>
+    <span style="position:absolute;inset:0;font-size:10px;line-height:14px;text-align:center;color:#333">${v.toFixed(1)}%</span>
+  </div>`;
+}
+
+function renderSparkline(tradeList) {
+  if (!tradeList || tradeList.length < 2) return '<span style="color:var(--text3)">—</span>';
+  const profits = tradeList.map(t => t.cumProfit ?? t.netProfit ?? 0);
+  const mn = Math.min(...profits), mx = Math.max(...profits);
+  const range = mx - mn || 1;
+  const W = 80, H = 28;
+  const pts = profits.map((v, i) =>
+    `${(i/(profits.length-1)*W).toFixed(1)},${(H - ((v-mn)/range*H)).toFixed(1)}`
+  ).join(' ');
+  const isUp = profits[profits.length-1] >= profits[0];
+  const color = isUp ? '#1a7f4b' : '#b91c1c';
+  return `<svg width="${W}" height="${H}" style="display:block">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/>
+  </svg>`;
 }
 
 // ── EXPANDABLE ROWS ────────────────────────────────────────────
@@ -3123,7 +3172,7 @@ function expandRow(idx) {
   const tr = document.createElement('tr');
   tr.id = 'expanded-' + idx; tr.className = 'expanded-row';
   const td = document.createElement('td');
-  td.colSpan = 12; td.style.padding = '0'; td.style.borderBottom = '2px solid #6366f1';
+  td.colSpan = 14; td.style.padding = '0'; td.style.borderBottom = '2px solid #6366f1';
   td.innerHTML = buildFichaHTML(s, idx);
   tr.appendChild(td);
   dataRow.insertAdjacentElement('afterend', tr);
