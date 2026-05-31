@@ -53,11 +53,14 @@
     height: 52px;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     position: sticky;
     top: 0;
     z-index: 100;
   }
+  .topbar-title{display:flex;flex-direction:column;justify-content:center;gap:1px}
+  .topbar-page-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.2px}
+  .topbar-page-sub{font-size:11px;color:var(--text3);line-height:1.2}
   .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
   .logo span { color: var(--accent); }
   .module-tag {
@@ -298,6 +301,10 @@
   </div>
 
   <div class="topbar">
+    <div class="topbar-title">
+      <div class="topbar-page-name">Ranking Live</div>
+      <div class="topbar-page-sub">Performance real por magic number</div>
+    </div>
     <div class="topbar-right">
       <span class="sync-info" id="sync-info"></span>
       <button class="t-btn t-btn-accent" onclick="refreshData()">↺ Actualizar</button>
@@ -815,12 +822,21 @@ function showApp(bots) {
 }
 
 function computeLiveMetrics(trades) {
-  const byMagic = {};
+  // Paso 1: agrupar por magic → por cuenta (evitar double-counting multi-VPS)
+  const byMagicAccount = {};
   for (const t of trades) {
     const m = String(t.magic || '');
     if (!m || m === '0') continue;
-    if (!byMagic[m]) byMagic[m] = [];
-    byMagic[m].push(t);
+    const acct = t.account_label || String(t.account_id) || 'unknown';
+    if (!byMagicAccount[m]) byMagicAccount[m] = {};
+    if (!byMagicAccount[m][acct]) byMagicAccount[m][acct] = [];
+    byMagicAccount[m][acct].push(t);
+  }
+  // Paso 2: para cada magic, elegir la cuenta con más trades
+  const byMagic = {};
+  for (const [magic, byAccount] of Object.entries(byMagicAccount)) {
+    const sorted = Object.entries(byAccount).sort((a, b) => b[1].length - a[1].length);
+    byMagic[magic] = sorted[0][1];
   }
   const result = {};
   for (const [magic, list] of Object.entries(byMagic)) {
@@ -846,10 +862,7 @@ function computeLiveMetrics(trades) {
         pips: null, netProfit: np, gainPct: null, cumProfit: cum,
       };
     });
-    result[magic] = {
-      pf, ddPct: +(maxDD*100).toFixed(2), winRate,
-      trades: list.length, tradeList,
-    };
+    result[magic] = { pf, ddPct: +(maxDD*100).toFixed(2), winRate, trades: list.length, tradeList };
   }
   return result;
 }

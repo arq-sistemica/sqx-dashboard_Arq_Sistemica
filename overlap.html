@@ -39,7 +39,10 @@
   .sidebar.collapsed .nav-item{justify-content:center;padding:8px 0;margin:1px 4px;width:calc(100% - 8px)}
   .topbar,.main{transition:margin-left 0.25s ease}
   /* ── TOPBAR ── */
-  .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:flex-end;position:sticky;top:0;z-index:100}
+  .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .topbar-title{display:flex;flex-direction:column;justify-content:center;gap:1px}
+  .topbar-page-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.2px}
+  .topbar-page-sub{font-size:11px;color:var(--text3);line-height:1.2}
   .logo{font-size:16px;font-weight:700;letter-spacing:-0.3px}.logo span{color:var(--accent)}
   .module-tag{font-size:11px;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid #c7d2fe;font-weight:600;margin-left:10px}
   .topbar-right{display:flex;gap:8px;align-items:center}
@@ -222,6 +225,24 @@
   #dna-panel .badge-info { background: var(--blue-bg);       color: var(--blue); }
   #dna-panel .badge-ok   { background: var(--green-bg);      color: var(--green); }
 
+#dna-panel .sem-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; margin-bottom: 5px;
+}
+#dna-panel .sem-verde    { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+#dna-panel .sem-amarillo { background: var(--amber-bg);  color: var(--amber);  border: 1px solid var(--amber-border); }
+#dna-panel .sem-rojo     { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
+#dna-panel .sem-wrap { position: relative; display: inline-block; }
+#dna-panel .sem-tooltip {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0;
+  background: var(--text); color: #fff; font-size: 10px; font-weight: 400;
+  padding: 6px 10px; border-radius: 6px; white-space: nowrap;
+  z-index: 100; line-height: 1.6; pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+#dna-panel .sem-wrap:hover .sem-tooltip { display: block; }
+
   /* ── FOOTER ── */
   .footer{margin-top:3rem;padding:2rem;border-top:1px solid var(--border);background:var(--bg2);text-align:center}
   .footer span{font-size:12px;color:var(--text3)}
@@ -273,6 +294,10 @@
   </div>
 
   <div class="topbar">
+    <div class="topbar-title">
+      <div class="topbar-page-name">Overlap</div>
+      <div class="topbar-page-sub">Correlación y pseudocódigo entre bots</div>
+    </div>
     <div class="topbar-right">
       <span class="sync-info" id="sync-info"></span>
       <span id="bots-counter" style="font-size:11px;color:var(--text3);margin-right:4px"></span>
@@ -310,6 +335,11 @@
           <div class="dna-stat-label">Duplicados detectados</div>
           <div class="dna-stat-val" id="dna-stat-dups" style="color:var(--red)">—</div>
           <div class="dna-stat-sub" id="dna-stat-dups-sub">overlap alto riesgo</div>
+        </div>
+        <div class="dna-stat">
+          <div class="dna-stat-label">Estado cartera live</div>
+          <div class="dna-stat-val" id="dna-stat-semaforo" style="font-size:14px;padding-top:4px">—</div>
+          <div class="dna-stat-sub" id="dna-stat-semaforo-sub">bots evaluados</div>
         </div>
         <div class="dna-stat">
           <div class="dna-stat-label">Activos distintos</div>
@@ -427,6 +457,25 @@ function findOverlapDuplicates(allBots) {
   return pairs.sort((x, y) => y.indSim - x.indSim);
 }
 
+function calcSemaforo(bot) {
+  if (bot.stage !== 'live' || (bot.pf == null && bot.ddPct == null)) return null;
+  const razones = [];
+  let puntos = 0;
+  if (bot.pf != null) {
+    if      (bot.pf < 1.0) { puntos += 3; razones.push(`PF ${bot.pf.toFixed(2)} — por debajo de 1.0`); }
+    else if (bot.pf < 1.2) { puntos += 2; razones.push(`PF ${bot.pf.toFixed(2)} — bajo`); }
+    else if (bot.pf < 1.5) { puntos += 1; razones.push(`PF ${bot.pf.toFixed(2)} — en límite`); }
+  }
+  if (bot.ddPct != null) {
+    if      (bot.ddPct > 20) { puntos += 3; razones.push(`DD ${bot.ddPct.toFixed(1)}% — crítico`); }
+    else if (bot.ddPct > 15) { puntos += 2; razones.push(`DD ${bot.ddPct.toFixed(1)}% — alto`); }
+    else if (bot.ddPct > 10) { puntos += 1; razones.push(`DD ${bot.ddPct.toFixed(1)}% — moderado`); }
+  }
+  if (puntos === 0) return { dot:'🟢', label:'Estable',    cls:'sem-verde',    razones:['PF y DD dentro de parámetros'] };
+  if (puntos <= 2)  return { dot:'🟡', label:'Observar',   cls:'sem-amarillo', razones };
+  return              { dot:'🔴', label:'Intervenir', cls:'sem-rojo',     razones };
+}
+
 function dnaInit(allBots) {
   const usage = {};
   allBots.forEach(bot => {
@@ -455,6 +504,15 @@ function dnaInit(allBots) {
   if (el('dna-stat-signal'))     el('dna-stat-signal').textContent = signalInd;
   if (el('dna-stat-signal-sub')) el('dna-stat-signal-sub').textContent = `${signalN}/${allBots.length} bots`;
   if (el('dna-stat-assets'))     el('dna-stat-assets').textContent = uniqueAssets;
+  const liveBots  = allBots.filter(b => b.stage === 'live');
+  const sems      = liveBots.map(b => calcSemaforo(b)).filter(Boolean);
+  const nVerde    = sems.filter(s => s.dot === '🟢').length;
+  const nAmarillo = sems.filter(s => s.dot === '🟡').length;
+  const nRojo     = sems.filter(s => s.dot === '🔴').length;
+  if (el('dna-stat-semaforo'))
+    el('dna-stat-semaforo').textContent = `🟢${nVerde} 🟡${nAmarillo} 🔴${nRojo}`;
+  if (el('dna-stat-semaforo-sub'))
+    el('dna-stat-semaforo-sub').textContent = `${sems.length} de ${liveBots.length} bots live`;
 
   // BOT CARDS
   const grid = document.getElementById('dna-bot-grid');
@@ -468,6 +526,13 @@ function dnaInit(allBots) {
     const div = document.createElement('div');
     div.className = 'dna-bot-card';
     const safeId = bot.id.replace(/'/g, "\\'");
+    const sem = calcSemaforo(bot);
+    const semHtml = sem
+      ? `<div class="sem-wrap" style="margin-bottom:5px">
+           <span class="sem-badge ${sem.cls}">${sem.dot} ${sem.label}</span>
+           <div class="sem-tooltip">${sem.razones.join('<br>')}</div>
+         </div>`
+      : '';
     div.innerHTML = `
       <div class="dna-bot-top">
         <div class="dna-bot-id">${bot.id}</div>
@@ -476,6 +541,7 @@ function dnaInit(allBots) {
           <button class="dna-bot-remove" onclick="removeBot('${safeId}')" title="Eliminar este bot del análisis">×</button>
         </div>
       </div>
+      ${semHtml}
       <div class="dna-bot-meta">${bot.asset} · ${bot.tf} · <b style="color:${bot.dir==='Long'?'var(--green)':'var(--red)'}">${bot.dir}</b> · ${bot.entry}</div>
       ${(bot.ddPct != null || bot.pf != null) ? `<div style="display:flex;gap:8px;margin-bottom:5px;margin-top:4px">
         ${bot.pf  != null ? `<span style="font-size:10px;font-weight:600;color:${bot.pf>=1.3?'var(--green)':bot.pf>=1.1?'#d97706':'var(--red)'}">PF ${bot.pf.toFixed(2)}</span>` : ''}

@@ -61,7 +61,10 @@
   .sidebar.collapsed .sidebar-footer{display:none}
   .sidebar.collapsed .nav-item{justify-content:center;padding:8px 0;margin:1px 4px;width:calc(100% - 8px)}
   .topbar,.main{transition:margin-left 0.25s ease}
-  .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:flex-end;position:sticky;top:0;z-index:100}
+  .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .topbar-title{display:flex;flex-direction:column;justify-content:center;gap:1px}
+  .topbar-page-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.2px}
+  .topbar-page-sub{font-size:11px;color:var(--text3);line-height:1.2}
   .main{padding:1.5rem 2rem}
   button{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:all 0.12s}
   button:hover{background:var(--bg3);color:var(--text);border-color:#adb5bd}
@@ -617,6 +620,10 @@
 
 <!-- ── TOPBAR ── -->
 <div class="topbar">
+  <div class="topbar-title">
+    <div class="topbar-page-name">Dashboard</div>
+    <div class="topbar-page-sub">Tabla principal de bots</div>
+  </div>
   <div class="topbar-right">
     <span id="db-count" style="font-size:11px;color:var(--text3);margin-right:4px">24 bots guardados</span>
     <span id="sync-status" style="font-size:11px;margin-right:4px;color:rgb(217,119,6);">⏳ Guardando...</span>

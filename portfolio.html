@@ -53,11 +53,14 @@
     height: 52px;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     position: sticky;
     top: 0;
     z-index: 100;
   }
+  .topbar-title{display:flex;flex-direction:column;justify-content:center;gap:1px}
+  .topbar-page-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.2px}
+  .topbar-page-sub{font-size:11px;color:var(--text3);line-height:1.2}
   .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
   .logo span { color: var(--accent); }
   .module-tag {
@@ -386,6 +389,10 @@
   </div>
 
   <div class="topbar">
+    <div class="topbar-title">
+      <div class="topbar-page-name">Portfolio Builder</div>
+      <div class="topbar-page-sub">Equity combinada y métricas de conjunto</div>
+    </div>
     <div class="topbar-right">
       <span id="sync-info" style="font-size:11px;color:var(--text3)"></span>
       <button class="t-btn t-btn-accent" onclick="refreshData()">↺ Actualizar</button>

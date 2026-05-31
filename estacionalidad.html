@@ -37,7 +37,10 @@
   .sidebar.collapsed .nav-item{justify-content:center;padding:8px 0;margin:1px 4px;width:calc(100% - 8px)}
   .topbar,.page-wrap{transition:margin-left 0.25s ease}
   /* TOPBAR */
-  .topbar { background:var(--bg); border-bottom:1px solid var(--border); padding:0 1.5rem; height:52px; display:flex; align-items:center; justify-content:flex-end; position:sticky; top:0; z-index:100; }
+  .topbar { background:var(--bg); border-bottom:1px solid var(--border); padding:0 1.5rem; height:52px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .topbar-title{display:flex;flex-direction:column;justify-content:center;gap:1px}
+  .topbar-page-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-0.2px}
+  .topbar-page-sub{font-size:11px;color:var(--text3);line-height:1.2}
   .logo { font-size:16px; font-weight:700; letter-spacing:-0.3px; color:var(--text); }
   .logo span { color:var(--accent); }
   .module-tag { font-size:11px; background:var(--accent-light); color:var(--accent); padding:3px 10px; border-radius:20px; border:1px solid #c7d2fe; font-weight:600; margin-left:10px; }
@@ -178,6 +181,10 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
+  <div class="topbar-title">
+    <div class="topbar-page-name">Estacionalidad</div>
+    <div class="topbar-page-sub" id="subtitle-meta">Análisis estacional por par y activo</div>
+  </div>
   <div class="topbar-right">
     <span style="font-size:11px;color:var(--text3)" id="season-info"></span>
   </div>
@@ -185,14 +192,6 @@
 
 <!-- PAGE -->
 <div class="page-wrap">
-
-  <!-- HEADER -->
-  <div class="page-header">
-    <div>
-      <div class="page-title">Estacionalidad de Mercados</div>
-      <div class="page-subtitle" id="subtitle-meta">Cargando datos...</div>
-    </div>
-  </div>
 
   <!-- CONTROLS -->
   <div class="controls-row">
