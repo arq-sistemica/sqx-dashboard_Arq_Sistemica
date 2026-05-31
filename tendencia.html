@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tendencia Semanal — SQX Dashboard</title>
+<script src="supabase.js"></script>
+<script src="sidebar.js"></script>
+<style>
+  :root {
+    --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
+    --text:#111318;--text2:#4a5060;--text3:#9098a8;
+    --green:#1a7f4b;--green-bg:#eaf7f0;--green-border:#b2dfc8;
+    --red:#b91c1c;--red-bg:#fef2f2;--red-border:#fcc;
+    --amber:#92400e;--amber-bg:#fffbeb;--amber-border:#fde68a;
+    --blue:#1d4ed8;--blue-bg:#eff6ff;
+    --accent:#4f46e5;--accent-light:#eef2ff;
+    --radius:6px;--radius-lg:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5}
+
+  /* ── SIDEBAR ── */
+  .sidebar{width:fit-content;height:100vh;background:var(--bg);border-right:1px solid var(--border);position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:200;overflow:hidden}
+  .sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between}
+  .sidebar-logo-text{flex:1;min-width:0}
+  .nav-section-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:1rem 1rem 0.4rem;display:block;white-space:nowrap}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;font-size:13px;color:var(--text2);cursor:pointer;border:none;background:transparent;width:calc(100% - 16px);text-align:left;text-decoration:none;transition:all 0.12s;font-family:inherit;font-weight:500;white-space:nowrap}
+  .nav-item:hover{background:var(--bg3);color:var(--text)}
+  .nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+  .sidebar-footer{padding:1rem;border-top:1px solid var(--border);margin-top:auto}
+  .sidebar.collapsed .nl{display:none}
+  .sidebar.collapsed .nav-section-lbl{opacity:0;height:0;padding:0;overflow:hidden}
+  .sidebar.collapsed .sidebar-logo-text{display:none}
+  .sidebar.collapsed .sidebar-logo{justify-content:center;padding:1rem 0;min-width:52px}
+  .sidebar.collapsed .sidebar-footer{display:none}
+  .sidebar.collapsed .nav-item{justify-content:center;padding:8px 0;margin:1px 4px;width:calc(100% - 8px)}
+  .topbar,.main{transition:margin-left 0.25s ease}
+
+  /* ── TOPBAR ── */
+  .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:flex-end;position:sticky;top:0;z-index:100}
+  .logo{font-size:16px;font-weight:700;letter-spacing:-0.3px}.logo span{color:var(--accent)}
+  .topbar-right{display:flex;gap:8px;align-items:center}
+  .sync-info{font-size:11px;color:var(--text3);margin-right:4px}
+  .main{padding:1.5rem 2rem}
+  button{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:all 0.12s}
+  button:hover{background:var(--bg3);color:var(--text);border-color:#adb5bd}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-primary:hover{background:#4338ca;color:#fff;border-color:#4338ca}
+
+  /* ── PAGE HEADER ── */
+  .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px}
+  .page-title{font-size:20px;font-weight:700}
+  .page-sub{font-size:12px;color:var(--text3);margin-top:3px}
+
+  /* ── STAT CARDS ── */
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.5rem}
+  @media(max-width:700px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px}
+  .stat-label{font-size:10px;color:var(--text3);margin-bottom:4px}
+  .stat-val{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+  .stat-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+  /* ── ÍNDICES GRID ── */
+  .section-title{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:1.5rem 0 10px;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+  .indices-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:1.5rem}
+  @media(max-width:700px){.indices-grid{grid-template-columns:repeat(3,1fr)}}
+  .ind-card{border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;background:var(--bg)}
+  .ind-name{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px}
+  .ind-price{font-size:18px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px}
+  .ind-trend{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;margin-bottom:4px}
+  .trend-alcista    {background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+  .trend-muy-alcista{background:#dcfce7;color:#15803d;border:1px solid #86efac}
+  .trend-bajista    {background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+  .trend-lateral    {background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+  .ind-zona{font-size:9px;color:var(--text3);line-height:1.4}
+  .ind-zona span{font-weight:600;color:var(--text2)}
+
+  /* ── PARES TABLE ── */
+  .table-wrap{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1.5rem}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  thead th{padding:8px 12px;text-align:left;color:var(--text3);font-size:10px;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:700;text-transform:uppercase;background:var(--bg2);white-space:nowrap}
+  tr.par-row{border-bottom:1px solid var(--border);transition:background .12s}
+  tr.par-row:hover{background:var(--bg2)}
+  tr.par-row:last-child{border-bottom:none}
+  td{padding:9px 12px;vertical-align:middle}
+
+  /* semáforo */
+  .sem-dot{font-size:16px;line-height:1}
+  .sem-label{font-size:11px;font-weight:600;margin-left:4px}
+
+  /* estacionalidad chip */
+  .estac-chip{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap}
+
+  /* índice tags */
+  .ind-tag{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);white-space:nowrap}
+  .ind-tag-up  {background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+  .ind-tag-down{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+  .ind-tag-lat {background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border)}
+
+  /* ── ALERTA CACHE ── */
+  .cache-banner{display:none;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--radius);padding:8px 14px;font-size:12px;color:var(--amber);margin-bottom:1rem;align-items:center;gap:8px}
+  .cache-banner.show{display:flex}
+
+  /* ── NO DATA ── */
+  .no-data{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+
+  /* ── FOOTER ── */
+  .footer{margin-top:3rem;padding:2rem;border-top:1px solid var(--border);background:var(--bg2);text-align:center}
+  .footer span{font-size:12px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-text">
+      <div class="logo">SQX<span>.</span>Dashboard</div>
+      <span style="font-size:11px;background:var(--accent-light);color:var(--accent);padding:3px 10px;border-radius:20px;border:1px solid #c7d2fe;font-weight:600;margin-top:8px;display:inline-block">Arq. Sistémica</span>
+    </div>
+  </div>
+  <nav style="flex:1">
+    <span class="nav-section-lbl">Análisis</span>
+    <a class="nav-item" href="index.html" title="Incubación"><span>📋</span><span class="nl"> Incubación</span></a>
+    <a class="nav-item" href="portfolio.html" title="Portfolio"><span>💼</span><span class="nl"> Portfolio</span></a>
+    <a class="nav-item" href="ranking.html" title="Ranking"><span>🏆</span><span class="nl"> Ranking</span></a>
+    <span class="nav-section-lbl">Inteligencia</span>
+    <a class="nav-item" href="overlap.html" title="Overlap"><span>📊</span><span class="nl"> Overlap</span></a>
+    <a class="nav-item active" href="tendencia.html" title="Tendencia"><span>📈</span><span class="nl"> Tendencia</span></a>
+    <a class="nav-item" href="estacionalidad.html" title="Estacionalidad"><span>📅</span><span class="nl"> Estacionalidad</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <span style="font-size:11px;color:var(--text3)">📈 Tendencia</span>
+  </div>
+</div>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-right">
+    <span class="sync-info" id="sync-info"></span>
+    <button onclick="recargar()">↺ Recargar</button>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- ALERTA CACHE -->
+  <div class="cache-banner" id="cache-banner">
+    <span>⚠</span>
+    <span id="cache-msg">TradingView cerrado al generar — S/R de la semana anterior</span>
+  </div>
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">📈 Tendencia Semanal</div>
+      <div class="page-sub" id="page-sub">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-label">Alineados</div>
+      <div class="stat-val" id="stat-verde" style="color:var(--green)">—</div>
+      <div class="stat-sub">pares con tendencia a favor</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Neutros</div>
+      <div class="stat-val" id="stat-amarillo" style="color:#d97706">—</div>
+      <div class="stat-sub">sin dirección clara</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Contra tendencia</div>
+      <div class="stat-val" id="stat-rojo" style="color:var(--red)">—</div>
+      <div class="stat-sub">revisar exposición</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Generado</div>
+      <div class="stat-val" id="stat-hora" style="font-size:16px;padding-top:4px">—</div>
+      <div class="stat-sub" id="stat-fecha">—</div>
+    </div>
+  </div>
+
+  <!-- ÍNDICES -->
+  <div class="section-title">Índices de divisas — fortaleza relativa</div>
+  <div class="indices-grid" id="indices-grid">
+    <div class="no-data">Cargando...</div>
+  </div>
+
+  <!-- TABLA PARES -->
+  <div class="section-title">Pares activos — semáforo de tendencia</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Par</th>
+          <th>Semáforo</th>
+          <th>Tendencia</th>
+          <th>Índice base</th>
+          <th>Índice cotizada</th>
+          <th>Estac. mes</th>
+          <th>Dirección bots</th>
+        </tr>
+      </thead>
+      <tbody id="pairs-tbody">
+        <tr><td colspan="7" class="no-data">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /main -->
+
+<div class="footer">
+  <span>Arquitectura Sistémica — SQX Dashboard · Tendencia Semanal</span>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// CONSTANTES
+// ════════════════════════════════════════════
+const TREND_JSON = 'weekly_trend.json';
+const MONTHS_ES  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// ════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════
+function trendClass(trend) {
+  if (!trend) return '';
+  const t = trend.toUpperCase();
+  if (t.includes('MUY ALCISTA')) return 'trend-muy-alcista';
+  if (t.includes('ALCISTA'))     return 'trend-alcista';
+  if (t.includes('BAJISTA'))     return 'trend-bajista';
+  return 'trend-lateral';
+}
+
+function trendArrow(trend) {
+  if (!trend) return '→';
+  const t = trend.toUpperCase();
+  if (t.includes('MUY ALCISTA')) return '↑↑';
+  if (t.includes('ALCISTA'))     return '↑';
+  if (t.includes('BAJISTA'))     return '↓';
+  return '→';
+}
+
+function indTagClass(trend) {
+  if (!trend) return 'ind-tag';
+  const t = trend.toUpperCase();
+  if (t.includes('ALCISTA')) return 'ind-tag ind-tag-up';
+  if (t.includes('BAJISTA')) return 'ind-tag ind-tag-down';
+  return 'ind-tag ind-tag-lat';
+}
+
+function estacChip(pos) {
+  if (pos == null) return '—';
+  const bg    = pos >= 70 ? '#dcfce7' : pos >= 55 ? '#d1fae5' : pos >= 45 ? '#fef3c7' : pos >= 30 ? '#fee2e2' : '#fecaca';
+  const color = pos >= 70 ? '#15803d' : pos >= 55 ? '#166534' : pos >= 45 ? '#92400e' : pos >= 30 ? '#991b1b' : '#7f1d1d';
+  const arrow = pos >= 60 ? '↑' : pos <= 40 ? '↓' : '→';
+  return `<span class="estac-chip" style="background:${bg};color:${color};border:1px solid ${color}40">${pos}% ${arrow}</span>`;
+}
+
+// ════════════════════════════════════════════
+// RENDER ÍNDICES
+// ════════════════════════════════════════════
+function renderIndices(indices) {
+  const grid = document.getElementById('indices-grid');
+  if (!grid || !indices) return;
+  const FLAG = { DXY:'🇺🇸', EXY:'🇪🇺', BXY:'🇬🇧', AXY:'🇦🇺', JXY:'🇯🇵', CXY:'🇨🇦' };
+  grid.innerHTML = Object.entries(indices).map(([key, d]) => {
+    const zona = d.zona;
+    const zonaHtml = zona
+      ? zona.zona
+        ? `<div class="ind-zona">Precio <span>${zona.zona.replace(/_/g,' ')}</span></div>`
+        : `<div class="ind-zona">Entre <span>${zona.entre_s}</span> y <span>${zona.entre_r}</span><br>${zona.nearest_tipo === 'R' ? '↑' : '↓'} ${zona.nearest_label} a ${zona.dist_pct}%</div>`
+      : '';
+    return `
+      <div class="ind-card">
+        <div class="ind-name">${FLAG[key] || ''} ${key}</div>
+        <div class="ind-price">${d.price?.toFixed(3) ?? '—'}</div>
+        <div><span class="ind-trend ${trendClass(d.trend)}">${trendArrow(d.trend)} ${d.trend}</span></div>
+        ${zonaHtml}
+      </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// RENDER PARES
+// ════════════════════════════════════════════
+function renderPairs(pairs, indices) {
+  const tbody = document.getElementById('pairs-tbody');
+  if (!tbody || !pairs) return;
+
+  let verde = 0, amarillo = 0, rojo = 0;
+
+  tbody.innerHTML = Object.entries(pairs).map(([par, d]) => {
+    const sem = d.semaforo || {};
+    if (sem.dot === '🟢') verde++;
+    else if (sem.dot === '🟡') amarillo++;
+    else if (sem.dot === '🔴') rojo++;
+
+    const baseData  = indices?.[d.base_index]  || {};
+    const quoteData = indices?.[d.quote_index] || {};
+    const estac     = d.estacionalidad;
+    const dirColor  = d.bots_dir === 'Long' ? 'var(--green)' : 'var(--red)';
+    const dirArrow  = d.bots_dir === 'Long' ? '▲' : '▼';
+
+    const tendColor = d.tendencia_par === 'ALCISTA' ? 'var(--green)'
+                    : d.tendencia_par === 'BAJISTA' ? 'var(--red)'
+                    : '#d97706';
+
+    return `<tr class="par-row">
+      <td style="font-weight:700;font-size:13px">${par}</td>
+      <td>
+        <span class="sem-dot">${sem.dot || '—'}</span>
+        <span class="sem-label" style="color:${sem.dot==='🟢'?'var(--green)':sem.dot==='🔴'?'var(--red)':'#d97706'}">${sem.label || '—'}</span>
+      </td>
+      <td style="font-weight:600;color:${tendColor}">${trendArrow(d.tendencia_par)} ${d.tendencia_par || '—'}</td>
+      <td>
+        <span class="${indTagClass(baseData.trend)}">${d.base_index} ${trendArrow(d.base_trend)}</span>
+      </td>
+      <td>
+        <span class="${indTagClass(quoteData.trend)}">${d.quote_index} ${trendArrow(d.quote_trend)}</span>
+      </td>
+      <td>${estac ? estacChip(estac.pos) : '—'}</td>
+      <td style="color:${dirColor};font-weight:700">${dirArrow} ${d.bots_dir}</td>
+    </tr>`;
+  }).join('');
+
+  // Actualizar stats
+  document.getElementById('stat-verde').textContent    = verde;
+  document.getElementById('stat-amarillo').textContent = amarillo;
+  document.getElementById('stat-rojo').textContent     = rojo;
+}
+
+// ════════════════════════════════════════════
+// LOAD
+// ════════════════════════════════════════════
+async function loadTrend() {
+  try {
+    const r = await fetch(TREND_JSON + '?t=' + Date.now());
+    if (!r.ok) throw new Error('No se pudo cargar weekly_trend.json');
+    const data = await r.json();
+
+    // Header info
+    const genAt = new Date(data.generated_at);
+    const hora  = genAt.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires' });
+    const fecha = genAt.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long', timeZone:'America/Argentina/Buenos_Aires' });
+    document.getElementById('stat-hora').textContent  = hora + 'hs';
+    document.getElementById('stat-fecha').textContent = fecha;
+    document.getElementById('page-sub').textContent   = `${Object.keys(data.pairs || {}).length} pares · Índices ${Object.keys(data.indices || {}).join(', ')}`;
+
+    const syncEl = document.getElementById('sync-info');
+    if (syncEl) syncEl.textContent = `Actualizado ${hora}hs`;
+
+    // Alerta cache
+    if (data.sr_source === 'cache') {
+      const banner = document.getElementById('cache-banner');
+      const msg    = document.getElementById('cache-msg');
+      if (banner) banner.classList.add('show');
+      if (msg && data.sr_cache_date) msg.textContent = `TradingView cerrado al generar — S/R guardados del ${data.sr_cache_date}`;
+    }
+
+    renderIndices(data.indices);
+    renderPairs(data.pairs, data.indices);
+
+  } catch(e) {
+    console.error('Error cargando tendencia:', e);
+    document.getElementById('page-sub').textContent = 'Error al cargar weekly_trend.json';
+    document.getElementById('pairs-tbody').innerHTML =
+      `<tr><td colspan="7" class="no-data">No se encontró weekly_trend.json — ejecutá el script semanal primero.</td></tr>`;
+    document.getElementById('indices-grid').innerHTML =
+      `<div class="no-data">Sin datos</div>`;
+  }
+}
+
+function recargar() { loadTrend(); }
+
+loadTrend();
+</script>
+</body>
+</html>

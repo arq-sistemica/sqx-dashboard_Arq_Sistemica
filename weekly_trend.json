@@ -1,0 +1,209 @@
+{
+  "generated_at": "2026-05-31T15:51:41.593Z",
+  "sr_source": "cache",
+  "sr_cache_date": "2026-05-31",
+  "indices": {
+    "DXY": {
+      "price": 98.942,
+      "trend": "BAJISTA",
+      "zona": {
+        "entre_r": "R Psicológica",
+        "entre_s": "S Moderado",
+        "nearest_label": "R Psicológica",
+        "nearest_tipo": "R",
+        "nearest_precio": 100.5,
+        "dist_pct": 1.57
+      }
+    },
+    "EXY": {
+      "price": 116.6,
+      "trend": "ALCISTA",
+      "zona": {
+        "entre_r": "R Fuerte",
+        "entre_s": "S Moderado",
+        "nearest_label": "S Moderado",
+        "nearest_tipo": "S",
+        "nearest_precio": 114.75,
+        "dist_pct": 1.59
+      }
+    },
+    "BXY": {
+      "price": 134.572,
+      "trend": "ALCISTA",
+      "zona": {
+        "entre_r": "R Mega",
+        "entre_s": "R Fuerte",
+        "nearest_label": "R Fuerte",
+        "nearest_tipo": "R",
+        "nearest_precio": 134,
+        "dist_pct": 0.43
+      }
+    },
+    "AXY": {
+      "price": 71.845,
+      "trend": "MUY ALCISTA",
+      "zona": {
+        "entre_r": "R Mega",
+        "entre_s": "R Fuerte",
+        "nearest_label": "R Mega",
+        "nearest_tipo": "R",
+        "nearest_precio": 72.1,
+        "dist_pct": 0.35
+      }
+    },
+    "JXY": {
+      "price": 62.781,
+      "trend": "BAJISTA",
+      "zona": {
+        "entre_r": "S Mayor",
+        "entre_s": "S Crítico",
+        "nearest_label": "S Mayor",
+        "nearest_tipo": "S",
+        "nearest_precio": 63.5,
+        "dist_pct": 1.15
+      }
+    },
+    "CXY": {
+      "price": 72.482,
+      "trend": "LATERAL",
+      "zona": {
+        "entre_r": "R Fuerte",
+        "entre_s": "S Moderado",
+        "nearest_label": "S Moderado",
+        "nearest_tipo": "S",
+        "nearest_precio": 72.25,
+        "dist_pct": 0.32
+      }
+    }
+  },
+  "pairs": {
+    "EURUSD": {
+      "base_index": "EXY",
+      "base_trend": "ALCISTA",
+      "quote_index": "DXY",
+      "quote_trend": "BAJISTA",
+      "tendencia_par": "ALCISTA",
+      "semaforo": {
+        "dot": "🟢",
+        "label": "Alineado"
+      },
+      "estacionalidad": {
+        "pos": 55,
+        "month": 4
+      },
+      "bots_dir": "Long"
+    },
+    "AUDUSD": {
+      "base_index": "AXY",
+      "base_trend": "MUY ALCISTA",
+      "quote_index": "DXY",
+      "quote_trend": "BAJISTA",
+      "tendencia_par": "ALCISTA",
+      "semaforo": {
+        "dot": "🟢",
+        "label": "Alineado"
+      },
+      "estacionalidad": {
+        "pos": 55,
+        "month": 4
+      },
+      "bots_dir": "Long"
+    },
+    "GBPJPY": {
+      "base_index": "BXY",
+      "base_trend": "ALCISTA",
+      "quote_index": "JXY",
+      "quote_trend": "BAJISTA",
+      "tendencia_par": "ALCISTA",
+      "semaforo": {
+        "dot": "🟢",
+        "label": "Alineado"
+      },
+      "estacionalidad": {
+        "pos": 55,
+        "month": 4
+      },
+      "bots_dir": "Long"
+    },
+    "EURJPY": {
+      "base_index": "EXY",
+      "base_trend": "ALCISTA",
+      "quote_index": "JXY",
+      "quote_trend": "BAJISTA",
+      "tendencia_par": "ALCISTA",
+      "semaforo": {
+        "dot": "🟢",
+        "label": "Alineado"
+      },
+      "estacionalidad": {
+        "pos": 73,
+        "month": 4
+      },
+      "bots_dir": "Long"
+    },
+    "AUDJPY": {
+      "base_index": "AXY",
+      "base_trend": "MUY ALCISTA",
+      "quote_index": "JXY",
+      "quote_trend": "BAJISTA",
+      "tendencia_par": "ALCISTA",
+      "semaforo": {
+        "dot": "🟢",
+        "label": "Alineado"
+      },
+      "estacionalidad": {
+        "pos": 73,
+        "month": 4
+      },
+      "bots_dir": "Long"
+    },
+    "USDJPY": {
+      "base_index": "DXY",
+      "base_trend": "BAJISTA",
+      "quote_index": "JXY",
+      "quote_trend": "BAJISTA",
+      "tendencia_par": "LATERAL",
+      "semaforo": {
+        "dot": "🟡",
+        "label": "Neutro"
+      },
+      "estacionalidad": {
+        "pos": 55,
+        "month": 4
+      },
+      "bots_dir": "Short"
+    },
+    "AUDCAD": {
+      "base_index": "AXY",
+      "base_trend": "MUY ALCISTA",
+      "quote_index": "CXY",
+      "quote_trend": "LATERAL",
+      "tendencia_par": "LATERAL",
+      "semaforo": {
+        "dot": "🟡",
+        "label": "Neutro"
+      },
+      "estacionalidad": {
+        "pos": 45,
+        "month": 4
+      },
+      "bots_dir": "Long"
+    },
+    "USDCAD": {
+      "base_index": "DXY",
+      "base_trend": "BAJISTA",
+      "quote_index": "CXY",
+      "quote_trend": "LATERAL",
+      "tendencia_par": "LATERAL",
+      "semaforo": {
+        "dot": "🟡",
+        "label": "Neutro"
+      },
+      "estacionalidad": {
+        "pos": 45,
+        "month": 4
+      },
+      "bots_dir": "Short"
+    }
+  }
+}

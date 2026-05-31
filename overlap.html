@@ -243,6 +243,56 @@
 }
 #dna-panel .sem-wrap:hover .sem-tooltip { display: block; }
 
+/* ── HORA DE MUERTE ── */
+#dna-panel .muerte-wrap { margin-top: 7px; }
+#dna-panel .muerte-title { font-size: 9px; color: var(--text3); margin-bottom: 3px; }
+#dna-panel .muerte-bars { display: flex; gap: 1px; align-items: flex-end; height: 28px; }
+#dna-panel .muerte-bar {
+  flex: 1; border-radius: 2px 2px 0 0; min-width: 3px;
+  position: relative; cursor: default;
+}
+#dna-panel .muerte-bar-label {
+  font-size: 7px; color: var(--text3); text-align: center;
+  margin-top: 2px; white-space: nowrap;
+}
+#dna-panel .muerte-peak {
+  font-size: 9px; font-weight: 700; color: var(--red);
+  margin-top: 3px;
+}
+
+/* ── SCORE CONFIANZA ── */
+#dna-panel .conf-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; font-weight: 700; padding: 1px 6px;
+  border-radius: 8px; margin-top: 4px;
+}
+#dna-panel .conf-inmaduro { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+#dna-panel .conf-validando { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+#dna-panel .conf-validado  { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+
+/* ── FICHA EXPANDIBLE ── */
+#dna-panel .dna-bot-card { cursor: pointer; transition: box-shadow 0.15s; }
+#dna-panel .dna-bot-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+#dna-panel .dna-bot-card.expanded { border-color: var(--accent); }
+#dna-panel .ficha-panel {
+  display: none; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border); font-size: 11px;
+}
+#dna-panel .ficha-panel.open { display: block; }
+#dna-panel .ficha-row {
+  display: flex; justify-content: space-between;
+  padding: 3px 0; border-bottom: 1px solid var(--border2);
+  font-size: 11px;
+}
+#dna-panel .ficha-row:last-child { border-bottom: none; }
+#dna-panel .ficha-label { color: var(--text3); }
+#dna-panel .ficha-val   { font-weight: 600; color: var(--text); }
+#dna-panel .ficha-chevron {
+  font-size: 9px; color: var(--text3);
+  transition: transform 0.15s; display: inline-block;
+}
+#dna-panel .ficha-chevron.open { transform: rotate(180deg); }
+
   /* ── FOOTER ── */
   .footer{margin-top:3rem;padding:2rem;border-top:1px solid var(--border);background:var(--bg2);text-align:center}
   .footer span{font-size:12px;color:var(--text3)}
@@ -286,6 +336,7 @@
       <a class="nav-item" href="ranking.html" title="Ranking"><span>🏆</span><span class="nl"> Ranking</span></a>
       <span class="nav-section-lbl">Inteligencia</span>
       <a class="nav-item active" href="overlap.html" title="Overlap"><span>📊</span><span class="nl"> Overlap</span></a>
+      <a class="nav-item" href="tendencia.html" title="Tendencia"><span>📈</span><span class="nl"> Tendencia</span></a>
       <a class="nav-item" href="estacionalidad.html" title="Estacionalidad"><span>📅</span><span class="nl"> Estacionalidad</span></a>
     </nav>
     <div class="sidebar-footer">
@@ -476,6 +527,156 @@ function calcSemaforo(bot) {
   return              { dot:'🔴', label:'Intervenir', cls:'sem-rojo',     razones };
 }
 
+function calcDegradacion(bot) {
+  if (!bot.tradeList || bot.tradeList.length < 5) return null;
+  const byWeek = {};
+  bot.tradeList.forEach(t => {
+    if (!t.closeDate || t.closeDate === '—') return;
+    const d = new Date(t.closeDate.replace(' ', 'T'));
+    if (isNaN(d)) return;
+    const dow = d.getDay();
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+    mon.setHours(0,0,0,0);
+    const key = mon.toISOString().slice(0,10);
+    if (!byWeek[key]) byWeek[key] = { wins:0, losses:0, gW:0, gL:0 };
+    const np = t.netProfit || 0;
+    if (np > 0) { byWeek[key].wins++;   byWeek[key].gW += np; }
+    else        { byWeek[key].losses++; byWeek[key].gL += Math.abs(np); }
+  });
+  const weeks = Object.keys(byWeek).sort();
+  if (weeks.length < 2) return null;
+  return weeks.map(w => {
+    const d = byWeek[w];
+    const pf = d.gL > 0 ? +(d.gW / d.gL).toFixed(2) : d.gW > 0 ? 3 : 0;
+    return { week: w, pf, trades: d.wins + d.losses, net: +(d.gW - d.gL).toFixed(2) };
+  });
+}
+
+function renderDegradacionSVG(semanas) {
+  if (!semanas || semanas.length < 2) return '';
+  const W = 220, H = 52, PAD = 4;
+  const pfs   = semanas.map(s => s.pf);
+  const maxPf = Math.max(...pfs, 2);
+  const minPf = Math.min(...pfs, 0);
+  const range = maxPf - minPf || 1;
+  const xStep = (W - PAD*2) / (semanas.length - 1);
+  const pts = semanas.map((s, i) => {
+    const x = PAD + i * xStep;
+    const y = H - PAD - ((s.pf - minPf) / range) * (H - PAD*2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const first3 = pfs.slice(0,3).reduce((a,b)=>a+b,0) / 3;
+  const last3  = pfs.slice(-3).reduce((a,b)=>a+b,0) / 3;
+  const trendColor = last3 >= first3 ? '#1a7f4b' : last3 >= first3*0.85 ? '#d97706' : '#b91c1c';
+  const y1 = H - PAD - ((1 - minPf) / range) * (H - PAD*2);
+  const refLine = (minPf < 1 && maxPf > 1)
+    ? `<line x1="${PAD}" y1="${y1.toFixed(1)}" x2="${W-PAD}" y2="${y1.toFixed(1)}" stroke="#e0e3e8" stroke-width="1" stroke-dasharray="3,2"/>`
+    : '';
+  const lastPf  = pfs[pfs.length-1];
+  const lastClr = lastPf >= 1.5 ? '#1a7f4b' : lastPf >= 1.2 ? '#d97706' : '#b91c1c';
+  return `
+    <div style="margin-top:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <span style="font-size:9px;color:var(--text3)">PF semanal · ${semanas.length} semanas</span>
+        <span style="font-size:10px;font-weight:700;color:${lastClr}">PF ${lastPf.toFixed(2)}</span>
+      </div>
+      <svg width="${W}" height="${H}" style="display:block;overflow:visible">
+        ${refLine}
+        <polyline points="${pts.join(' ')}" fill="none" stroke="${trendColor}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${pts[pts.length-1].split(',')[0]}" cy="${pts[pts.length-1].split(',')[1]}" r="3" fill="${trendColor}"/>
+      </svg>
+      <div style="font-size:9px;color:var(--text3);margin-top:1px">
+        ${semanas[0].week.slice(5)} → ${semanas[semanas.length-1].week.slice(5)}
+        · ${last3 >= first3 ? '↑ mejorando' : last3 >= first3*0.85 ? '→ estable' : '↓ degradando'}
+      </div>
+    </div>`;
+}
+
+function calcHoraMuerte(bot) {
+  if (!bot.tradeList || bot.tradeList.length < 8) return null;
+  const byHour = {};
+  for (let h = 0; h < 24; h++) byHour[h] = { net: 0, count: 0 };
+  bot.tradeList.forEach(t => {
+    if (!t.closeDate || t.closeDate === '—') return;
+    const d = new Date(t.closeDate.replace(' ', 'T'));
+    if (isNaN(d)) return;
+    const h = d.getHours();
+    byHour[h].net   += t.netProfit || 0;
+    byHour[h].count++;
+  });
+  const activas = Object.entries(byHour)
+    .filter(([, v]) => v.count > 0)
+    .map(([h, v]) => ({ hour: +h, net: +v.net.toFixed(2), count: v.count }));
+  if (activas.length < 3) return null;
+  const peor = activas.reduce((a, b) => b.net < a.net ? b : a);
+  return { byHour: activas, peorHora: peor };
+}
+
+function renderHoraMuerteSVG(data) {
+  if (!data) return '';
+  const { byHour, peorHora } = data;
+  const maxAbs = Math.max(...byHour.map(h => Math.abs(h.net)), 0.01);
+  const H = 28;
+  const bars = byHour.map(h => {
+    const pct    = Math.abs(h.net) / maxAbs;
+    const height = Math.max(2, Math.round(pct * H));
+    const color  = h.net >= 0 ? '#1a7f4b' : '#b91c1c';
+    const opacity = h.hour === peorHora.hour ? '1' : '0.6';
+    const label  = h.hour === peorHora.hour ? `<div class="muerte-bar-label" style="color:var(--red)">${h.hour}h</div>` : '';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+      <div class="muerte-bar" style="height:${height}px;background:${color};opacity:${opacity}"
+        title="${h.hour}:00 · $${h.net.toFixed(2)} · ${h.count} trades"></div>
+      ${label}
+    </div>`;
+  }).join('');
+  return `
+    <div class="muerte-wrap">
+      <div class="muerte-title">P&L por hora del día</div>
+      <div class="muerte-bars">${bars}</div>
+      <div class="muerte-peak">⚠ Peor franja: ${peorHora.hour}:00h ($${peorHora.net.toFixed(2)})</div>
+    </div>`;
+}
+
+function calcConfianza(bot) {
+  const n = bot.tradeList?.length || 0;
+  if (n === 0) return null;
+  if (n < 30)  return { n, cls: 'conf-inmaduro',  dot: '🔵', label: `n=${n} · baja confianza`,  title: 'Menos de 30 trades — no concluir nada aún' };
+  if (n < 100) return { n, cls: 'conf-validando', dot: '🟡', label: `n=${n} · en validación`,   title: '30–100 trades — tendencia visible pero no definitiva' };
+  return         { n, cls: 'conf-validado',  dot: '🟢', label: `n=${n} · validado`,        title: 'Más de 100 trades — dato estadísticamente confiable' };
+}
+
+function buildFichaDiagnostico(bot) {
+  const sem  = calcSemaforo(bot);
+  const conf = calcConfianza(bot);
+  const deg  = calcDegradacion(bot);
+  const hora = calcHoraMuerte(bot);
+
+  let degLabel = '—';
+  if (deg && deg.length >= 3) {
+    const first3 = deg.slice(0,3).reduce((a,b) => a + b.pf, 0) / 3;
+    const last3  = deg.slice(-3).reduce((a,b) => a + b.pf, 0) / 3;
+    degLabel = last3 >= first3 ? '↑ Mejorando' : last3 >= first3 * 0.85 ? '→ Estable' : '↓ Degradando';
+  }
+
+  const rows = [
+    { label: 'Estado',      val: sem  ? `${sem.dot} ${sem.label}`   : '— sin datos live' },
+    { label: 'Confianza',   val: conf ? `${conf.dot} ${conf.label}` : '— sin trades' },
+    { label: 'PF live',     val: bot.pf    != null ? bot.pf.toFixed(2)    : '—' },
+    { label: 'DD live',     val: bot.ddPct != null ? bot.ddPct.toFixed(1) + '%' : '—' },
+    { label: 'Trades',      val: bot.tradeList?.length || '—' },
+    { label: 'Tendencia',   val: degLabel },
+    { label: 'Peor franja', val: hora ? `${hora.peorHora.hour}:00h ($${hora.peorHora.net.toFixed(2)})` : '—' },
+    { label: 'Diagnóstico', val: sem ? sem.razones.join(' · ') : '—' },
+  ];
+
+  return rows.map(r => `
+    <div class="ficha-row">
+      <span class="ficha-label">${r.label}</span>
+      <span class="ficha-val">${r.val}</span>
+    </div>`).join('');
+}
+
 function dnaInit(allBots) {
   const usage = {};
   allBots.forEach(bot => {
@@ -525,6 +726,17 @@ function dnaInit(allBots) {
     const rest    = bot.inds.filter(i => !primary.includes(i));
     const div = document.createElement('div');
     div.className = 'dna-bot-card';
+    const fichaId = 'ficha-' + bot.id.replace(/[^a-zA-Z0-9]/g, '_');
+    div.onclick = (e) => {
+      if (e.target.classList.contains('dna-bot-remove')) return;
+      div.classList.toggle('expanded');
+      const panel = document.getElementById(fichaId);
+      if (panel) {
+        panel.classList.toggle('open');
+        const chev = div.querySelector('.ficha-chevron');
+        if (chev) chev.classList.toggle('open');
+      }
+    };
     const safeId = bot.id.replace(/'/g, "\\'");
     const sem = calcSemaforo(bot);
     const semHtml = sem
@@ -532,6 +744,14 @@ function dnaInit(allBots) {
            <span class="sem-badge ${sem.cls}">${sem.dot} ${sem.label}</span>
            <div class="sem-tooltip">${sem.razones.join('<br>')}</div>
          </div>`
+      : '';
+    const degradacion    = calcDegradacion(bot);
+    const degradHtml     = renderDegradacionSVG(degradacion);
+    const horaMuerte     = calcHoraMuerte(bot);
+    const horaMuerteHtml = renderHoraMuerteSVG(horaMuerte);
+    const confianza      = calcConfianza(bot);
+    const confianzaHtml  = confianza
+      ? `<div><span class="conf-badge ${confianza.cls}" title="${confianza.title}">${confianza.dot} ${confianza.label}</span></div>`
       : '';
     div.innerHTML = `
       <div class="dna-bot-top">
@@ -552,7 +772,16 @@ function dnaInit(allBots) {
         ${rest.map(i=>`<span class="dna-chip ${bot.dir==='Short'?'dna-chip-short':''}">${i}</span>`).join('')}
         ${bot.inds.length === 0 ? '<span class="dna-chip" style="background:#fff3cd;border-color:#ffc107;color:#856404">⚠ sin indicadores</span>' : ''}
       </div>
-      <div style="font-size:9px;color:var(--text3);margin-top:5px;line-height:1.4">${bot.signal.substring(0,72)}${bot.signal.length>72?'…':''}</div>`;
+      <div style="font-size:9px;color:var(--text3);margin-top:5px;line-height:1.4">${bot.signal.substring(0,72)}${bot.signal.length>72?'…':''}</div>
+      ${degradHtml}
+      ${horaMuerteHtml}
+      ${confianzaHtml}
+      <div style="display:flex;justify-content:flex-end;margin-top:4px">
+        <span style="font-size:9px;color:var(--text3)">ver diagnóstico <span class="ficha-chevron">▼</span></span>
+      </div>
+      <div class="ficha-panel" id="${fichaId}">
+        ${buildFichaDiagnostico(bot)}
+      </div>`;
     grid.appendChild(div);
   });
 
@@ -1073,7 +1302,8 @@ function _botsToOverlapFormat(remoteBots, liveByMagic) {
       const live = b.magic ? (liveByMagic[String(b.magic)] || null) : null;
       const ddPct = live?.ddPct ?? b.mt5Data?.ddPct ?? null;
       const pf    = live?.pf    ?? b.mt5Data?.pf    ?? null;
-      return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal, ddPct, pf };
+      const tradeList = live?.tradeList ?? b.mt5Data?.tradeList ?? [];
+      return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal, ddPct, pf, tradeList };
     });
 }
 
