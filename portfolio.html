@@ -476,6 +476,26 @@
           </div>
         </div>
 
+        <!-- D1: CORRELACIÓN DD -->
+        <div id="correlacion-section" style="display:none;margin-top:1.5rem">
+          <div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--border)">
+            Correlación de Drawdown — días donde múltiples bots perdieron juntos
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+            Cada fila es un día con pérdidas. Rojo = bot perdió ese día. Cuantas más columnas rojas en una fila, mayor correlación sistémica.
+          </div>
+          <div id="correlacion-wrap" style="overflow-x:auto"></div>
+        </div>
+
+        <!-- D2: SIMULADOR SIN BOT -->
+        <div id="sim-panel" style="display:none;margin-top:1.5rem;border:1px solid var(--accent);border-radius:var(--radius-lg);overflow:hidden">
+          <div style="padding:10px 14px;background:var(--accent-light);border-bottom:1px solid #c7d2fe;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:var(--accent)">Simulación: portfolio sin <span id="sim-bot-name">—</span></span>
+            <button onclick="document.getElementById('sim-panel').style.display='none'" style="height:24px;padding:0 10px;font-size:11px;cursor:pointer;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg)">✕ Cerrar</button>
+          </div>
+          <div id="sim-content" style="padding:14px 16px"></div>
+        </div>
+
       </div>
 
     </div>
@@ -488,6 +508,7 @@
 // ─────────────────────────────────────────────
 let ALL_BOTS = [];      // [{name, magic, symbol, tf, pf, liveData}]
 let ALL_TRADES = [];    // raw trades from Supabase
+let LIVE_BY_MAGIC = {}; // computed by computeLiveByMagic — global for D2/D3
 let SELECTED = new Set(); // Set of magic strings
 let SORT_MODE = 'pf';  // 'pf' | 'name'
 
@@ -510,14 +531,14 @@ async function initPortfolio() {
 
   try {
     const [remoteBots, trades] = await Promise.all([sb.getBots(), sb.getMyTrades()]);
-    const liveByMagic = computeLiveByMagic(trades);
+    LIVE_BY_MAGIC = computeLiveByMagic(trades);
     ALL_TRADES = trades;
 
     // Solo bots con magic + trades
     ALL_BOTS = remoteBots
-      .filter(b => b.magic && liveByMagic[String(b.magic)])
+      .filter(b => b.magic && LIVE_BY_MAGIC[String(b.magic)])
       .map(b => {
-        const live = liveByMagic[String(b.magic)];
+        const live = LIVE_BY_MAGIC[String(b.magic)];
         return {
           name:   b.name || '—',
           magic:  String(b.magic),
@@ -608,13 +629,22 @@ function renderBotList() {
   el.innerHTML = bots.map(b => {
     const sel = SELECTED.has(b.magic);
     const pfCls = b.pf >= 1.3 ? 'pf-good' : b.pf >= 1.1 ? 'pf-warn' : 'pf-bad';
+    const eff = calcEfficiency(b);
+    const effHtml = eff
+      ? `<span style="font-size:10px;color:${eff.perDay>=0?'var(--green)':'var(--red)'};font-weight:600;margin-left:5px">${eff.perDay>=0?'+':''}$${eff.perDay}/d</span>`
+      : '';
     return `<div class="bot-item${sel?' selected':''}" onclick="toggleBot('${b.magic}')">
       <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();toggleBot('${b.magic}')">
       <div class="bot-item-info">
         <div class="bot-item-name" title="${esc(b.name)}">${esc(b.name)}</div>
-        <div class="bot-item-meta">${b.symbol} · ${b.tf} · Magic ${b.magic}</div>
+        <div class="bot-item-meta">${b.symbol} · ${b.tf} · Magic ${b.magic}${effHtml}</div>
       </div>
-      <div class="bot-pf-badge ${pfCls}">${b.pf ? b.pf.toFixed(2) : '—'}</div>
+      <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+        <div class="bot-pf-badge ${pfCls}">${b.pf ? b.pf.toFixed(2) : '—'}</div>
+        <button onclick="event.stopPropagation();simularSinBot('${b.magic}')"
+          style="font-size:10px;height:22px;padding:0 7px;border-radius:4px;background:var(--bg2);border:1px solid var(--border2);color:var(--text3);cursor:pointer;white-space:nowrap"
+          title="Ver métricas del portfolio sin este bot">Sin este →</button>
+      </div>
     </div>`;
   }).join('');
 
@@ -693,6 +723,7 @@ function renderAnalysis() {
   renderBotRanks(selectedBots);
   renderWarning(trades, selectedBots);
   renderCorrelation(trades, selectedBots);
+  renderCorrelacion(calcCorrelacionDD(selectedBots));
 }
 
 function computePortfolioMetrics(trades) {
@@ -745,12 +776,12 @@ function renderKPIs(m) {
   document.getElementById('kpi-row').innerHTML = `
     <div class="kpi-card">
       <div class="kpi-card-top">Profit Factor</div>
-      <div class="kpi-card-val" style="color:${pfColor}">${m.pf >= 999 ? '∞' : m.pf.toFixed(2)}</div>
+      <div id="kpi-pf" class="kpi-card-val" style="color:${pfColor}">${m.pf >= 999 ? '∞' : m.pf.toFixed(2)}</div>
       <div class="kpi-card-sub">Portfolio combinado</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-card-top">Max Drawdown</div>
-      <div class="kpi-card-val" style="color:${ddColor}">${m.ddPct.toFixed(2)}%</div>
+      <div id="kpi-dd" class="kpi-card-val" style="color:${ddColor}">${m.ddPct.toFixed(2)}%</div>
       <div class="kpi-card-sub">Sobre equity acum.</div>
     </div>
     <div class="kpi-card">
@@ -760,7 +791,7 @@ function renderKPIs(m) {
     </div>
     <div class="kpi-card">
       <div class="kpi-card-top">Net P&amp;L</div>
-      <div class="kpi-card-val" style="color:${npColor}">${(m.netProfit>=0?'+':'-')}${fmt(m.netProfit)}</div>
+      <div id="kpi-net" class="kpi-card-val" style="color:${npColor}">${(m.netProfit>=0?'+':'-')}${fmt(m.netProfit)}</div>
       <div class="kpi-card-sub">Sin leverage</div>
     </div>
     <div class="kpi-card">
@@ -1049,6 +1080,201 @@ function fmt(v) {
 
 function esc(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────
+// D3 — EFFICIENCY SCORE
+// ─────────────────────────────────────────────
+function calcEfficiency(bot) {
+  const trades = ALL_TRADES.filter(t => String(t.magic||'') === String(bot.magic));
+  if (!trades.length) return null;
+  const net = trades.reduce((s,t) => s + (t.profit||0) + (t.commission||0) + (t.swap||0), 0);
+  const fechas = trades.map(t => new Date(t.close_time)).filter(d => !isNaN(d));
+  if (!fechas.length) return null;
+  const first = new Date(Math.min(...fechas));
+  const dias  = Math.max(1, Math.round((new Date() - first) / 86400000));
+  return { net: +net.toFixed(2), dias, perDay: +(net / dias).toFixed(3) };
+}
+
+// ─────────────────────────────────────────────
+// D1 — CORRELACIÓN DD
+// ─────────────────────────────────────────────
+function calcCorrelacionDD(selectedBots) {
+  const magicToName = {};
+  selectedBots.forEach(b => { magicToName[b.magic] = b.name; });
+
+  const dayMap = {};
+  for (const t of ALL_TRADES) {
+    const m = String(t.magic || '');
+    if (!magicToName[m]) continue;
+    const day = (t.close_time || '').slice(0, 10);
+    if (!day || day < '2000-01-01') continue;
+    if (!dayMap[day]) dayMap[day] = {};
+    if (!dayMap[day][m]) dayMap[day][m] = 0;
+    dayMap[day][m] += (t.profit||0) + (t.commission||0) + (t.swap||0);
+  }
+
+  const days = Object.keys(dayMap)
+    .filter(d => Object.keys(dayMap[d]).length >= 2)
+    .sort()
+    .slice(-30);
+
+  return { days, dayMap, bots: selectedBots, magicToName };
+}
+
+function renderCorrelacion(data) {
+  const section = document.getElementById('correlacion-section');
+  const wrap    = document.getElementById('correlacion-wrap');
+  if (!section || !wrap) return;
+  if (!data || !data.days.length) { section.style.display = 'none'; return; }
+
+  const { days, dayMap, bots, magicToName } = data;
+
+  // Solo bots con actividad en esos días
+  const activeBots = bots.filter(b => days.some(d => dayMap[d]?.[b.magic] !== undefined));
+  if (!activeBots.length) { section.style.display = 'none'; return; }
+
+  let diasCorrelados = 0;
+  days.forEach(d => {
+    const perdedores = activeBots.filter(b => (dayMap[d]?.[b.magic] || 0) < 0);
+    if (perdedores.length >= 2) diasCorrelados++;
+  });
+  const corrPct  = Math.round(diasCorrelados / days.length * 100);
+  const corrColor = corrPct >= 50 ? 'var(--red)' : corrPct >= 30 ? '#d97706' : 'var(--green)';
+  const corrLabel = corrPct >= 50 ? 'Alta correlación — revisar diversificación'
+                  : corrPct >= 30 ? 'Correlación moderada'
+                  : 'Baja correlación — buena diversificación';
+
+  let html = `
+    <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <div style="font-size:13px;font-weight:700;color:${corrColor}">${corrPct}% días correlados</div>
+      <div style="font-size:12px;color:var(--text2)">${corrLabel}</div>
+      <div style="font-size:11px;color:var(--text3);margin-left:auto">${days.length} días analizados</div>
+    </div>
+    <table style="border-collapse:collapse;font-size:11px;min-width:600px">
+      <thead>
+        <tr>
+          <th style="padding:5px 10px;text-align:left;background:var(--bg2);border:1px solid var(--border);font-size:10px;color:var(--text3);white-space:nowrap">Día</th>
+          ${activeBots.map(b => {
+            const short = b.name.replace(/^(SQX_|sqx_)/i,'').slice(0,12);
+            return `<th style="padding:5px 6px;text-align:center;background:var(--bg2);border:1px solid var(--border);font-size:9px;color:var(--text3);white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg);height:70px;vertical-align:bottom" title="${esc(b.name)}">${esc(short)}</th>`;
+          }).join('')}
+          <th style="padding:5px 8px;text-align:center;background:var(--bg2);border:1px solid var(--border);font-size:10px;color:var(--text3)">Bots −</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  days.forEach(day => {
+    const perdedores = activeBots.filter(b => (dayMap[day]?.[b.magic] || 0) < 0).length;
+    const rowBg = perdedores >= Math.ceil(activeBots.length / 2) ? 'rgba(185,28,28,0.06)' : 'transparent';
+    html += `<tr style="background:${rowBg}">
+      <td style="padding:4px 10px;border:1px solid var(--border);white-space:nowrap;font-size:10px">${day}</td>`;
+    activeBots.forEach(b => {
+      const net = dayMap[day]?.[b.magic];
+      if (net === undefined) {
+        html += `<td style="padding:4px 6px;border:1px solid var(--border);text-align:center;color:var(--border2)">·</td>`;
+      } else if (net < 0) {
+        html += `<td style="padding:4px 6px;border:1px solid var(--border);text-align:center;background:#fef2f2" title="${esc(b.name)}: $${net.toFixed(2)}"><span style="color:var(--red);font-weight:700;font-size:10px">✗</span></td>`;
+      } else {
+        html += `<td style="padding:4px 6px;border:1px solid var(--border);text-align:center;background:#eaf7f0" title="${esc(b.name)}: $${net.toFixed(2)}"><span style="color:var(--green);font-weight:700;font-size:10px">✓</span></td>`;
+      }
+    });
+    html += `<td style="padding:4px 8px;border:1px solid var(--border);text-align:center;font-weight:700;color:${perdedores>=2?'var(--red)':'var(--text3)'}">${perdedores}</td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  section.style.display = 'block';
+}
+
+// ─────────────────────────────────────────────
+// D2 — SIMULADOR SIN BOT
+// ─────────────────────────────────────────────
+function simularSinBot(magic) {
+  const panel   = document.getElementById('sim-panel');
+  const nameEl  = document.getElementById('sim-bot-name');
+  const content = document.getElementById('sim-content');
+  if (!panel || !content) return;
+
+  const selectedBots = ALL_BOTS.filter(b => SELECTED.has(b.magic));
+  const bot = selectedBots.find(b => String(b.magic) === String(magic));
+  if (!bot) {
+    // Bot not currently selected — show message
+    if (nameEl) nameEl.textContent = ALL_BOTS.find(b => String(b.magic) === String(magic))?.name || magic;
+    content.innerHTML = '<div style="color:var(--text3);font-size:12px">Este bot no está en la selección actual. Seleccioná 2+ bots primero.</div>';
+    panel.style.display = 'block';
+    return;
+  }
+  if (nameEl) nameEl.textContent = bot.name;
+
+  const otrosMagics = new Set(selectedBots.filter(b => String(b.magic) !== String(magic)).map(b => String(b.magic)));
+  const tradesSin = ALL_TRADES
+    .filter(t => otrosMagics.has(String(t.magic||'')))
+    .sort((a,b) => new Date(a.close_time) - new Date(b.close_time));
+
+  if (!tradesSin.length) {
+    content.innerHTML = '<div style="color:var(--text3);font-size:12px">Sin suficientes datos para simular.</div>';
+    panel.style.display = 'block';
+    return;
+  }
+
+  const netPs = tradesSin.map(t => (t.profit||0)+(t.commission||0)+(t.swap||0));
+  const wins   = netPs.filter(p => p > 0);
+  const losses = netPs.filter(p => p < 0);
+  const gW  = wins.reduce((a,b)=>a+b,0);
+  const gL  = Math.abs(losses.reduce((a,b)=>a+b,0));
+  const pfSin  = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
+  const netSin = +netPs.reduce((a,b)=>a+b,0).toFixed(2);
+  let peak=0,eq=0,maxDD=0;
+  netPs.forEach(np=>{ eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+  const ddSin = +(maxDD*100).toFixed(2);
+
+  const pfActual  = parseFloat(document.getElementById('kpi-pf')?.textContent) || null;
+  const ddActual  = parseFloat(document.getElementById('kpi-dd')?.textContent) || null;
+  const netActual = parseFloat(document.getElementById('kpi-net')?.textContent?.replace(/[^0-9.-]/g,'')) || null;
+
+  const diff = (actual, sin, mejor) => {
+    if (actual == null) return '';
+    const d = sin - actual;
+    const color = mejor === 'mayor'
+      ? (d > 0 ? 'var(--green)' : d < 0 ? 'var(--red)' : 'var(--text3)')
+      : (d < 0 ? 'var(--green)' : d > 0 ? 'var(--red)' : 'var(--text3)');
+    const sign = d > 0 ? '+' : '';
+    return `<span style="color:${color};font-size:11px;margin-left:6px">(${sign}${d.toFixed(2)})</span>`;
+  };
+
+  const botShort = esc(bot.name.slice(0,14));
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">PF sin ${botShort}</div>
+        <div style="font-size:20px;font-weight:700;color:${pfSin>=1.3?'var(--green)':pfSin>=1.1?'#d97706':'var(--red)'}">
+          ${pfSin>=999?'∞':pfSin.toFixed(2)}${diff(pfActual,pfSin,'mayor')}
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">DD sin ${botShort}</div>
+        <div style="font-size:20px;font-weight:700;color:${ddSin<=5?'var(--green)':ddSin<=15?'#d97706':'var(--red)'}">
+          ${ddSin.toFixed(1)}%${diff(ddActual,ddSin,'menor')}
+        </div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Net sin ${botShort}</div>
+        <div style="font-size:20px;font-weight:700;color:${netSin>=0?'var(--green)':'var(--red)'}">
+          ${netSin>=0?'+':''}$${Math.abs(netSin).toLocaleString('es-AR',{maximumFractionDigits:0})}${diff(netActual,netSin,'mayor')}
+        </div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);background:var(--bg2);border-radius:var(--radius);padding:8px 12px">
+      ${pfSin > (pfActual||0) && ddSin < (ddActual||100)
+        ? '✅ Sacar este bot <strong>mejoraría</strong> el portfolio (mejor PF y menor DD)'
+        : pfSin < (pfActual||0) && ddSin > (ddActual||0)
+        ? '⚠ Sacar este bot <strong>empeoraría</strong> el portfolio (peor PF y mayor DD)'
+        : '→ Efecto mixto — evaluar según prioridad (PF vs DD)'}
+    </div>`;
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
 // ─────────────────────────────────────────────
