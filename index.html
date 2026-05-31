@@ -1468,16 +1468,13 @@ function switchTab(name) {
 
 function switchSubTab(name) {
   ['bots','alertas'].forEach(t => {
-    document.getElementById('subtab-btn-' + t).classList.toggle('active', t === name);
-    document.getElementById('subtab-' + t).classList.toggle('active', t === name);
+    const btn   = document.getElementById('subtab-btn-' + t);
+    const panel = document.getElementById('subtab-' + t);
+    if (btn)   btn.classList.toggle('active', t === name);
+    if (panel) panel.classList.toggle('active', t === name);
   });
   sessionStorage.setItem('sqx_incub_subtab', name);
 }
-// Restaurar sub-tab al recargar
-(function() {
-  const saved = sessionStorage.getItem('sqx_incub_subtab');
-  if (saved) switchSubTab(saved);
-})();
 
 // ── AUTH (Supabase) ────────────────────────────────────────────
 async function authInit() {
@@ -1555,6 +1552,8 @@ async function authGrant() {
   renderMagicLinking();
   renderAlerts();
   updateRankingCache();
+  const savedSubTab = sessionStorage.getItem('sqx_incub_subtab');
+  if (savedSubTab) switchSubTab(savedSubTab);
 }
 
 function computeLiveMetrics(trades) {
