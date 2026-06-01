@@ -1783,8 +1783,8 @@ function diagnosticoDuplicados(threshold = 70) {
         const a = bots[i], b = bots[j];
         const ns = _nameScore(a.name, b.name);
         if (ns < threshold) continue;
-        const ta = _tradeCount(a), tb = _tradeCount(b);
-        const versionesDistintas = ta > 0 && tb > 0 && ta !== tb;
+        const la = _liveCount(a), lb = _liveCount(b);
+        const versionesDistintas = la > 0 && lb > 0 && la !== lb;
         const bothSQX = _hasSQX(a) && _hasSQX(b);
         let caso, confirmado;
         if (bothSQX) {
@@ -2703,9 +2703,9 @@ async function mergeAndCleanDuplicates(dryRun = false) {
   const isDupe = (a, b) => {
     if (a.symbol !== b.symbol) return false;
     if (_nameScore(a.name, b.name) < 90) return false;
-    // Universal: si ambos tienen trades y la cantidad difiere → versiones distintas
-    const ta = _tradeCount(a), tb = _tradeCount(b);
-    if (ta > 0 && tb > 0 && ta !== tb) return false;
+    // Si ambos tienen trades en Supabase y las cantidades difieren → versiones distintas
+    const la = _liveCount(a), lb = _liveCount(b);
+    if (la > 0 && lb > 0 && la !== lb) return false;
     if (_hasSQX(a) && _hasSQX(b)) {
       const pfA = _getBotPF(a), pfB = _getBotPF(b);
       const ddA = _getBotDD(a), ddB = _getBotDD(b);
