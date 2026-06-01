@@ -1771,7 +1771,9 @@ const _hasSQX     = b => !!(b.is || b.oos);
 const _liveCount  = b => window.LIVE?.[String(b.magic)]?.tradeList?.length ?? 0;
 const _tradeCount = b => (b.mt5Data?.tradeList?.length ?? 0) + _liveCount(b);
 // Último número identificador del nombre, ignorando sufijo de copia (1)/(2) al final
-const _lastIdNum  = name => { const s = (name||'').replace(/\s*\([12]\)\s*$/, '').trim(); const n = s.match(/\d+/g); return n ? n[n.length - 1] : null; };
+const _lastIdNum      = name => { const s = (name||'').replace(/\s*\([12]\)\s*$/, '').trim(); const n = s.match(/\d+/g); return n ? n[n.length - 1] : null; };
+// Nombre truncado: termina en delimitador no-alfanumérico → el último id no es confiable
+const _isTruncated    = name => /[^a-z0-9)]$/i.test((name||'').trimEnd());
 
 function diagnosticoDuplicados(threshold = 70) {
   const bySymbol = {};
@@ -1787,7 +1789,9 @@ function diagnosticoDuplicados(threshold = 70) {
         if (ns < threshold) continue;
         const la = _liveCount(a), lb = _liveCount(b);
         const ma = a.mt5Data?.tradeList?.length ?? 0, mb = b.mt5Data?.tradeList?.length ?? 0;
-        const mt5IdDifiere = ma > 0 && mb > 0 && ma !== mb && _lastIdNum(a.name) !== _lastIdNum(b.name) && _lastIdNum(a.name) !== null;
+        const mt5IdDifiere = ma > 0 && mb > 0 && ma !== mb
+          && !_isTruncated(a.name) && !_isTruncated(b.name)
+          && _lastIdNum(a.name) !== _lastIdNum(b.name) && _lastIdNum(a.name) !== null;
         const versionesDistintas = (la > 0 && lb > 0 && la !== lb) || mt5IdDifiere;
         const bothSQX = _hasSQX(a) && _hasSQX(b);
         let caso, confirmado;
@@ -2711,8 +2715,9 @@ async function mergeAndCleanDuplicates(dryRun = false) {
     const la = _liveCount(a), lb = _liveCount(b);
     if (la > 0 && lb > 0 && la !== lb) return false;
     // Si ambos tienen mt5Data con cantidades distintas → comparar último id numérico del nombre
+    // (solo si ninguno tiene nombre truncado — terminado en delimitador)
     const ma = a.mt5Data?.tradeList?.length ?? 0, mb = b.mt5Data?.tradeList?.length ?? 0;
-    if (ma > 0 && mb > 0 && ma !== mb) {
+    if (ma > 0 && mb > 0 && ma !== mb && !_isTruncated(a.name) && !_isTruncated(b.name)) {
       const ia = _lastIdNum(a.name), ib = _lastIdNum(b.name);
       if (ia !== null && ib !== null && ia !== ib) return false;
     }
