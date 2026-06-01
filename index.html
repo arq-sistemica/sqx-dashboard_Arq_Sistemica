@@ -1770,6 +1770,8 @@ const _getBotDD   = b => b.is?.dd  ?? b.oos?.dd  ?? b.dd  ?? null;
 const _hasSQX     = b => !!(b.is || b.oos);
 const _liveCount  = b => window.LIVE?.[String(b.magic)]?.tradeList?.length ?? 0;
 const _tradeCount = b => (b.mt5Data?.tradeList?.length ?? 0) + _liveCount(b);
+// Último número identificador del nombre, ignorando sufijo de copia (1)/(2) al final
+const _lastIdNum  = name => { const s = (name||'').replace(/\s*\([12]\)\s*$/, '').trim(); const n = s.match(/\d+/g); return n ? n[n.length - 1] : null; };
 
 function diagnosticoDuplicados(threshold = 70) {
   const bySymbol = {};
@@ -1784,7 +1786,9 @@ function diagnosticoDuplicados(threshold = 70) {
         const ns = _nameScore(a.name, b.name);
         if (ns < threshold) continue;
         const la = _liveCount(a), lb = _liveCount(b);
-        const versionesDistintas = la > 0 && lb > 0 && la !== lb;
+        const ma = a.mt5Data?.tradeList?.length ?? 0, mb = b.mt5Data?.tradeList?.length ?? 0;
+        const mt5IdDifiere = ma > 0 && mb > 0 && ma !== mb && _lastIdNum(a.name) !== _lastIdNum(b.name) && _lastIdNum(a.name) !== null;
+        const versionesDistintas = (la > 0 && lb > 0 && la !== lb) || mt5IdDifiere;
         const bothSQX = _hasSQX(a) && _hasSQX(b);
         let caso, confirmado;
         if (bothSQX) {
@@ -2703,9 +2707,15 @@ async function mergeAndCleanDuplicates(dryRun = false) {
   const isDupe = (a, b) => {
     if (a.symbol !== b.symbol) return false;
     if (_nameScore(a.name, b.name) < 90) return false;
-    // Si ambos tienen trades en Supabase y las cantidades difieren → versiones distintas
+    // Si ambos tienen trades Supabase con cantidades distintas → versiones distintas
     const la = _liveCount(a), lb = _liveCount(b);
     if (la > 0 && lb > 0 && la !== lb) return false;
+    // Si ambos tienen mt5Data con cantidades distintas → comparar último id numérico del nombre
+    const ma = a.mt5Data?.tradeList?.length ?? 0, mb = b.mt5Data?.tradeList?.length ?? 0;
+    if (ma > 0 && mb > 0 && ma !== mb) {
+      const ia = _lastIdNum(a.name), ib = _lastIdNum(b.name);
+      if (ia !== null && ib !== null && ia !== ib) return false;
+    }
     if (_hasSQX(a) && _hasSQX(b)) {
       const pfA = _getBotPF(a), pfB = _getBotPF(b);
       const ddA = _getBotDD(a), ddB = _getBotDD(b);
