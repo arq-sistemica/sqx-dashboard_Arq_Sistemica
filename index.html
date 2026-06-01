@@ -1783,6 +1783,8 @@ function diagnosticoDuplicados(threshold = 70) {
         const a = bots[i], b = bots[j];
         const ns = _nameScore(a.name, b.name);
         if (ns < threshold) continue;
+        const ta = _tradeCount(a), tb = _tradeCount(b);
+        const versionesDistintas = ta > 0 && tb > 0 && ta !== tb;
         const bothSQX = _hasSQX(a) && _hasSQX(b);
         let caso, confirmado;
         if (bothSQX) {
@@ -1790,12 +1792,9 @@ function diagnosticoDuplicados(threshold = 70) {
           const ddA = _getBotDD(a), ddB = _getBotDD(b);
           const metricsOk = pfA != null && pfB != null && ddA != null && ddB != null
             && Math.abs(pfA - pfB) <= 0.05 && Math.abs(ddA - ddB) <= 0.05;
-          caso = 'A (ambos SQX)'; confirmado = ns >= 90 && metricsOk;
+          caso = 'A (ambos SQX)'; confirmado = ns >= 90 && metricsOk && !versionesDistintas;
         } else {
-          const ta = _tradeCount(a), tb = _tradeCount(b);
-          const versionesDistintas = ta > 0 && tb > 0 && ta !== tb;
-          caso = 'B (sin SQX)';
-          confirmado = ns >= 90 && !versionesDistintas;
+          caso = 'B (sin SQX)'; confirmado = ns >= 90 && !versionesDistintas;
         }
         rows.push({
           estado: confirmado ? '✅ CONFIRMADO' : '⚠️ sospechoso',
@@ -2704,15 +2703,14 @@ async function mergeAndCleanDuplicates(dryRun = false) {
   const isDupe = (a, b) => {
     if (a.symbol !== b.symbol) return false;
     if (_nameScore(a.name, b.name) < 90) return false;
+    // Universal: si ambos tienen trades y la cantidad difiere → versiones distintas
+    const ta = _tradeCount(a), tb = _tradeCount(b);
+    if (ta > 0 && tb > 0 && ta !== tb) return false;
     if (_hasSQX(a) && _hasSQX(b)) {
       const pfA = _getBotPF(a), pfB = _getBotPF(b);
       const ddA = _getBotDD(a), ddB = _getBotDD(b);
       if (pfA != null && pfB != null && Math.abs(pfA - pfB) > 0.05) return false;
       if (ddA != null && ddB != null && Math.abs(ddA - ddB) > 0.05) return false;
-    } else {
-      // Caso B: si ambos tienen trades y la cantidad difiere → versiones distintas, no fusionar
-      const ta = _tradeCount(a), tb = _tradeCount(b);
-      if (ta > 0 && tb > 0 && ta !== tb) return false;
     }
     return true;
   };
