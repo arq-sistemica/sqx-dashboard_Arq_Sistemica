@@ -2761,6 +2761,7 @@ async function mergeAndCleanDuplicates(dryRun = false) {
   if (dryRun) {
     const report = [];
     plan.forEach(({ winner, losers }) => losers.forEach(loser => {
+      if (!isDupe(winner, loser)) return; // descartar pares transitivos que no pasan isDupe directo
       report.push({
         ganador: winner.name, perdedor: loser.name,
         'trades ganador': _tradeCount(winner), 'trades perdedor': _tradeCount(loser),
@@ -2781,6 +2782,7 @@ async function mergeAndCleanDuplicates(dryRun = false) {
 
   plan.forEach(({ winner, losers }) => {
     losers.forEach(loser => {
+      if (!isDupe(winner, loser)) { console.log(`SKIP transitivo: "${loser.name}" no pasa isDupe con "${winner.name}"`); return; }
       console.log(`FUSIÓN: "${loser.name}" → "${winner.name}"`);
       // SQX data: transferir si el ganador no lo tiene
       for (const k of ['is','oos','overviewData','pseudocodigoData'])
