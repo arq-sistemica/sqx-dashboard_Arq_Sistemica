@@ -1792,7 +1792,10 @@ function diagnosticoDuplicados(threshold = 70) {
             && Math.abs(pfA - pfB) <= 0.05 && Math.abs(ddA - ddB) <= 0.05;
           caso = 'A (ambos SQX)'; confirmado = ns >= 90 && metricsOk;
         } else {
-          caso = 'B (sin SQX)'; confirmado = ns >= 90;
+          const ta = _tradeCount(a), tb = _tradeCount(b);
+          const versionesDistintas = ta > 0 && tb > 0 && ta !== tb;
+          caso = 'B (sin SQX)';
+          confirmado = ns >= 90 && !versionesDistintas;
         }
         rows.push({
           estado: confirmado ? '✅ CONFIRMADO' : '⚠️ sospechoso',
@@ -2706,6 +2709,10 @@ async function mergeAndCleanDuplicates(dryRun = false) {
       const ddA = _getBotDD(a), ddB = _getBotDD(b);
       if (pfA != null && pfB != null && Math.abs(pfA - pfB) > 0.05) return false;
       if (ddA != null && ddB != null && Math.abs(ddA - ddB) > 0.05) return false;
+    } else {
+      // Caso B: si ambos tienen trades y la cantidad difiere → versiones distintas, no fusionar
+      const ta = _tradeCount(a), tb = _tradeCount(b);
+      if (ta > 0 && tb > 0 && ta !== tb) return false;
     }
     return true;
   };
