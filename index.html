@@ -643,6 +643,7 @@
   <div class="topbar-right">
     <span id="db-count" style="font-size:11px;color:var(--text3);margin-right:4px">24 bots guardados</span>
     <span id="sync-status" style="font-size:11px;margin-right:4px;color:rgb(217,119,6);">⏳ Guardando...</span>
+    <button id="btn-refresh-trades" onclick="refreshTrades()" title="Actualizar trades ahora" style="font-size:12px;padding:2px 6px;cursor:pointer;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text2);">🔄</button>
 
     <!-- Selector de cuenta MT5 — reemplazado por checkboxes en panel INCUBACION -->
 
@@ -1572,6 +1573,18 @@ async function authGrant() {
   const stubsCreated = autoCreateStubs();
   if (stubsCreated > 0)
     console.log(`Auto-stubs: ${stubsCreated} bots creados sin CSV`);
+  // Fallback: crear stub mínimo para magics que siguen sin bot tras autoCreateStubs
+  {
+    const knownMagics = new Set(DB.map(b => b.magic).filter(Boolean).map(String));
+    const trades = window._lastTrades || [];
+    const orphans = new Set();
+    trades.forEach(t => { const m = String(t.magic || ''); if (m && m !== '0' && !knownMagics.has(m)) orphans.add(m); });
+    orphans.forEach(magic => {
+      const first = trades.find(t => String(t.magic) === magic);
+      DB.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), magic: parseInt(magic), name: `Bot ${magic} (auto)`, symbol: first ? first.symbol : '', tf: '', source: 'mt5', added: new Date().toISOString().slice(0, 10), notes: '' });
+      console.log(`Fallback stub: magic ${magic}`);
+    });
+  }
   renderAccountCheckboxes();
   render();
   renderMagicLinking();
@@ -1579,6 +1592,32 @@ async function authGrant() {
   updateRankingCache();
   const savedSubTab = sessionStorage.getItem('sqx_incub_subtab');
   if (savedSubTab) switchSubTab(savedSubTab);
+  window._refreshInterval = setInterval(refreshTrades, 60 * 60 * 1000);
+}
+
+async function refreshTrades() {
+  const btn = document.getElementById('btn-refresh-trades');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    const trades = await sb.getMyTrades();
+    window._lastTrades = trades;
+    window._selectedAccounts = new Set();
+    window._filteredMagics = null;
+    window.LIVE = computeLiveMetrics(trades);
+    window._magicSummary = buildMagicSummary(trades);
+    autoMatchMagics();
+    autoCreateStubs();
+    renderAccountCheckboxes();
+    render();
+    renderAlerts();
+    const now = new Date();
+    const hhmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    setSyncStatus('🔄 ' + hhmm, 'var(--text3)');
+  } catch(e) {
+    console.warn('refreshTrades error:', e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄'; }
+  }
 }
 
 function computeLiveMetrics(trades, skipMt5Merge = false) {
@@ -2282,6 +2321,7 @@ async function authRegister() {
 }
 
 async function authLogout() {
+  clearInterval(window._refreshInterval);
   await sb.signOut();
   location.reload();
 }
@@ -2588,6 +2628,11 @@ function processFile(file) {
 
         parsed.forEach(s => {
           const sNorm = _nN(s.name);
+          // 0. Match por magic number (prioridad máxima si el CSV trae magic)
+          if (s.magic) {
+            const magicMatch = DB.find(x => x.magic && String(x.magic) === String(s.magic));
+            if (magicMatch) { mergeSQX(magicMatch, s); merged++; return; }
+          }
           // 1. Match exacto por nombre
           const exactMatch = DB.find(x => x.name === s.name);
           if (exactMatch) { mergeSQX(exactMatch, s); merged++; return; }
