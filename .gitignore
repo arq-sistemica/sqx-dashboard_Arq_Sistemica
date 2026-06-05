@@ -5,7 +5,6 @@ db_data*.json
 db_data_*.json
 myfxbook_output.json
 .json/
-tradecapture/
 *.csv
 
 # Claude Code interno

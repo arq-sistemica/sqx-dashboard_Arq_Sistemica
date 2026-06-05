@@ -1,0 +1,95 @@
+================================================================================
+ANÁLISIS DE BOTS AUDUSD SHORT — MÉTRICAS REALES POR BOT
+Cuenta incubadora: ~50 bots | Base $10,000 por bot | Actualizado: 04/05/2026
+Fuente: Myfxbook — filtro individual por magic number
+================================================================================
+
+CONTEXTO IMPORTANTE
+-------------------
+La cuenta Myfxbook tiene ~50 bots corriendo juntos. Para aislar la
+contribución real de cada bot se usó el filtro por magic number de Myfxbook.
+
+El equity total que muestra Myfxbook ($11,331) corresponde a TODA la cuenta
+y no debe usarse para evaluar bots individuales.
+
+La base de cálculo por bot es $10,000.
+
+Cada bot tuvo cambio de magic number por migración de VPS:
+  - Bot 2623: operó como "2623" y luego como "2623214" — mismo EA
+  - Bot 4914: operó como "4914" y luego como "4914115" — mismo EA
+  - Bot 2719: sin cambio de magic number
+
+
+================================================================================
+MÉTRICAS REALES — FILTRO MYFXBOOK INDIVIDUAL
+================================================================================
+
+BOT 2719  ← ÚNICO CON EDGE REAL
+---------------------------------
+Gain:           +1.57%
+Profit neto:    +$156.63
+Drawdown:       1.29%
+Highest:        $10,254.77 (Abr 13)
+G/DD ratio:     1.22x
+Veredicto:      MANTENER — es el mejor bot del trío por amplio margen
+
+
+BOT 2623  ← MARGINAL
+---------------------------------
+Gain:           +0.06%
+Profit neto:    +$6.39
+Drawdown:       1.94%
+Highest:        $10,175.96 (Abr 10)
+G/DD ratio:     0.03x
+Veredicto:      OBSERVAR — apenas positivo, no justifica el DD
+
+
+BOT 4914  ← EN NEGATIVO ⚠️
+---------------------------------
+Gain:           -0.16%
+Profit neto:    -$15.68
+Drawdown:       2.56%
+Highest:        $10,246.53 (Feb 26)
+G/DD ratio:     negativo
+Veredicto:      REVISAR / REEMPLAZAR — único bot en negativo, mayor DD
+
+
+================================================================================
+RANKING FINAL
+================================================================================
+
+1°  Bot 2719  →  +$156.63  /  DD 1.29%  /  G/DD 1.22x   → Mantener
+2°  Bot 2623  →  +$6.39    /  DD 1.94%  /  G/DD 0.03x   → Observar
+3°  Bot 4914  →  -$15.68   /  DD 2.56%  /  G/DD negativo → Reemplazar
+
+
+================================================================================
+NOTA SOBRE EL ANÁLISIS ANTERIOR
+================================================================================
+
+El análisis previo basado en la cuenta IC Markets mostraba al bot 4914 como
+el mejor (+$101) y al 2719 como borderline. Ese análisis estaba distorsionado
+porque los magic numbers se superponían entre bots en la misma cuenta.
+
+El filtro individual de Myfxbook invierte el ranking completamente.
+Estos números son los correctos.
+
+
+================================================================================
+ACCIONES CONCRETAS
+================================================================================
+
+1. Bot 2719 → No tocar. Si se va a escalar sizing, empezar por este bot.
+
+2. Bot 2623 → Monitorear 15 trades más. Si no mejora el G/DD, reemplazar
+              por una versión más reciente del EA desde SQX.
+
+3. Bot 4914 → Candidato a reemplazo. Ya existe Magic 2623 que lo reemplazó
+              en DarwinexZero. Evaluar si corresponde hacer lo mismo
+              en la incubadora.
+
+
+================================================================================
+FIN DEL DOCUMENTO
+Fede — Incubadora AUDUSD | 04/05/2026
+================================================================================

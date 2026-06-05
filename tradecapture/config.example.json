@@ -1,0 +1,18 @@
+{
+  "credentials_file": "credentials.json",
+  "drive_folder_id": "PEGAR_AQUI_EL_ID_DE_CARPETA_DRIVE",
+  "accounts": [
+    {
+      "label": "DarwinexZero",
+      "mt5_files_path": "C:\\Users\\Fede\\AppData\\Roaming\\MetaQuotes\\Terminal\\TERMINAL_ID_DARWINEX\\MQL5\\Files\\"
+    },
+    {
+      "label": "AXISelect",
+      "mt5_files_path": "C:\\Users\\Fede\\AppData\\Roaming\\MetaQuotes\\Terminal\\TERMINAL_ID_AXI\\MQL5\\Files\\"
+    },
+    {
+      "label": "PropXP",
+      "mt5_files_path": "C:\\Users\\Fede\\AppData\\Roaming\\MetaQuotes\\Terminal\\TERMINAL_ID_PROPXP\\MQL5\\Files\\"
+    }
+  ]
+}
