@@ -7,6 +7,8 @@
     { href: 'overlap.html',        label: 'Overlap',        icon: '📊' },
     { href: 'tendencia.html',      label: 'Tendencia',      icon: '📈' },
     { href: 'estacionalidad.html', label: 'Estacionalidad', icon: '📅' },
+    { href: 'sqx.html',            label: 'SQX',            icon: '⚙️' },
+    { href: 'mt5.html',            label: 'MT5',            icon: '📉' },
   ];
 
   var style = document.createElement('style');

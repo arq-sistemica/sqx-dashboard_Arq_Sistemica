@@ -917,6 +917,11 @@ async function initRanking() {
   document.getElementById('no-data-screen').style.display = 'flex';
 }
 
+function authLogout() {
+  if (typeof sb !== 'undefined') sb.signOut();
+  window.location.href = 'index.html';
+}
+
 initRanking();
 
 // Auto-refresh cuando el dashboard actualiza sqx_ranking_bots desde otra pestaña

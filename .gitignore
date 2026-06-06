@@ -18,3 +18,7 @@ old_*.html
 
 # Node
 node_modules/
+
+# Carpetas locales — no commitear
+_archivo/
+MQ5/

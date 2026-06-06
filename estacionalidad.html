@@ -559,6 +559,11 @@ function startAutoRefresh() {
   });
 }
 
+function authLogout() {
+  if (typeof sb !== 'undefined') sb.signOut();
+  window.location.href = 'index.html';
+}
+
 // ── START ──
 init();
 </script>

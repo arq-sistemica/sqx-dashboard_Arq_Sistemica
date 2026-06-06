@@ -1481,6 +1481,11 @@ window.addEventListener('storage', e => {
   b.innerHTML = '<span>⚡ Datos actualizados desde el dashboard</span><button onclick="document.getElementById(\'update-banner\').style.display=\'none\';refreshData()" style="background:#fff;color:#1a7f4b;border:none;border-radius:5px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">↺ Recargar</button><button onclick="document.getElementById(\'update-banner\').style.display=\'none\'" style="background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 2px">×</button>';
   document.body.appendChild(b);
 });
+
+function authLogout() {
+  if (typeof sb !== 'undefined') sb.signOut();
+  window.location.href = 'index.html';
+}
 </script>
 </body>
 </html>

@@ -1,9 +1,37 @@
 # SQX Dashboard — Arquitectura Sistémica
 
-## Documentación del proyecto
-- [`docs/arquitectura.md`](docs/arquitectura.md) — mapa completo del ecosistema y módulos
-- [`docs/roadmap.md`](docs/roadmap.md) — pendientes y features futuras
-- [`docs/convenciones.md`](docs/convenciones.md) — reglas de trabajo y convenciones
+## ⚠️ REDISEÑO EN CURSO — Leer antes de tocar código
+
+### Arquitectura nueva (3 capas separadas)
+El sistema está siendo rediseñado. Las tres capas son independientes y se unen SOLO en el Dashboard:
+
+1. **Capa SQX** — backtest puro (tabla `bots` en Supabase)
+2. **Capa MT5** — trades reales (tabla `trades` en Supabase)
+3. **Dashboard** — une ambas capas por magic number
+
+### Regla crítica — Magic Number
+**Magic = todos los dígitos del nombre del bot concatenados, sin separaciones**
+- `"Strategy 3.1.18(1) - Improved 5.1.6"` → magic = `31181516`
+- `"Strategy 1.5.5(5) - Improved 1.1.5"` → magic = `1555115`
+- El magic es el ID del bot. Se calcula al cargar. NO es editable.
+- El magic es el JOIN entre bots (SQX) y trades (MT5)
+
+### Código legacy — NO usar, NO extender
+- `autoMatchMagics()` → será eliminado
+- `autoCreateStubs()` → será eliminado
+- `renderMagicLinking()` → será eliminado
+- `magic_locked` → será eliminado
+- `mt5Data` dentro del bot → será eliminado
+- Campo Magic editable en la ficha → será eliminado
+
+### Navegación nueva
+Sección ANÁLISIS: `SQX` | `MT5` | `Dashboard`
+
+### Carga de datos
+- CSVs SQX: scan de carpeta `SQX/` → parsea todos → deduplica por magic (más reciente gana)
+- Pseudocódigos: scan de carpeta `Pseud_codigos/` → vincula por magic → NO dispara IA
+- IA narrativa: botón individual por bot, nunca automático al cargar carpeta
+- Duplicados: siempre gana el más reciente, sin errores
 
 ## Descripción
 Dashboard web personal para analizar bots de trading de StrategyQuant X (SQX) con datos live de MT5 via Supabase.

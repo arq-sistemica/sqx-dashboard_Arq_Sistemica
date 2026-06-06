@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MT5 — Trades Live</title>
+<script src="supabase.js"></script>
+<script src="sidebar.js"></script>
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
+  --text:#111318;--text2:#4a5060;--text3:#9098a8;
+  --green:#1a7f4b;--green-bg:#eaf7f0;--green-border:#b2dfc8;
+  --red:#b91c1c;--red-bg:#fef2f2;--red-border:#fcc;
+  --amber:#92400e;--amber-bg:#fffbeb;
+  --accent:#4f46e5;--accent-light:#eef2ff;
+  --radius:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5}
+
+.page-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);gap:12px;flex-wrap:wrap}
+.page-topbar h1{font-size:15px;font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#sync-status{font-size:12px;color:var(--text3)}
+
+.btn{padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;font-size:13px;white-space:nowrap}
+.btn:hover{background:var(--bg3)}
+select.filter-sel{padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text2)}
+
+.filters-bar{display:flex;align-items:center;gap:10px;padding:8px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.filter-label{font-size:12px;color:var(--text3)}
+.filter-count{margin-left:auto;font-size:12px;color:var(--text3)}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--bg2);border-bottom:2px solid var(--border);padding:7px 10px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{background:var(--bg3)}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer}
+tbody tr:hover{background:var(--bg2)}
+tbody tr.expanded{background:var(--accent-light)}
+tbody td{padding:7px 10px;vertical-align:middle}
+td.num{text-align:right}
+td.spark{text-align:center;padding:4px 10px}
+
+.num-good{color:var(--green)}
+.num-mid{color:var(--amber)}
+.num-bad{color:var(--red)}
+
+.detail-row td{padding:0;background:var(--bg)}
+.detail-inner{padding:16px 20px;border-top:2px solid var(--accent-light)}
+.detail-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+
+.trade-table{width:100%;border-collapse:collapse;font-size:12px}
+.trade-table th{background:var(--bg2);border-bottom:1px solid var(--border);padding:5px 8px;text-align:left;white-space:nowrap}
+.trade-table td{padding:5px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.trade-table tr:last-child td{border-bottom:none}
+.trade-p{color:var(--green)}.trade-n{color:var(--red)}
+
+.equity-svg{display:block;width:100%;height:64px;margin-top:8px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;display:none;max-width:500px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.toast-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.toast-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+</style>
+</head>
+<body>
+<div id="toast-ok" class="toast toast-ok"></div>
+<div id="toast-err" class="toast toast-err"></div>
+
+<div class="page-topbar">
+  <div>
+    <h1>📉 MT5 — Trades Live</h1>
+    <div id="sync-status" style="font-size:12px;color:var(--text3);margin-top:2px">Cargando...</div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn" onclick="loadData()">↻ Actualizar</button>
+  </div>
+</div>
+
+<div class="filters-bar">
+  <span id="acct-wrap" style="display:none;align-items:center;gap:6px">
+    <span class="filter-label">Cuenta:</span>
+    <select class="filter-sel" id="f-account" onchange="applyAccountFilter()"><option value="">Todas</option></select>
+  </span>
+  <span class="filter-count" id="f-count"></span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortBy('name')">Bot<span id="s-name"></span></th>
+        <th onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
+        <th onclick="sortBy('magic')">Magic<span id="s-magic"></span></th>
+        <th onclick="sortBy('account')">Cuenta<span id="s-account"></span></th>
+        <th onclick="sortBy('trades')" class="num">Trades<span id="s-trades"></span></th>
+        <th onclick="sortBy('pf')" class="num">PF<span id="s-pf"> ▼</span></th>
+        <th onclick="sortBy('dd')" class="num">DD%<span id="s-dd"></span></th>
+        <th onclick="sortBy('wr')" class="num">WR%<span id="s-wr"></span></th>
+        <th onclick="sortBy('netProfit')" class="num">Net P&amp;L<span id="s-netProfit"></span></th>
+        <th class="spark">Equity</th>
+      </tr>
+    </thead>
+    <tbody id="mt5-tbody"></tbody>
+  </table>
+</div>
+
+<script>
+var _allTrades = [];
+var _botsByMagic = {};
+var LIVE = {};
+var sortCol = 'pf', sortDir = -1;
+var expandedMagic = null;
+
+// ─── Helpers ────────────────────────────────────────────────────────
+function authLogout() { if (typeof sb !== 'undefined') sb.signOut(); window.location.href = 'index.html'; }
+
+function alertOk(m) {
+  const e = document.getElementById('toast-ok');
+  e.textContent = m; e.style.display = 'block';
+  document.getElementById('toast-err').style.display = 'none';
+  clearTimeout(e._t); e._t = setTimeout(() => e.style.display = 'none', 6000);
+}
+function alertErr(m) {
+  const e = document.getElementById('toast-err');
+  e.textContent = m; e.style.display = 'block';
+  document.getElementById('toast-ok').style.display = 'none';
+}
+function setSyncStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  el.textContent = msg; el.style.color = color || 'var(--text3)';
+}
+function fmt(v, dec) {
+  if (v === null || v === undefined) return '—';
+  return Number(v).toFixed(dec ?? 2);
+}
+function pfColor(v)  { return v === null || v === undefined ? '' : v >= 1.5 ? 'num-good' : v >= 1.0 ? 'num-mid' : 'num-bad'; }
+function ddColor(v)  { return v === null || v === undefined ? '' : v <= 10  ? 'num-good' : v <= 20  ? 'num-mid' : 'num-bad'; }
+function wrColor(v)  { return v === null || v === undefined ? '' : v >= 55  ? 'num-good' : v >= 45  ? 'num-mid' : 'num-bad'; }
+function npColor(v)  { return v === null || v === undefined ? '' : v > 0 ? 'num-good' : v < 0 ? 'num-bad' : ''; }
+
+// ─── Sparkline SVG (80×30) ───────────────────────────────────────────
+function sparkline(tradeList) {
+  if (!tradeList || tradeList.length < 2) return '<span style="color:var(--text3);font-size:11px">—</span>';
+  const pts = tradeList.map(t => t.cumProfit);
+  const minY = Math.min(...pts), maxY = Math.max(...pts);
+  const rangeY = maxY - minY || 1, n = pts.length - 1;
+  const coords = pts.map((y, i) =>
+    (i / (n||1) * 80).toFixed(1) + ',' + ((1 - (y - minY) / rangeY) * 28 + 1).toFixed(1)
+  ).join(' ');
+  const color = pts[pts.length-1] >= 0 ? '#1a7f4b' : '#b91c1c';
+  return `<svg width="80" height="30" viewBox="0 0 80 30" style="display:block;margin:0 auto">` +
+    `<polyline points="${coords}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+}
+
+// ─── Equity curve SVG (expandida, 100%×64) ──────────────────────────
+function equityCurve(tradeList) {
+  if (!tradeList || tradeList.length < 2) return '';
+  const pts = tradeList.map(t => t.cumProfit);
+  const minY = Math.min(0, ...pts), maxY = Math.max(...pts);
+  const rangeY = maxY - minY || 1, n = pts.length - 1;
+  const W = 600, H = 56;
+  const coords = pts.map((y, i) =>
+    (i / (n||1) * W).toFixed(1) + ',' + ((1 - (y - minY) / rangeY) * H).toFixed(1)
+  ).join(' ');
+  const color = pts[pts.length-1] >= 0 ? '#1a7f4b' : '#b91c1c';
+  const zeroY = ((1 - (0 - minY) / rangeY) * H).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" class="equity-svg" preserveAspectRatio="none">` +
+    `<line x1="0" y1="${zeroY}" x2="${W}" y2="${zeroY}" stroke="var(--border)" stroke-width="1"/>` +
+    `<polyline points="${coords}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+
+// ─── computeLiveMetrics (copiado de index.html) ──────────────────────
+function computeLiveMetrics(trades) {
+  const byMagicAccount = {};
+  for (const t of trades) {
+    const m = String(t.magic || '');
+    if (!m || m === '0') continue;
+    const acct = t.account_label || String(t.account_id) || 'unknown';
+    if (!byMagicAccount[m]) byMagicAccount[m] = {};
+    if (!byMagicAccount[m][acct]) byMagicAccount[m][acct] = [];
+    byMagicAccount[m][acct].push(t);
+  }
+  const byMagic = {}, winnerAccount = {};
+  for (const [magic, byAccount] of Object.entries(byMagicAccount)) {
+    const sorted = Object.entries(byAccount).sort((a, b) => b[1].length - a[1].length);
+    byMagic[magic] = sorted[0][1];
+    winnerAccount[magic] = sorted[0][0];
+  }
+  const result = {};
+  for (const [magic, list] of Object.entries(byMagic)) {
+    list.sort((a, b) => new Date(a.close_time) - new Date(b.close_time));
+    const netPs = list.map(t => +((t.profit||0)+(t.commission||0)+(t.swap||0)).toFixed(2));
+    const wins  = netPs.filter(p => p > 0);
+    const losses= netPs.filter(p => p < 0);
+    const gW = wins.reduce((a,b)=>a+b,0);
+    const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
+    const pf = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
+    const winRate = list.length ? +(wins.length/list.length*100).toFixed(1) : 0;
+    let peak=0,eq=0,maxDD=0;
+    netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+    let cum=0;
+    const tradeList = list.map(t => {
+      const np = +((t.profit||0)+(t.commission||0)+(t.swap||0)).toFixed(2);
+      cum = +(cum+np).toFixed(2);
+      return {
+        openDate:  t.open_time  ? t.open_time.slice(0,16).replace('T',' ')  : '—',
+        closeDate: t.close_time ? t.close_time.slice(0,16).replace('T',' ') : '—',
+        symbol:    t.symbol||'—',
+        action:    t.type==='buy'?'Buy':'Sell',
+        lots:      t.lots,
+        openPrice: t.open_price,
+        closePrice:t.close_price,
+        netProfit: np,
+        cumProfit: cum,
+      };
+    });
+    result[magic] = {
+      pf, ddPct: +(maxDD*100).toFixed(2), winRate,
+      trades: list.length,
+      avgWinUsd:  wins.length   ? +(gW/wins.length).toFixed(2)   : null,
+      avgLossUsd: losses.length ? +(gL/losses.length).toFixed(2) : null,
+      netProfit:  +netPs.reduce((a,b)=>a+b,0).toFixed(2),
+      tradeList,
+      account: winnerAccount[magic] || null,
+    };
+  }
+  return result;
+}
+
+// ─── Cuenta filter ────────────────────────────────────────────────────
+function populateAccountFilter() {
+  const accounts = [...new Set(_allTrades.map(t => t.account_label || String(t.account_id)).filter(Boolean))].sort();
+  const sel = document.getElementById('f-account');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Todas</option>' +
+    accounts.map(a => `<option${a===prev?' selected':''}>${a}</option>`).join('');
+  document.getElementById('acct-wrap').style.display = accounts.length > 1 ? 'flex' : 'none';
+}
+
+function applyAccountFilter() {
+  const acct = document.getElementById('f-account').value;
+  const filtered = acct ? _allTrades.filter(t => (t.account_label || String(t.account_id)) === acct) : _allTrades;
+  LIVE = computeLiveMetrics(filtered);
+  renderTable();
+}
+
+// ─── Sorting ──────────────────────────────────────────────────────────
+var KEY = {
+  name:      r => (r.name||'').toLowerCase(),
+  symbol:    r => r.symbol||'',
+  magic:     r => r.magic,
+  account:   r => r.account||'',
+  trades:    r => r.trades,
+  pf:        r => r.pf,
+  dd:        r => r.ddPct,
+  wr:        r => r.winRate,
+  netProfit: r => r.netProfit,
+};
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  document.querySelectorAll('thead span[id^="s-"]').forEach(el => el.textContent = '');
+  const ind = document.getElementById('s-' + col);
+  if (ind) ind.textContent = sortDir === -1 ? ' ▼' : ' ▲';
+  renderTable();
+}
+
+// ─── Render tabla ─────────────────────────────────────────────────────
+function renderTable() {
+  const rows = Object.entries(LIVE).map(([magic, d]) => {
+    const bot = _botsByMagic[magic];
+    const sym = d.tradeList.length ? d.tradeList[d.tradeList.length-1].symbol : (bot?.symbol || '—');
+    return { magic: Number(magic), name: bot?.name || '—', symbol: sym, account: d.account||'—',
+      trades: d.trades, pf: d.pf, ddPct: d.ddPct, winRate: d.winRate, netProfit: d.netProfit,
+      tradeList: d.tradeList };
+  });
+
+  const fn = KEY[sortCol] || (() => '');
+  rows.sort((a, b) => { const av = fn(a), bv = fn(b); return av < bv ? sortDir : av > bv ? -sortDir : 0; });
+  document.getElementById('f-count').textContent = rows.length + ' magic' + (rows.length !== 1 ? 's' : '');
+
+  const tbody = document.getElementById('mt5-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Sin trades. Verifica la conexión MT5 → Supabase.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const name = r.name.length > 38 ? r.name.slice(0,36)+'…' : r.name;
+    return `<tr data-magic="${r.magic}" onclick="toggleDetail(${r.magic})">
+      <td title="${r.name}">${name}</td>
+      <td>${r.symbol}</td>
+      <td style="font-variant-numeric:tabular-nums;color:var(--text3)">${r.magic}</td>
+      <td>${r.account}</td>
+      <td class="num">${r.trades}</td>
+      <td class="num ${pfColor(r.pf)}">${fmt(r.pf)}</td>
+      <td class="num ${ddColor(r.ddPct)}">${fmt(r.ddPct,1)}%</td>
+      <td class="num ${wrColor(r.winRate)}">${fmt(r.winRate,1)}%</td>
+      <td class="num ${npColor(r.netProfit)}">${r.netProfit >= 0 ? '+' : ''}${fmt(r.netProfit,2)}</td>
+      <td class="spark">${sparkline(r.tradeList)}</td>
+    </tr>`;
+  }).join('');
+
+  if (expandedMagic !== null) {
+    const row = rows.find(r => r.magic === expandedMagic);
+    if (row) insertDetailRow(row);
+    else expandedMagic = null;
+  }
+}
+
+// ─── Ficha expandible ─────────────────────────────────────────────────
+function insertDetailRow(row) {
+  const tr = document.querySelector(`tr[data-magic="${row.magic}"]`);
+  if (!tr) return;
+  const detail = document.createElement('tr');
+  detail.className = 'detail-row';
+  detail.id = 'detail-' + row.magic;
+  detail.innerHTML = '<td colspan="10"><div class="detail-inner">' +
+    buildDetail(row.magic, LIVE[String(row.magic)]) + '</div></td>';
+  tr.insertAdjacentElement('afterend', detail);
+}
+
+function toggleDetail(magic) {
+  const existing = document.getElementById('detail-' + magic);
+  if (existing) {
+    existing.remove();
+    document.querySelector(`tr[data-magic="${magic}"]`)?.classList.remove('expanded');
+    expandedMagic = null;
+    return;
+  }
+  if (expandedMagic !== null) {
+    document.getElementById('detail-' + expandedMagic)?.remove();
+    document.querySelector(`tr[data-magic="${expandedMagic}"]`)?.classList.remove('expanded');
+  }
+  expandedMagic = magic;
+  const liveData = LIVE[String(magic)];
+  if (!liveData) return;
+  document.querySelector(`tr[data-magic="${magic}"]`)?.classList.add('expanded');
+
+  const tr = document.querySelector(`tr[data-magic="${magic}"]`);
+  if (!tr) return;
+  const detail = document.createElement('tr');
+  detail.className = 'detail-row';
+  detail.id = 'detail-' + magic;
+  detail.innerHTML = '<td colspan="10"><div class="detail-inner">' + buildDetail(magic, liveData) + '</div></td>';
+  tr.insertAdjacentElement('afterend', detail);
+}
+
+function buildDetail(magic, d) {
+  const last50 = d.tradeList.slice(-50).reverse();
+  let html = '<div class="detail-title">Equity curve</div>';
+  html += equityCurve(d.tradeList);
+  html += '<div class="detail-title" style="margin-top:14px">Últimos ' + Math.min(50, d.tradeList.length) + ' trades</div>';
+  html += '<div style="overflow-x:auto"><table class="trade-table"><thead><tr>' +
+    '<th>Cierre</th><th>Symbol</th><th>Tipo</th><th>Lots</th><th>Open</th><th>Close</th><th>Net P&L</th><th>Acum.</th>' +
+    '</tr></thead><tbody>';
+  last50.forEach(t => {
+    html += `<tr>
+      <td>${t.closeDate}</td>
+      <td>${t.symbol}</td>
+      <td>${t.action}</td>
+      <td>${t.lots??'—'}</td>
+      <td>${t.openPrice??'—'}</td>
+      <td>${t.closePrice??'—'}</td>
+      <td class="${t.netProfit>=0?'trade-p':'trade-n'}">${t.netProfit>=0?'+':''}${fmt(t.netProfit,2)}</td>
+      <td class="${t.cumProfit>=0?'trade-p':'trade-n'}">${fmt(t.cumProfit,2)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+// ─── Carga de datos ───────────────────────────────────────────────────
+async function loadData() {
+  setSyncStatus('Cargando trades...', '');
+  try {
+    const [trades, bots] = await Promise.all([sb.getMyTrades(), sb.getBots().catch(() => [])]);
+    _allTrades = trades;
+    _botsByMagic = {};
+    bots.forEach(b => { if (b.magic) _botsByMagic[String(b.magic)] = b; });
+    LIVE = computeLiveMetrics(trades);
+    populateAccountFilter();
+    renderTable();
+    const n = Object.keys(LIVE).length;
+    setSyncStatus(`${n} magic${n !== 1 ? 's' : ''} — ${trades.length} trades`, '#1a7f4b');
+    setTimeout(() => setSyncStatus('', ''), 5000);
+  } catch(e) {
+    setSyncStatus('Error al cargar trades', '#b91c1c');
+    alertErr('Error: ' + e.message);
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────
+async function init() {
+  if (typeof sb === 'undefined' || !sb.isAuthenticated()) { window.location.href = 'index.html'; return; }
+  // acct-wrap se muestra en populateAccountFilter() solo si hay > 1 cuenta
+  await loadData();
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

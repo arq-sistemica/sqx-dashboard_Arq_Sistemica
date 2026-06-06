@@ -13,6 +13,99 @@ function _sbHeaders(token) {
   };
 }
 
+// DB row (columnas planas) → objeto bot JS anidado que espera index.html
+function _rowToBot(row) {
+  return {
+    id:        String(row.id),   // BIGINT como string — backward compat con === en index.html
+    magic:     row.id,           // numérico — para LIVE[String(bot.magic)] lookups
+    name:      row.name,
+    symbol:    row.symbol,
+    tf:        row.tf,
+    estado:    row.estado,
+    sqxFilter: row.filter,       // index.html usa sqxFilter, DB usa filter
+    added:     row.added,
+    notes:     row.notes  || '',
+    sqn:       row.full_sqn,
+    stag:      row.full_stag,
+    zp:        row.full_zp,
+    is: {
+      pf:        row.is_pf,
+      cagr:      row.is_cagr,
+      wr:        row.is_wr,
+      trades:    row.is_trades,
+      sharpe:    row.is_sharpe,
+      dd:        row.is_dd,
+      np:        row.is_np,
+      retdd:     row.is_retdd,
+      cagrdd:    row.is_cagrdd,
+      stability: row.is_stability,
+      fitness:   row.is_fitness,
+      exposure:  row.is_exposure,
+      rexp:      row.is_rexp,
+    },
+    oos: {
+      pf:        row.oos_pf,
+      cagr:      row.oos_cagr,
+      wr:        row.oos_wr,
+      trades:    row.oos_trades,
+      sharpe:    row.oos_sharpe,
+      dd:        row.oos_dd,
+      np:        row.oos_np,
+      retdd:     row.oos_retdd,
+      cagrdd:    row.oos_cagrdd,
+      stability: row.oos_stability,
+      fitness:   row.oos_fitness,
+    },
+    overviewData: row.overview_data || null,
+    pseudocodigo: row.pseudocodigo  || null,
+  };
+}
+
+// Objeto bot JS anidado → DB row (columnas planas)
+function _botToRow(bot) {
+  return {
+    user_id: sb.getUserId(),
+    id:      Number(bot.id) || Number(bot.magic),
+    name:    bot.name,
+    symbol:  bot.symbol  || '',
+    tf:      bot.tf      || '',
+    estado:  bot.estado  || 'activo',
+    filter:  bot.sqxFilter || null,
+    added:   bot.added   || null,
+    notes:   bot.notes   || '',
+    is_pf:        bot.is?.pf        ?? null,
+    is_cagr:      bot.is?.cagr      ?? null,
+    is_wr:        bot.is?.wr        ?? null,
+    is_trades:    bot.is?.trades    ?? null,
+    is_sharpe:    bot.is?.sharpe    ?? null,
+    is_dd:        bot.is?.dd        ?? null,
+    is_np:        bot.is?.np        ?? null,
+    is_retdd:     bot.is?.retdd     ?? null,
+    is_cagrdd:    bot.is?.cagrdd    ?? null,
+    is_stability: bot.is?.stability ?? null,
+    is_fitness:   bot.is?.fitness   ?? null,
+    is_exposure:  bot.is?.exposure  ?? null,
+    is_rexp:      bot.is?.rexp      ?? null,
+    oos_pf:        bot.oos?.pf        ?? null,
+    oos_cagr:      bot.oos?.cagr      ?? null,
+    oos_wr:        bot.oos?.wr        ?? null,
+    oos_trades:    bot.oos?.trades    ?? null,
+    oos_sharpe:    bot.oos?.sharpe    ?? null,
+    oos_dd:        bot.oos?.dd        ?? null,
+    oos_np:        bot.oos?.np        ?? null,
+    oos_retdd:     bot.oos?.retdd     ?? null,
+    oos_cagrdd:    bot.oos?.cagrdd    ?? null,
+    oos_stability: bot.oos?.stability ?? null,
+    oos_fitness:   bot.oos?.fitness   ?? null,
+    full_sqn:         bot.sqn  ?? bot.overviewData?.sqn      ?? null,
+    full_stag:        bot.stag ?? bot.overviewData?.stag     ?? null,
+    full_zp:          bot.zp   ?? bot.overviewData?.zp       ?? null,
+    full_str_quality:           bot.overviewData?.strQuality ?? null,
+    overview_data: bot.overviewData || null,
+    pseudocodigo:  bot.pseudocodigo || null,
+  };
+}
+
 const sb = {
   // ── AUTH ──────────────────────────────────────────────────────
   async signIn(email, password) {
@@ -71,9 +164,13 @@ const sb = {
     return sb.getSession()?.access_token ?? SUPABASE_KEY;
   },
 
+  getUserId() {
+    return sb.getSession()?.user?.id ?? null;
+  },
+
   // ── BOTS ──────────────────────────────────────────────────────
   async getBots() {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/bots?select=id,data&order=id`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/bots?select=*&order=id`, {
       headers: _sbHeaders(sb.getToken()),
     });
     if (!r.ok) {
@@ -81,13 +178,11 @@ const sb = {
       throw new Error(err.message || `Error ${r.status} al cargar bots`);
     }
     const rows = await r.json();
-    // Cada fila: { id, data: { ...campos del bot sin id } }
-    return rows.map(row => ({ id: row.id, ...row.data }));
+    return rows.map(_rowToBot);
   },
 
   async upsertBots(bots) {
-    // Separar id del resto y guardar en columna data (JSONB)
-    const rows = bots.map(({ id, ...rest }) => ({ id, data: rest }));
+    const rows = bots.map(_botToRow);
     const r = await fetch(`${SUPABASE_URL}/rest/v1/bots`, {
       method:  'POST',
       headers: {
@@ -102,9 +197,13 @@ const sb = {
     }
   },
 
+  async upsertBot(bot) {
+    return sb.upsertBots([bot]);
+  },
+
   async deleteBot(id) {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/bots?id=eq.${encodeURIComponent(id)}`,
+      `${SUPABASE_URL}/rest/v1/bots?id=eq.${id}`,
       { method: 'DELETE', headers: _sbHeaders(sb.getToken()) }
     );
     if (!r.ok) throw new Error(`Error ${r.status} al eliminar bot`);

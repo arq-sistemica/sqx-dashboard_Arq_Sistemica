@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQX — Backtest</title>
+<script src="supabase.js"></script>
+<script src="sidebar.js"></script>
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
+  --text:#111318;--text2:#4a5060;--text3:#9098a8;
+  --green:#1a7f4b;--green-bg:#eaf7f0;--green-border:#b2dfc8;
+  --red:#b91c1c;--red-bg:#fef2f2;--red-border:#fcc;
+  --amber:#92400e;--amber-bg:#fffbeb;--amber-border:#fde68a;
+  --accent:#4f46e5;--accent-light:#eef2ff;
+  --radius:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5}
+
+.page-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);gap:12px;flex-wrap:wrap}
+.page-topbar h1{font-size:15px;font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#sync-status{font-size:12px;color:var(--text3)}
+
+.btn{padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;font-size:13px;white-space:nowrap}
+.btn:hover{background:var(--bg3)}
+
+.filters-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg)}
+.filter-label{font-size:12px;color:var(--text3)}
+.filter-btn{padding:3px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;font-size:12px}
+.filter-btn.active{background:var(--accent-light);color:var(--accent);border-color:var(--accent);font-weight:600}
+select.filter-sel{padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--bg);color:var(--text2)}
+.filter-count{margin-left:auto;font-size:12px;color:var(--text3)}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--bg2);border-bottom:2px solid var(--border);padding:7px 10px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{background:var(--bg3)}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer}
+tbody tr:hover{background:var(--bg2)}
+tbody tr.expanded{background:var(--accent-light)}
+tbody td{padding:7px 10px;vertical-align:middle}
+td.num{text-align:right}
+
+.badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:600}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.badge-gray{background:var(--bg3);color:var(--text3)}
+.num-good{color:var(--green)}
+.num-mid{color:var(--amber)}
+.num-bad{color:var(--red)}
+
+.detail-row td{padding:0;background:var(--bg)}
+.detail-inner{padding:16px 20px;border-top:2px solid var(--accent-light)}
+.detail-section{margin-bottom:16px}
+.detail-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.metric-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px}
+.metric-item .m-label{font-size:11px;color:var(--text3)}
+.metric-item .m-value{font-size:14px;font-weight:600;color:var(--text);margin-top:2px}
+
+.monthly-table{border-collapse:collapse;font-size:11px}
+.monthly-table th,.monthly-table td{border:1px solid var(--border);padding:3px 6px;text-align:right}
+.monthly-table th{background:var(--bg2);font-weight:600}
+.monthly-table td.year-col{text-align:left;font-weight:600;background:var(--bg2)}
+.m-pos{color:var(--green)}.m-neg{color:var(--red)}
+
+.pseudo-block{font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:monospace;color:var(--text)}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;display:none;max-width:520px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.toast-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.toast-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+</style>
+</head>
+<body>
+<div id="toast-ok" class="toast toast-ok"></div>
+<div id="toast-err" class="toast toast-err"></div>
+
+<div class="page-topbar">
+  <div>
+    <h1>⚙️ SQX — Capa Backtest</h1>
+    <div id="sync-status" style="font-size:12px;color:var(--text3);margin-top:2px">Cargando...</div>
+  </div>
+  <div class="topbar-right">
+    <input type="file" id="sqx-input" webkitdirectory style="display:none" onchange="handleScanSQX(this.files);this.value=''">
+    <button class="btn" onclick="document.getElementById('sqx-input').click()">⚙️ Scan carpeta SQX</button>
+    <input type="file" id="pseudo-input" webkitdirectory style="display:none" onchange="handleScanPseudo(this.files);this.value=''">
+    <button class="btn" onclick="document.getElementById('pseudo-input').click()">📝 Scan Pseudocódigos</button>
+  </div>
+</div>
+
+<div class="filters-bar">
+  <span class="filter-label">Filtro:</span>
+  <button class="filter-btn active" id="f-all"    onclick="setFilter('all')">Todos</button>
+  <button class="filter-btn"        id="f-passed" onclick="setFilter('passed')">✓ PASSED</button>
+  <button class="filter-btn"        id="f-failed" onclick="setFilter('failed')">✗ FAILED</button>
+  <span class="filter-label" style="margin-left:8px">Symbol:</span>
+  <select class="filter-sel" id="f-symbol" onchange="renderTable()"><option value="">Todos</option></select>
+  <span class="filter-label">TF:</span>
+  <select class="filter-sel" id="f-tf" onchange="renderTable()"><option value="">Todos</option></select>
+  <span class="filter-count" id="f-count"></span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortBy('name')">Nombre<span id="s-name"></span></th>
+        <th onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
+        <th onclick="sortBy('tf')">TF<span id="s-tf"></span></th>
+        <th onclick="sortBy('isPf')" class="num">IS PF<span id="s-isPf"> ▼</span></th>
+        <th onclick="sortBy('isWr')" class="num">IS WR%<span id="s-isWr"></span></th>
+        <th onclick="sortBy('isDd')" class="num">IS DD%<span id="s-isDd"></span></th>
+        <th onclick="sortBy('oosPf')" class="num">OOS PF<span id="s-oosPf"></span></th>
+        <th onclick="sortBy('oosWr')" class="num">OOS WR%<span id="s-oosWr"></span></th>
+        <th onclick="sortBy('oosDd')" class="num">OOS DD%<span id="s-oosDd"></span></th>
+        <th onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
+      </tr>
+    </thead>
+    <tbody id="bots-tbody"></tbody>
+  </table>
+</div>
+
+<script>
+var DB = [];
+var sortCol = 'isPf', sortDir = -1;
+var filterMode = 'all';
+var expandedId = null;
+
+// ─── Helpers ────────────────────────────────────────────────────────
+function authLogout() { if (typeof sb !== 'undefined') sb.signOut(); window.location.href = 'index.html'; }
+
+function alertOk(m) {
+  const e = document.getElementById('toast-ok');
+  e.textContent = m; e.style.display = 'block';
+  document.getElementById('toast-err').style.display = 'none';
+  clearTimeout(e._t); e._t = setTimeout(() => e.style.display = 'none', 8000);
+}
+function alertErr(m) {
+  const e = document.getElementById('toast-err');
+  e.textContent = m; e.style.display = 'block';
+  document.getElementById('toast-ok').style.display = 'none';
+}
+function setSyncStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  el.textContent = msg; el.style.color = color || 'var(--text3)';
+}
+function fmt(v, dec) {
+  if (v === null || v === undefined) return '—';
+  return Number(v).toFixed(dec ?? 2);
+}
+function pfColor(v)  { return v === null || v === undefined ? '' : v >= 1.5 ? 'num-good' : v >= 1.0 ? 'num-mid' : 'num-bad'; }
+function ddColor(v)  { return v === null || v === undefined ? '' : v <= 10  ? 'num-good' : v <= 20  ? 'num-mid' : 'num-bad'; }
+function wrColor(v)  { return v === null || v === undefined ? '' : v >= 55  ? 'num-good' : v >= 45  ? 'num-mid' : 'num-bad'; }
+
+function filterBadge(f) {
+  if (!f) return '<span class="badge badge-gray">—</span>';
+  const u = f.toUpperCase();
+  if (u.includes('PASSED')) return '<span class="badge badge-green">PASSED</span>';
+  if (u.includes('FAILED')) return '<span class="badge badge-red">FAILED</span>';
+  return '<span class="badge badge-gray">' + f.slice(0, 12) + '</span>';
+}
+
+// ─── Filtros ─────────────────────────────────────────────────────────
+function setFilter(mode) {
+  filterMode = mode;
+  ['all','passed','failed'].forEach(m => document.getElementById('f-' + m).classList.toggle('active', m === mode));
+  renderTable();
+}
+
+function populateFilters() {
+  const symbols = [...new Set(DB.map(b => b.symbol).filter(Boolean))].sort();
+  const tfs     = [...new Set(DB.map(b => b.tf).filter(Boolean))].sort();
+  const symSel = document.getElementById('f-symbol');
+  const tfSel  = document.getElementById('f-tf');
+  const ps = symSel.value, pt = tfSel.value;
+  symSel.innerHTML = '<option value="">Todos</option>' + symbols.map(s => `<option${s===ps?' selected':''}>${s}</option>`).join('');
+  tfSel.innerHTML  = '<option value="">Todos</option>' + tfs.map(t =>    `<option${t===pt?' selected':''}>${t}</option>`).join('');
+}
+
+function getFiltered() {
+  const sym = document.getElementById('f-symbol').value;
+  const tf  = document.getElementById('f-tf').value;
+  return DB.filter(b => {
+    if (filterMode === 'passed' && !(b.sqxFilter||'').toUpperCase().includes('PASSED')) return false;
+    if (filterMode === 'failed' &&  (b.sqxFilter||'').toUpperCase().includes('PASSED')) return false;
+    if (sym && b.symbol !== sym) return false;
+    if (tf  && b.tf !== tf)     return false;
+    return true;
+  });
+}
+
+// ─── Sorting ──────────────────────────────────────────────────────────
+var KEY = {
+  name:   b => (b.name||'').toLowerCase(),
+  symbol: b => b.symbol||'',
+  tf:     b => b.tf||'',
+  isPf:   b => b.is?.pf   ?? -Infinity,
+  isWr:   b => b.is?.wr   ?? -Infinity,
+  isDd:   b => b.is?.dd   ?? Infinity,
+  oosPf:  b => b.oos?.pf  ?? -Infinity,
+  oosWr:  b => b.oos?.wr  ?? -Infinity,
+  oosDd:  b => b.oos?.dd  ?? Infinity,
+  filter: b => b.sqxFilter||'',
+};
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  document.querySelectorAll('thead span[id^="s-"]').forEach(el => el.textContent = '');
+  const ind = document.getElementById('s-' + col);
+  if (ind) ind.textContent = sortDir === -1 ? ' ▼' : ' ▲';
+  renderTable();
+}
+
+// ─── Render tabla ─────────────────────────────────────────────────────
+function renderTable() {
+  const bots = getFiltered();
+  const fn = KEY[sortCol] || (() => '');
+  bots.sort((a, b) => { const av = fn(a), bv = fn(b); return av < bv ? sortDir : av > bv ? -sortDir : 0; });
+  document.getElementById('f-count').textContent = bots.length + ' bot' + (bots.length !== 1 ? 's' : '');
+
+  const tbody = document.getElementById('bots-tbody');
+  if (!bots.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Sin bots. Usa "Scan carpeta SQX" para cargar un Databank CSV.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = bots.map(b => {
+    const id = String(b.magic || b.id);
+    const name = (b.name||'—');
+    const nameShort = name.length > 42 ? name.slice(0, 40) + '…' : name;
+    return `<tr data-id="${id}" onclick="toggleDetail('${id}')">
+      <td title="${name}">${nameShort}</td>
+      <td>${b.symbol||'—'}</td>
+      <td>${b.tf||'—'}</td>
+      <td class="num ${pfColor(b.is?.pf)}">${fmt(b.is?.pf)}</td>
+      <td class="num ${wrColor(b.is?.wr)}">${fmt(b.is?.wr,1)}%</td>
+      <td class="num ${ddColor(b.is?.dd)}">${fmt(b.is?.dd,1)}%</td>
+      <td class="num ${pfColor(b.oos?.pf)}">${fmt(b.oos?.pf)}</td>
+      <td class="num ${wrColor(b.oos?.wr)}">${fmt(b.oos?.wr,1)}%</td>
+      <td class="num ${ddColor(b.oos?.dd)}">${fmt(b.oos?.dd,1)}%</td>
+      <td>${filterBadge(b.sqxFilter)}</td>
+    </tr>`;
+  }).join('');
+
+  if (expandedId) {
+    const bot = bots.find(b => String(b.magic || b.id) === expandedId);
+    if (bot) insertDetailRow(expandedId, bot);
+    else expandedId = null;
+  }
+}
+
+// ─── Ficha expandible ─────────────────────────────────────────────────
+function toggleDetail(id) {
+  const existing = document.getElementById('detail-' + id);
+  if (existing) {
+    existing.remove();
+    document.querySelector(`tr[data-id="${id}"]`)?.classList.remove('expanded');
+    expandedId = null;
+    return;
+  }
+  if (expandedId) {
+    document.getElementById('detail-' + expandedId)?.remove();
+    document.querySelector(`tr[data-id="${expandedId}"]`)?.classList.remove('expanded');
+  }
+  expandedId = id;
+  const bot = DB.find(b => String(b.magic || b.id) === id);
+  if (!bot) return;
+  document.querySelector(`tr[data-id="${id}"]`)?.classList.add('expanded');
+  insertDetailRow(id, bot);
+}
+
+function insertDetailRow(id, bot) {
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  if (!tr) return;
+  const detail = document.createElement('tr');
+  detail.className = 'detail-row';
+  detail.id = 'detail-' + id;
+  detail.innerHTML = '<td colspan="10"><div class="detail-inner">' + buildDetail(bot) + '</div></td>';
+  tr.insertAdjacentElement('afterend', detail);
+}
+
+function metricsBlock(items) {
+  return '<div class="metrics-grid">' + items.map(([label, value, cls]) =>
+    `<div class="metric-item"><div class="m-label">${label}</div><div class="m-value${cls?' '+cls:''}">${value}</div></div>`
+  ).join('') + '</div>';
+}
+
+function buildDetail(bot) {
+  const is = bot.is || {}, oos = bot.oos || {};
+  let html = '';
+
+  html += '<div class="detail-section"><div class="detail-title">In-Sample (IS)</div>';
+  html += metricsBlock([
+    ['PF',        fmt(is.pf),           pfColor(is.pf)],
+    ['WR%',       fmt(is.wr,1)+'%',     wrColor(is.wr)],
+    ['DD%',       fmt(is.dd,1)+'%',     ddColor(is.dd)],
+    ['Trades',    is.trades??'—',       ''],
+    ['CAGR%',     fmt(is.cagr,1)+'%',  ''],
+    ['Sharpe',    fmt(is.sharpe),       ''],
+    ['Fitness',   fmt(is.fitness),      ''],
+    ['Stability', fmt(is.stability),    ''],
+    ['Ret/DD',    fmt(is.retdd),        ''],
+    ['CAGR/DD',   fmt(is.cagrdd),       ''],
+    ['Net P%',    fmt(is.np,1)+'%',     ''],
+    ['SQN',       fmt(bot.sqn),         ''],
+  ]);
+  html += '</div>';
+
+  html += '<div class="detail-section"><div class="detail-title">Out-of-Sample (OOS)</div>';
+  html += metricsBlock([
+    ['PF',        fmt(oos.pf),          pfColor(oos.pf)],
+    ['WR%',       fmt(oos.wr,1)+'%',    wrColor(oos.wr)],
+    ['DD%',       fmt(oos.dd,1)+'%',    ddColor(oos.dd)],
+    ['Trades',    oos.trades??'—',      ''],
+    ['CAGR%',     fmt(oos.cagr,1)+'%', ''],
+    ['Sharpe',    fmt(oos.sharpe),      ''],
+    ['Fitness',   fmt(oos.fitness),     ''],
+    ['Stability', fmt(oos.stability),   ''],
+    ['Ret/DD',    fmt(oos.retdd),       ''],
+    ['CAGR/DD',   fmt(oos.cagrdd),      ''],
+    ['Net P%',    fmt(oos.np,1)+'%',    ''],
+  ]);
+  html += '</div>';
+
+  if (bot.overviewData?.monthlyData?.length) {
+    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    html += '<div class="detail-section"><div class="detail-title">Overview mensual</div>';
+    html += '<div style="overflow-x:auto"><table class="monthly-table"><thead><tr><th>Año</th>' +
+      MONTHS.map(m => `<th>${m}</th>`).join('') + '<th>YTD</th></tr></thead><tbody>';
+    bot.overviewData.monthlyData.forEach(row => {
+      html += `<tr><td class="year-col">${row.year}</td>` +
+        row.months.map(v => v === null ? '<td>—</td>' :
+          `<td class="${v>=0?'m-pos':'m-neg'}">${v.toFixed(1)}%</td>`).join('') +
+        `<td class="${(row.ytd||0)>=0?'m-pos':'m-neg'}">${row.ytd!==null?row.ytd.toFixed(1)+'%':'—'}</td></tr>`;
+    });
+    html += '</tbody></table></div></div>';
+  }
+
+  if (bot.pseudocodigo) {
+    html += '<div class="detail-section"><div class="detail-title">Pseudocódigo</div>';
+    html += '<pre class="pseudo-block">' + bot.pseudocodigo.replace(/</g,'&lt;') + '</pre>';
+    html += '</div>';
+  }
+
+  return html;
+}
+
+// ─── Scan SQX ────────────────────────────────────────────────────────
+async function handleScanSQX(files) {
+  const csvFiles = [...files].filter(f => f.name.toLowerCase().endsWith('.csv'));
+  if (!csvFiles.length) { alertErr('No se encontraron archivos .csv en la carpeta.'); return; }
+
+  const allBots = (await Promise.all(csvFiles.map(file => new Promise(resolve => {
+    const rd = new FileReader();
+    rd.onload = e => {
+      try {
+        const firstLine = (e.target.result||'').split('\n')[0];
+        if (firstLine.includes('Magic Number')) { resolve([]); return; }
+        resolve(parseCSV(e.target.result).map(b => ({ ...b, _mtime: file.lastModified })));
+      } catch { resolve([]); }
+    };
+    rd.onerror = () => resolve([]);
+    rd.readAsText(file, 'UTF-8');
+  })))).flat();
+
+  const byMagic = {};
+  allBots.forEach(b => {
+    const k = String(b.magic || b.id);
+    if (!byMagic[k] || b._mtime > byMagic[k]._mtime) byMagic[k] = b;
+  });
+
+  const _nN = n => { const r = (n||'').toLowerCase().replace(/[^a-z0-9]/g,''); return r.startsWith('wfm') ? r.slice(3) : r; };
+  const applyMerge = (existing, s) => {
+    existing.is = s.is; existing.oos = s.oos; existing.sqxFilter = s.sqxFilter;
+    existing.symbol = existing.symbol || s.symbol;
+    existing.tf = existing.tf || s.tf;
+    existing.source = 'csv';
+  };
+  let added = 0, updated = 0;
+  Object.values(byMagic).forEach(s => {
+    const sNorm = _nN(s.name);
+    const magicM = s.magic ? DB.find(x => x.magic && String(x.magic) === String(s.magic)) : null;
+    if (magicM) { applyMerge(magicM, s); updated++; return; }
+    const exactM = DB.find(x => x.name === s.name);
+    if (exactM) { applyMerge(exactM, s); updated++; return; }
+    const fuzzyM = DB.find(x => { const xN = _nN(x.name); return xN === sNorm || xN.startsWith(sNorm) || sNorm.startsWith(xN); });
+    if (fuzzyM) { applyMerge(fuzzyM, s); updated++; return; }
+    const { _mtime, ...clean } = s;
+    DB.push(clean); added++;
+  });
+
+  populateFilters();
+  renderTable();
+
+  if (sb.isAuthenticated()) {
+    try {
+      await sb.upsertBots(DB);
+      setSyncStatus('✓ Guardado en Supabase', '#1a7f4b');
+      setTimeout(() => setSyncStatus('', ''), 4000);
+    } catch(e) { console.warn('scanSQX: upsert failed', e.message); }
+  }
+  alertOk(`✓ Scan SQX — ${Object.keys(byMagic).length} bot(s) leídos, ${added} nuevo(s), ${updated} actualizado(s).`);
+}
+
+// ─── Scan Pseudocódigos ───────────────────────────────────────────────
+async function handleScanPseudo(files) {
+  const txtFiles = [...files].filter(f => f.name.toLowerCase().endsWith('.txt'));
+  if (!txtFiles.length) { alertErr('No se encontraron archivos .txt en la carpeta.'); return; }
+
+  const allItems = (await Promise.all(txtFiles.map(file => new Promise(resolve => {
+    const rd = new FileReader();
+    rd.onload = e => {
+      const magic = file.name.replace(/\.txt$/i,'').split('_')[0].replace(/\D/g,'');
+      resolve(magic ? { magic, text: e.target.result||'', filename: file.name, mtime: file.lastModified } : null);
+    };
+    rd.onerror = () => resolve(null);
+    rd.readAsText(file, 'UTF-8');
+  })))).filter(Boolean);
+
+  const byMagic = {};
+  allItems.forEach(item => { if (!byMagic[item.magic] || item.mtime > byMagic[item.magic].mtime) byMagic[item.magic] = item; });
+
+  let matched = 0, unmatched = 0;
+  Object.values(byMagic).forEach(({ magic, text, filename }) => {
+    const bot = DB.find(b => String(b.magic) === magic || String(b.id) === magic);
+    if (!bot) { unmatched++; return; }
+    bot.pseudocodigo = text;
+    bot.pseudocodigoData = { ...(bot.pseudocodigoData||{}), filename, text };
+    matched++;
+  });
+
+  if (matched === 0) { alertErr(`Sin match — ${Object.keys(byMagic).length} .txt leídos, ninguno coincide con bots en DB.`); return; }
+
+  renderTable();
+  if (sb.isAuthenticated()) {
+    try {
+      await sb.upsertBots(DB);
+      setSyncStatus('✓ Guardado en Supabase', '#1a7f4b');
+      setTimeout(() => setSyncStatus('', ''), 4000);
+    } catch(e) { console.warn('scanPseudo: upsert failed', e.message); }
+  }
+  alertOk(`✓ Pseudocódigos — ${matched} bot(s) actualizado(s)${unmatched ? ', ' + unmatched + ' sin match' : ''}.`);
+}
+
+// ─── parseCSV + splitLine (copiado de index.html) ────────────────────
+function splitLine(line, sep) {
+  const r = []; let cur = '', inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; cur += ch; }
+    else if (ch === sep && !inQ) { r.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  r.push(cur); return r;
+}
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) throw new Error('Archivo vacío.');
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim());
+  const col = name => headers.indexOf(name);
+  const C = {
+    name:col('Strategy Name'), filter:col('Filters result'),
+    sym:col('Symbol (IS)'), tf:col('TimeFrame (IS)'),
+    np_is:col('Net profit (IS)'), tr_is:col('# of trades (IS)'),
+    pf_is:col('Profit factor (IS)'), sh_is:col('Sharpe Ratio (IS)'),
+    ann_is:col('Annual % Return (IS)'), stab_is:col('Stability (IS)'),
+    dd_is:col('Drawdown (IS)'), wl_is:col('Win/Loss ratio (IS)'),
+    rdd_is:col('Ret/DD Ratio (IS)'), cdd_is:col('CAGR/Max DD % (IS)'),
+    fit_is:col('Fitness (IS)'), exp_is:col('Exposure (IS)'), rex_is:col('R Expectancy (IS)'),
+    np_oos:col('Net profit (OOS)'), tr_oos:col('# of trades (OOS)'),
+    pf_oos:col('Profit factor (OOS)'), sh_oos:col('Sharpe Ratio (OOS)'),
+    ann_oos:col('Annual % Return (OOS)'), stab_oos:col('Stability (OOS)'),
+    dd_oos:col('Drawdown (OOS)'), wl_oos:col('Win/Loss ratio (OOS)'),
+    rdd_oos:col('Ret/DD Ratio (OOS)'), cdd_oos:col('CAGR/Max DD % (OOS)'),
+    fit_oos:col('Fitness (OOS)'),
+  };
+  if (C.name === -1 || C.pf_is === -1) throw new Error('No parece un Databank CSV de SQX.');
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const cols = splitLine(line, sep);
+    const g = i => (i >= 0 && cols[i] !== undefined) ? cols[i].replace(/"/g,'').trim() : '';
+    const n = i => { const v = parseFloat(g(i)); return isNaN(v) ? null : v; };
+    const symRaw = g(C.sym), symClean = symRaw.split('_')[0] || symRaw;
+    const nameStr = g(C.name), magicStr = nameStr.replace(/\D/g,'');
+    const magic = magicStr ? Number(magicStr) : null;
+    return {
+      id: magicStr || (Date.now().toString(36) + Math.random().toString(36).slice(2)),
+      magic, name: nameStr, symbol: symClean, tf: g(C.tf),
+      sqxFilter: g(C.filter), source: 'csv', added: new Date().toISOString().slice(0,10),
+      notes: '', sqn: null, stag: null, zp: null,
+      is:  { np:n(C.np_is),  trades:n(C.tr_is),  pf:n(C.pf_is),  sharpe:n(C.sh_is),  cagr:n(C.ann_is),  stability:n(C.stab_is),  dd:n(C.dd_is),  wr:n(C.wl_is),  retdd:n(C.rdd_is),  cagrdd:n(C.cdd_is),  fitness:n(C.fit_is),  exposure:n(C.exp_is),  rexp:n(C.rex_is) },
+      oos: { np:n(C.np_oos), trades:n(C.tr_oos), pf:n(C.pf_oos), sharpe:n(C.sh_oos), cagr:n(C.ann_oos), stability:n(C.stab_oos), dd:n(C.dd_oos), wr:n(C.wl_oos), retdd:n(C.rdd_oos), cagrdd:n(C.cdd_oos), fitness:n(C.fit_oos) }
+    };
+  });
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────
+async function init() {
+  if (typeof sb === 'undefined' || !sb.isAuthenticated()) { window.location.href = 'index.html'; return; }
+  setSyncStatus('Cargando bots...', '');
+  try {
+    DB = await sb.getBots();
+    setSyncStatus(DB.length + ' bots cargados', '#1a7f4b');
+    setTimeout(() => setSyncStatus('', ''), 3000);
+    populateFilters();
+    renderTable();
+  } catch(e) {
+    setSyncStatus('Error al cargar', '#b91c1c');
+    alertErr('Error cargando bots: ' + e.message);
+  }
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

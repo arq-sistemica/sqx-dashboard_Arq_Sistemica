@@ -1254,6 +1254,11 @@ function simularSinBot(magic) {
   panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
+function authLogout() {
+  if (typeof sb !== 'undefined') sb.signOut();
+  window.location.href = 'index.html';
+}
+
 // ─────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────

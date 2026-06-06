@@ -354,6 +354,11 @@ async function loadTrend() {
 
 function recargar() { loadTrend(); }
 
+function authLogout() {
+  if (typeof sb !== 'undefined') sb.signOut();
+  window.location.href = 'index.html';
+}
+
 loadTrend();
 </script>
 </body>
