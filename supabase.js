@@ -13,16 +13,40 @@ function _sbHeaders(token) {
   };
 }
 
-// DB row (columnas planas) → objeto bot JS anidado que espera index.html
+// DB row → objeto bot JS anidado
+// Soporta esquema viejo (data JSONB) y nuevo (columnas planas)
 function _rowToBot(row) {
+  if (row.data !== undefined) {
+    // Esquema viejo: todo en row.data JSONB
+    const d = row.data;
+    return {
+      id:        String(row.id),
+      magic:     d.magic ?? null,
+      name:      d.name,
+      symbol:    d.symbol,
+      tf:        d.tf,
+      estado:    d.estado,
+      sqxFilter: d.sqxFilter,
+      added:     d.added,
+      notes:     d.notes  || '',
+      sqn:       d.sqn   ?? d.overviewData?.sqn  ?? null,
+      stag:      d.stag  ?? d.overviewData?.stag ?? null,
+      zp:        d.zp    ?? d.overviewData?.zp   ?? null,
+      is:        d.is    || {},
+      oos:       d.oos   || {},
+      overviewData: d.overviewData || null,
+      pseudocodigo: d.pseudocodigo || null,
+    };
+  }
+  // Esquema nuevo: columnas planas
   return {
-    id:        String(row.id),   // BIGINT como string — backward compat con === en index.html
-    magic:     row.id,           // numérico — para LIVE[String(bot.magic)] lookups
+    id:        String(row.id),
+    magic:     row.id,
     name:      row.name,
     symbol:    row.symbol,
     tf:        row.tf,
     estado:    row.estado,
-    sqxFilter: row.filter,       // index.html usa sqxFilter, DB usa filter
+    sqxFilter: row.filter,
     added:     row.added,
     notes:     row.notes  || '',
     sqn:       row.full_sqn,
