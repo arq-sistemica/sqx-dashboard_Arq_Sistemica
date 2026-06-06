@@ -601,39 +601,6 @@
   </div>
 </div>
 
-<!-- ── SIDEBAR ── -->
-<div class="sidebar">
-  <div class="sidebar-logo">
-    <div class="sidebar-logo-text">
-      <div class="logo">SQX<span>.</span>Dashboard</div>
-      <span class="module-tag" style="margin-left:0;margin-top:8px;display:inline-block">Arq. Sistémica</span>
-    </div>
-  </div>
-  <nav style="flex:1">
-    <span class="nav-section-lbl">Análisis</span>
-    <a class="nav-item active" href="index.html" title="Dashboard"><span>📋</span><span class="nl"> Dashboard</span></a>
-    <a class="nav-item" href="portfolio.html" title="Portfolio"><span>💼</span><span class="nl"> Portfolio</span></a>
-    <a class="nav-item" href="ranking.html" title="Ranking"><span>🏆</span><span class="nl"> Ranking</span></a>
-    <span class="nav-section-lbl">Inteligencia</span>
-    <a class="nav-item" href="overlap.html" title="Overlap"><span>📊</span><span class="nl"> Overlap</span></a>
-    <a class="nav-item" href="tendencia.html" title="Tendencia"><span>📈</span><span class="nl"> Tendencia</span></a>
-    <a class="nav-item" href="estacionalidad.html" title="Estacionalidad"><span>📅</span><span class="nl"> Estacionalidad</span></a>
-  </nav>
-  <div class="sidebar-footer">
-    <button class="nav-item" onclick="authLogout()" title="Cerrar sesión"><span>⎋</span><span class="nl" style="color:var(--text3)"> Cerrar sesión</span></button>
-  </div>
-</div>
-
-<!-- ── MOBILE NAV ── -->
-<nav class="mobile-nav">
-  <a href="index.html"><span class="mn-icon">📋</span><span>Dashboard</span></a>
-  <a href="portfolio.html"><span class="mn-icon">💼</span><span>Portfolio</span></a>
-  <a href="ranking.html"><span class="mn-icon">🏆</span><span>Ranking</span></a>
-  <a href="overlap.html"><span class="mn-icon">📊</span><span>Overlap</span></a>
-  <a href="tendencia.html"><span class="mn-icon">📈</span><span>Tendencia</span></a>
-  <a href="estacionalidad.html"><span class="mn-icon">📅</span><span>Estacion.</span></a>
-</nav>
-
 <!-- ── TOPBAR ── -->
 <div class="topbar">
   <div class="topbar-title">
@@ -717,6 +684,21 @@
       <span class="fmt fmt-on">✓ Overview SQX</span>
       <span class="fmt fmt-on">✓ MT5 Live</span>
     </div>
+  </div>
+  <!-- SCAN CARPETA SQX / PSEUDOCÓDIGOS -->
+  <input type="file" id="scan-dir-input" multiple webkitdirectory accept=".csv"
+         style="display:none" onchange="scanSQXFolder(this.files);this.value=''">
+  <input type="file" id="scan-psc-input" multiple webkitdirectory
+         style="display:none" onchange="scanPseudocodigos(this.files);this.value=''">
+  <div style="margin-top:8px;display:flex;gap:8px;justify-content:center">
+    <button onclick="document.getElementById('scan-dir-input').click()"
+            style="padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px">
+      📂 Scan carpeta SQX
+    </button>
+    <button onclick="document.getElementById('scan-psc-input').click()"
+            style="padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px">
+      📝 Scan Pseudocódigos
+    </button>
   </div>
   <div class="alert alert-ok" id="alert-ok" style="display: none;">✓ 24 bots guardados en GitHub.</div>
   <div class="alert alert-err" id="alert-err" style="display: none;"></div>
@@ -2570,15 +2552,23 @@ function parseCSV(text) {
     const cols = splitLine(line, sep);
     const g = i => (i >= 0 && cols[i] !== undefined) ? cols[i].replace(/"/g,'').trim() : '';
     const n = i => { const v = parseFloat(g(i)); return isNaN(v) ? null : v; };
-    const symRaw = g(C.sym);
+    const symRaw   = g(C.sym);
     const symClean = symRaw.split('_')[0] || symRaw;
+    const nameStr  = g(C.name);
+    const magicStr = nameStr.replace(/\D/g, '');
+    const magic    = magicStr ? Number(magicStr) : null;
     return {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-      name: g(C.name), symbol: symClean, symbolFull: symRaw, tf: g(C.tf),
-      phase: 'IS+OOS', sqxFilter: g(C.filter), source: 'csv',
-      added: new Date().toISOString().slice(0,10), notes: '',
+      id:        magicStr || (Date.now().toString(36) + Math.random().toString(36).slice(2)),
+      magic:     magic,
+      name:      nameStr,
+      symbol:    symClean,
+      tf:        g(C.tf),
+      sqxFilter: g(C.filter),
+      source:    'csv',
+      added:     new Date().toISOString().slice(0,10),
+      notes:     '',
       sqn: null, stag: null, zp: null,
-      is: { np:n(C.np_is), trades:n(C.tr_is), pf:n(C.pf_is), sharpe:n(C.sh_is), cagr:n(C.ann_is), stability:n(C.stab_is), dd:n(C.dd_is), wr:n(C.wl_is), retdd:n(C.rdd_is), cagrdd:n(C.cdd_is), fitness:n(C.fit_is), exposure:n(C.exp_is), rexp:n(C.rex_is) },
+      is:  { np:n(C.np_is),  trades:n(C.tr_is),  pf:n(C.pf_is),  sharpe:n(C.sh_is),  cagr:n(C.ann_is),  stability:n(C.stab_is),  dd:n(C.dd_is),  wr:n(C.wl_is),  retdd:n(C.rdd_is),  cagrdd:n(C.cdd_is),  fitness:n(C.fit_is),  exposure:n(C.exp_is),  rexp:n(C.rex_is) },
       oos: { np:n(C.np_oos), trades:n(C.tr_oos), pf:n(C.pf_oos), sharpe:n(C.sh_oos), cagr:n(C.ann_oos), stability:n(C.stab_oos), dd:n(C.dd_oos), wr:n(C.wl_oos), retdd:n(C.rdd_oos), cagrdd:n(C.cdd_oos), fitness:n(C.fit_oos) }
     };
   });
@@ -2599,6 +2589,123 @@ dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dra
 dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
 function handleFile(input) { if (input.files[0]) processFile(input.files[0]); input.value = ''; }
+
+async function scanSQXFolder(files) {
+  const csvFiles = [...files].filter(f => f.name.toLowerCase().endsWith('.csv'));
+  if (!csvFiles.length) { alertErr('No se encontraron archivos .csv en la carpeta.'); return; }
+
+  // Leer todos los CSVs en paralelo
+  const allBots = (await Promise.all(csvFiles.map(file => new Promise(resolve => {
+    const rd = new FileReader();
+    rd.onload = e => {
+      try {
+        const firstLine = (e.target.result || '').split('\n')[0];
+        if (firstLine.includes('Magic Number')) { resolve([]); return; }
+        resolve(parseCSV(e.target.result).map(b => ({ ...b, _mtime: file.lastModified })));
+      } catch { resolve([]); }
+    };
+    rd.onerror = () => resolve([]);
+    rd.readAsText(file, 'UTF-8');
+  })))).flat();
+
+  // Dedup entre archivos: mismo magic → gana el del archivo más reciente
+  const byMagic = {};
+  allBots.forEach(b => {
+    const k = String(b.magic || b.id);
+    if (!byMagic[k] || b._mtime > byMagic[k]._mtime) byMagic[k] = b;
+  });
+
+  // Merge con DB existente
+  const _nN = n => { const r = (n||'').toLowerCase().replace(/[^a-z0-9]/g,''); return r.startsWith('wfm') ? r.slice(3) : r; };
+  const applyMerge = (existing, s) => {
+    existing.is = s.is; existing.oos = s.oos;
+    existing.sqxFilter = s.sqxFilter;
+    existing.symbol = existing.symbol || s.symbol;
+    existing.tf     = existing.tf     || s.tf;
+    existing.source = 'csv';
+  };
+  let added = 0, updated = 0;
+  Object.values(byMagic).forEach(s => {
+    const sNorm = _nN(s.name);
+    const magicM = s.magic ? DB.find(x => x.magic && String(x.magic) === String(s.magic)) : null;
+    if (magicM) { applyMerge(magicM, s); updated++; return; }
+    const exactM = DB.find(x => x.name === s.name);
+    if (exactM) { applyMerge(exactM, s); updated++; return; }
+    const fuzzyM = DB.find(x => { const xN = _nN(x.name); return xN === sNorm || xN.startsWith(sNorm) || sNorm.startsWith(xN); });
+    if (fuzzyM) { applyMerge(fuzzyM, s); updated++; return; }
+    const { _mtime, ...clean } = s;
+    DB.push(clean); added++;
+  });
+
+  markDirty(); render(); updateRankingCache();
+
+  // Upsert silencioso en Supabase
+  if (sb.isAuthenticated()) {
+    try {
+      await sb.upsertBots(DB);
+      dirty = false;
+      document.getElementById('save-notice').style.display = 'none';
+      setSyncStatus('✓ Guardado en Supabase', '#1a7f4b');
+      setTimeout(() => setSyncStatus('', ''), 4000);
+    } catch(e) { console.warn('scanSQXFolder: upsert failed', e.message); }
+  }
+
+  alertOk(`✓ Scan carpeta SQX — ${Object.keys(byMagic).length} bot(s) leídos, ${added} nuevo(s), ${updated} actualizado(s).`);
+}
+
+async function scanPseudocodigos(files) {
+  const txtFiles = [...files].filter(f => f.name.toLowerCase().endsWith('.txt'));
+  if (!txtFiles.length) { alertErr('No se encontraron archivos .txt en la carpeta.'); return; }
+
+  // Leer todos los .txt en paralelo; extraer magic del nombre de archivo
+  const allItems = (await Promise.all(txtFiles.map(file => new Promise(resolve => {
+    const rd = new FileReader();
+    rd.onload = e => {
+      const magic = file.name.replace(/\.txt$/i, '').split('_')[0].replace(/\D/g, '');
+      resolve(magic ? { magic, text: e.target.result || '', filename: file.name, mtime: file.lastModified } : null);
+    };
+    rd.onerror = () => resolve(null);
+    rd.readAsText(file, 'UTF-8');
+  })))).filter(Boolean);
+
+  // Dedup: mismo magic → archivo más reciente
+  const byMagic = {};
+  allItems.forEach(item => {
+    if (!byMagic[item.magic] || item.mtime > byMagic[item.magic].mtime) byMagic[item.magic] = item;
+  });
+
+  // Vincular a bots en DB por magic
+  let matched = 0, unmatched = 0;
+  Object.values(byMagic).forEach(({ magic, text, filename }) => {
+    const bot = DB.find(b => String(b.magic) === magic || String(b.id) === magic);
+    if (!bot) { unmatched++; return; }
+    bot.pseudocodigo = text;
+    bot.pseudocodigoData = { ...(bot.pseudocodigoData || {}), filename, text };
+    matched++;
+  });
+
+  if (matched === 0) {
+    alertErr(`Scan Pseudocódigos — ningún .txt matcheó con bots en DB (${Object.keys(byMagic).length} archivos leídos).`);
+    return;
+  }
+
+  markDirty(); render();
+
+  // Upsert silencioso en Supabase
+  if (sb.isAuthenticated()) {
+    try {
+      await sb.upsertBots(DB);
+      dirty = false;
+      document.getElementById('save-notice').style.display = 'none';
+      setSyncStatus('✓ Guardado en Supabase', '#1a7f4b');
+      setTimeout(() => setSyncStatus('', ''), 4000);
+    } catch(e) { console.warn('scanPseudocodigos: upsert failed', e.message); }
+  }
+
+  const unmatchedNote = unmatched ? `, ${unmatched} sin match` : '';
+  alertOk(`✓ Scan Pseudocódigos — ${Object.keys(byMagic).length} archivo(s) leídos, ${matched} bot(s) actualizado(s)${unmatchedNote}.`);
+}
+
 function processFile(file) {
   if (!file.name.toLowerCase().endsWith('.csv')) { alertErr('Solo archivos .csv por ahora.'); return; }
   const rd = new FileReader();
