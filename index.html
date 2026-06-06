@@ -787,26 +787,6 @@
     </div>
   </div>
 
-  <!-- MAGIC NUMBER LINKING -->
-  <div class="section-card" id="magic-link-card" style="display:none">
-    <div class="section-head" id="magic-head" onclick="toggleMagicPanel()">
-      <span class="section-title">🔗 Vincular Magic Numbers — <span id="magic-pending-count" style="color:var(--amber)">0 bots sin vincular</span></span>
-      <span class="chevron" id="chev-magic">▼</span>
-    </div>
-    <div class="collapse-body" id="magic-body">
-      <div class="form-inner">
-        <p style="font-size:12px;color:var(--text3);margin-bottom:1rem">
-          Asigná el <strong>magic number</strong> a cada bot para que el dashboard muestre sus métricas live.
-          Las sugerencias se generan comparando el nombre del bot con el comment de los trades en MT5.
-        </p>
-        <div id="magic-link-table"></div>
-        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-          <button class="btn-primary" onclick="saveAllMagics()" id="btn-save-magics">💾 Guardar vinculaciones</button>
-          <span id="magic-save-status" style="font-size:12px;color:var(--text3)"></span>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- SUB-TABS INCUBACION -->
   <div class="subtab-bar">
@@ -1533,10 +1513,8 @@ async function authGrant() {
     window._selectedAccounts = new Set();  // reset filtro al (re)login
     window._filteredMagics   = null;
     window.LIVE = computeLiveMetrics(trades);
-    window._magicSummary = buildMagicSummary(trades);
   } catch(e) {
     window.LIVE = {};
-    window._magicSummary = {};
   }
   // Cargar labels de cuentas para mostrar nombres amigables en los checkboxes
   try {
@@ -1548,28 +1526,8 @@ async function authGrant() {
   }
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('btn-save').disabled = false;
-  // Motor de auto-matching: vincula silenciosamente, detecta ambigüedades
-  const matchResult = autoMatchMagics();
-  if (matchResult.autoLinked > 0)
-    console.log(`Auto-match: ${matchResult.autoLinked} bots vinculados automáticamente`);
-  const stubsCreated = autoCreateStubs();
-  if (stubsCreated > 0)
-    console.log(`Auto-stubs: ${stubsCreated} bots creados sin CSV`);
-  // Fallback: crear stub mínimo para magics que siguen sin bot tras autoCreateStubs
-  {
-    const knownMagics = new Set(DB.map(b => b.magic).filter(Boolean).map(String));
-    const trades = window._lastTrades || [];
-    const orphans = new Set();
-    trades.forEach(t => { const m = String(t.magic || ''); if (m && m !== '0' && !knownMagics.has(m)) orphans.add(m); });
-    orphans.forEach(magic => {
-      const first = trades.find(t => String(t.magic) === magic);
-      DB.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), magic: parseInt(magic), name: `Bot ${magic} (auto)`, symbol: first ? first.symbol : '', tf: '', source: 'mt5', added: new Date().toISOString().slice(0, 10), notes: '' });
-      console.log(`Fallback stub: magic ${magic}`);
-    });
-  }
   renderAccountCheckboxes();
   render();
-  renderMagicLinking();
   renderAlerts();
   updateRankingCache();
   const savedSubTab = sessionStorage.getItem('sqx_incub_subtab');
@@ -1586,9 +1544,6 @@ async function refreshTrades() {
     window._selectedAccounts = new Set();
     window._filteredMagics = null;
     window.LIVE = computeLiveMetrics(trades);
-    window._magicSummary = buildMagicSummary(trades);
-    autoMatchMagics();
-    autoCreateStubs();
     renderAccountCheckboxes();
     render();
     renderAlerts();
@@ -1602,7 +1557,7 @@ async function refreshTrades() {
   }
 }
 
-function computeLiveMetrics(trades, skipMt5Merge = false) {
+function computeLiveMetrics(trades) {
   // Paso 1: agrupar por magic → por cuenta
   const byMagicAccount = {};
   for (const t of trades) {
@@ -1662,95 +1617,12 @@ function computeLiveMetrics(trades, skipMt5Merge = false) {
       account: winnerAccount[magic] || null,  // cuenta ganadora (más historial)
     };
   }
-  if (!skipMt5Merge) {
-  // Paso 3: merge con mt5Data histórico para bots que no tienen trades en Supabase
-  // o que tienen historial previo al primer trade de Supabase
-  const _parseDate = s => {
-    if (!s || s === '—') return 0;
-    return new Date(s.replace(/\./g, '-').replace(' ', 'T')).getTime();
-  };
 
-  for (const bot of (window.DB || DB)) {
-    if (!bot.magic || !bot.mt5Data?.tradeList?.length) continue;
-    const m = String(bot.magic);
-    const mt5List = bot.mt5Data.tradeList;
-
-    if (!result[m]) {
-      // Bot sin trades en Supabase — usar mt5Data completo
-      const netPs = mt5List.map(t => +(t.netProfit||0));
-      const wins   = netPs.filter(p => p > 0);
-      const losses = netPs.filter(p => p < 0);
-      const gW = wins.reduce((a,b)=>a+b,0);
-      const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
-      const pf = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
-      const winRate = mt5List.length ? +(wins.length/mt5List.length*100).toFixed(1) : 0;
-      let peak=0,eq=0,maxDD=0;
-      netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
-      let cum=0;
-      const tradeList = mt5List.map(t => ({ ...t, cumProfit: (cum=+(cum+(t.netProfit||0)).toFixed(2)) }));
-      result[m] = {
-        pf, ddPct: +(maxDD*100).toFixed(2), winRate, gain: null,
-        trades: mt5List.length, balance: null, sharpe: null, zProb: null,
-        avgWinUsd:  wins.length   ? +(gW/wins.length).toFixed(2)   : null,
-        avgLossUsd: losses.length ? +(gL/losses.length).toFixed(2) : null,
-        netProfit:  +netPs.reduce((a,b)=>a+b,0).toFixed(2),
-        tradeList, source: 'mt5data', account: null,
-      };
-    } else {
-      // Bot con trades en Supabase — prepend mt5Data anterior al primer trade de Supabase
-      const sbList = result[m].tradeList;
-      const firstSbDate = sbList.length ? _parseDate(sbList[0].openDate) : Infinity;
-      const olderMt5 = mt5List.filter(t => _parseDate(t.closeDate) < firstSbDate);
-      if (olderMt5.length) {
-        const combined = [...olderMt5, ...sbList];
-        const netPs = combined.map(t => +(t.netProfit||0));
-        const wins   = netPs.filter(p => p > 0);
-        const losses = netPs.filter(p => p < 0);
-        const gW = wins.reduce((a,b)=>a+b,0);
-        const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
-        let peak=0,eq=0,maxDD=0,cum=0;
-        netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
-        const tradeList = combined.map(t => ({ ...t, cumProfit: (cum=+(cum+(t.netProfit||0)).toFixed(2)) }));
-        result[m] = {
-          ...result[m],
-          pf:        gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0,
-          ddPct:     +(maxDD*100).toFixed(2),
-          winRate:   combined.length ? +(wins.length/combined.length*100).toFixed(1) : 0,
-          trades:    combined.length,
-          netProfit: +netPs.reduce((a,b)=>a+b,0).toFixed(2),
-          avgWinUsd:  wins.length   ? +(gW/wins.length).toFixed(2)   : null,
-          avgLossUsd: losses.length ? +(gL/losses.length).toFixed(2) : null,
-          tradeList,
-        };
-      }
-    }
-  }
-  } // end if (!skipMt5Merge)
 
   return result;
 }
 
-// ── MAGIC NUMBER LINKING ───────────────────────────────────────
 const _normName = n => { const r = (n||'').toLowerCase().replace(/[^a-z0-9]/g,''); return r.startsWith('wfm') ? r.slice(3) : r; };
-
-function buildMagicSummary(trades) {
-  const summary = {};
-  for (const t of trades) {
-    const m = String(t.magic || '');
-    if (!m || m === '0') continue;
-    if (!summary[m]) summary[m] = { magic: m, comments: {}, count: 0, symbols: new Set() };
-    const c = (t.comment || '').trim();
-    if (c) summary[m].comments[c] = (summary[m].comments[c] || 0) + 1;
-    summary[m].count++;
-    if (t.symbol) summary[m].symbols.add(t.symbol);
-  }
-  for (const m of Object.values(summary)) {
-    const entries = Object.entries(m.comments).sort((a,b)=>b[1]-a[1]);
-    m.topComment = entries.length ? entries[0][0] : '';
-    m.symbols = [...m.symbols];
-  }
-  return summary;
-}
 
 function _magicScore(botName, tradeComment) {
   if (!tradeComment) return 0;
@@ -1790,7 +1662,7 @@ const _getBotPF   = b => b.is?.pf  ?? b.oos?.pf  ?? b.pf  ?? null;
 const _getBotDD   = b => b.is?.dd  ?? b.oos?.dd  ?? b.dd  ?? null;
 const _hasSQX     = b => !!(b.is || b.oos);
 const _liveCount  = b => window.LIVE?.[String(b.magic)]?.tradeList?.length ?? 0;
-const _tradeCount = b => (b.mt5Data?.tradeList?.length ?? 0) + _liveCount(b);
+const _tradeCount = b => _liveCount(b);
 // Último número identificador del nombre, ignorando sufijo de copia (1)/(2) al final
 const _lastIdNum      = name => { const s = (name||'').replace(/\s*\([12]\)\s*$/, '').trim(); const n = s.match(/\d+/g); return n ? n[n.length - 1] : null; };
 // Nombre truncado: termina en delimitador no-alfanumérico → el último id no es confiable
@@ -1809,11 +1681,7 @@ function diagnosticoDuplicados(threshold = 70) {
         const ns = _nameScore(a.name, b.name);
         if (ns < threshold) continue;
         const la = _liveCount(a), lb = _liveCount(b);
-        const ma = a.mt5Data?.tradeList?.length ?? 0, mb = b.mt5Data?.tradeList?.length ?? 0;
-        const mt5IdDifiere = ma > 0 && mb > 0 && ma !== mb
-          && !_isTruncated(a.name) && !_isTruncated(b.name)
-          && _lastIdNum(a.name) !== _lastIdNum(b.name) && _lastIdNum(a.name) !== null;
-        const versionesDistintas = (la > 0 && lb > 0 && la !== lb) || mt5IdDifiere;
+        const versionesDistintas = la > 0 && lb > 0 && la !== lb;
         const bothSQX = _hasSQX(a) && _hasSQX(b);
         let caso, confirmado;
         if (bothSQX) {
@@ -1844,201 +1712,6 @@ function diagnosticoDuplicados(threshold = 70) {
   return rows;
 }
 
-function suggestMagicForBot(bot, magicSummary, usedMagics) {
-  let best = null, bestScore = 0;
-  for (const [magic, info] of Object.entries(magicSummary)) {
-    if (usedMagics && usedMagics.has(magic)) continue; // ya asignado a otro bot
-    const score = _magicScore(bot.name, info.topComment);
-    if (score > bestScore) { bestScore = score; best = { magic, info, score }; }
-  }
-  return bestScore >= 50 ? best : null;
-}
-
-// ── BOT STUB — helpers ────────────────────────────────────────
-// Detecta si un comment es un mensaje de cierre de MT5 ([tp xxx] / [sl xxx])
-// y NO un nombre de estrategia real
-function _isTpSlComment(comment) {
-  if (!comment) return true;
-  const c = comment.trim().toLowerCase();
-  return c.startsWith('[tp') || c.startsWith('[sl') || c.startsWith('[so');
-}
-
-// Crea bots stub automáticamente para magic numbers con trades pero sin bot asignado
-// Solo para orphans con nombre real (ignora [tp/sl])
-function autoCreateStubs() {
-  const ms             = window._magicSummary || {};
-  const usedMagics     = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
-  const ambiguousMagics = new Set((window._magicAmbiguous || []).map(a => a.magic));
-  let created = 0;
-
-  for (const [magic, info] of Object.entries(ms)) {
-    if (usedMagics.has(magic)) continue;              // ya tiene bot
-    if (ambiguousMagics.has(magic)) continue;         // pendiente de resolución por usuario
-    if (_isTpSlComment(info.topComment)) continue;    // comment de sistema, ignorar
-    if (!info.topComment) continue;
-
-    // Antes de crear stub — buscar cualquier bot sin magic con nombre idéntico (normalizado)
-    const normComment = _normName(info.topComment);
-    const exactMatch = DB.find(b => !b.magic && _normName(b.name) === normComment);
-    if (exactMatch) {
-      exactMatch.magic        = Number(magic);
-      exactMatch.magic_locked = true;
-      usedMagics.add(magic);
-      created++;
-      markDirty();
-      console.log(`Auto-match exact: ${exactMatch.name} → magic ${magic}`);
-      continue;
-    }
-
-    // Si hay candidato con alta similitud pero no exacto → diferir al usuario, no crear stub
-    const softMatch = DB.find(b => !b.magic && _nameScore(b.name, info.topComment) >= 80);
-    if (softMatch) {
-      (window._magicAmbiguous = window._magicAmbiguous || []).push({ magic, info, candidates: [softMatch] });
-      console.log(`Soft-match deferred: "${softMatch.name}" ≈ "${info.topComment}" (magic ${magic})`);
-      continue;
-    }
-
-    // Solo si no hay match — crear stub
-    const stub = {
-      id:          'stub_' + magic,
-      name:        info.topComment.replace(/_/g, ' '), // humanizar underscores
-      magic:       Number(magic),
-      magic_locked: true,
-      source:      'stub',
-      symbol:      info.symbols[0] || '',
-      tf:          '',
-      added:       new Date().toISOString().slice(0, 10),
-      notes:       '',
-    };
-    DB.push(stub);
-    usedMagics.add(magic);
-    created++;
-  }
-
-  if (created > 0) markDirty();
-  return created;
-}
-
-// ── AUTO-MATCHING MAGIC → BOT ─────────────────────────────────
-// Corre al login. Vincula silenciosamente cuando hay match claro.
-// Distingue duplicados de formato (resuelve solo) de ambigüedades reales.
-
-// Elige el mejor bot entre duplicados de formato (mismo nombre normalizado)
-function _pickBestDuplicate(bots) {
-  return bots.slice().sort((a, b) => {
-    const s = x => (x.is?.pf != null ? 4 : 0) + (x.overviewData ? 2 : 0) + (x.source === 'csv' ? 1 : 0);
-    return s(b) - s(a);
-  })[0];
-}
-
-function autoMatchMagics() {
-  const ms = window._magicSummary || {};
-  if (!Object.keys(ms).length) return { autoLinked: 0, ambiguous: 0 };
-
-  const lockedMagics = new Set(
-    DB.filter(b => b.magic && b.magic_locked).map(b => String(b.magic))
-  );
-  const freshLocked = new Set(lockedMagics);
-
-  let autoLinked = 0;
-  const ambiguous = [];
-
-  const magicEntries = Object.entries(ms).sort((a, b) => b[1].count - a[1].count);
-
-  for (const [magic, info] of magicEntries) {
-    if (freshLocked.has(magic)) continue;
-    if (!info.topComment) continue;
-
-    const available = DB.filter(b =>
-      !b.magic_locked && !freshLocked.has(String(b.magic || ''))
-    );
-
-    const candidates = available
-      .map(bot => ({ bot, score: _magicScore(bot.name, info.topComment) }))
-      .filter(x => x.score >= 80)
-      .sort((a, b) => b.score - a.score);
-
-    if (candidates.length === 0) continue;
-
-    const top    = candidates[0];
-    const second = candidates[1];
-
-    if (!second || top.score > second.score) {
-      // Ganador claro → vincular silenciosamente
-      top.bot.magic        = Number(magic);
-      top.bot.magic_locked = true;
-      freshLocked.add(magic);
-      autoLinked++;
-      continue;
-    }
-
-    // Hay empate → analizar el tipo
-    const tied     = candidates.filter(x => x.score === top.score);
-    const tiedNorms = tied.map(x => _normName(x.bot.name));
-
-    // TIPO 1 — Duplicado de formato: todos los empatados tienen el mismo nombre normalizado
-    if (tiedNorms.every(n => n === tiedNorms[0])) {
-      const winner = _pickBestDuplicate(tied.map(x => x.bot));
-      winner.magic        = Number(magic);
-      winner.magic_locked = true;
-      freshLocked.add(magic);
-      autoLinked++;
-      continue;
-    }
-
-    // TIPO 2 — Empate por prefijo truncado: elegir el que tiene sufijo más corto
-    if (top.score === 90) {
-      const commentNorm = _normName(info.topComment);
-      const withExtra = tied.map(x => ({
-        bot:      x.bot,
-        extraLen: _normName(x.bot.name).length - commentNorm.length,
-      })).sort((a, b) => a.extraLen - b.extraLen);
-
-      if (withExtra[0].extraLen < withExtra[1].extraLen) {
-        // Uno claramente más corto → ganador por proximidad
-        withExtra[0].bot.magic        = Number(magic);
-        withExtra[0].bot.magic_locked = true;
-        freshLocked.add(magic);
-        autoLinked++;
-        continue;
-      }
-    }
-
-    // TIPO 3 — Ambigüedad real: bots genuinamente distintos → usuario elige
-    ambiguous.push({ magic, info, candidates: tied.map(x => x.bot) });
-  }
-
-  if (autoLinked > 0) {
-    markDirty();
-    window.LIVE = computeLiveMetrics(window._lastTrades || []);
-  }
-
-  window._magicAmbiguous  = ambiguous;
-  window._magicAutoLinked = autoLinked;
-  return { autoLinked, ambiguous: ambiguous.length };
-}
-
-async function resolveAmbiguity(magic, botId) {
-  const bot = DB.find(b => b.id === botId);
-  if (!bot) return;
-  bot.magic        = Number(magic);
-  bot.magic_locked = true;
-  // Quitar de la lista de ambiguos
-  window._magicAmbiguous = (window._magicAmbiguous || []).filter(a => a.magic !== magic);
-  if (window._lastTrades) window.LIVE = computeLiveMetrics(window._lastTrades);
-  markDirty();
-  renderMagicLinking();
-  renderAlerts();
-  render();
-  // Guardar automáticamente en Supabase para que persista al recargar
-  try {
-    await sb.upsertBots(DB);
-    setSyncStatus('✓ Guardado', '#1a7f4b');
-  } catch(e) {
-    console.warn('No se pudo guardar resolución:', e);
-  }
-  alertOk(`✓ Magic ${magic} asignado a "${bot.name.slice(0, 40)}"`);
-}
 
 // ── ALERTAS LIVE (Capa 5) ───────────────────────────────────────
 function renderAlerts() {
@@ -2125,137 +1798,6 @@ function renderAlerts() {
 
 function dismissAlerts() { switchSubTab('bots'); }
 
-function renderMagicLinking() {
-  const card = document.getElementById('magic-link-card');
-  if (!card) return;
-
-  const ambiguous  = window._magicAmbiguous  || [];
-  const autoLinked = window._magicAutoLinked || 0;
-  const ms         = window._magicSummary || {};
-
-  // Ocultar panel si no hay ambigüedades ni orphans
-  const usedMagics  = new Set(DB.filter(b => b.magic).map(b => String(b.magic)));
-  const orphanMagics = Object.entries(ms)
-    .filter(([magic]) => !usedMagics.has(magic))
-    .sort((a, b) => b[1].count - a[1].count);
-
-  if (!ambiguous.length && !orphanMagics.length) {
-    card.style.display = 'none';
-    return;
-  }
-
-  // Título del panel
-  const pendingLabel = ambiguous.length
-    ? `⚠️ ${ambiguous.length} caso${ambiguous.length > 1 ? 's' : ''} requieren tu atención`
-    : `✓ Vinculación automática completa`;
-  document.getElementById('magic-pending-count').textContent = pendingLabel;
-  card.style.display = '';
-
-  // Tabla de ambigüedades
-  const ambiguousHtml = ambiguous.length ? `
-    <div style="margin-bottom:1rem">
-      <div style="font-size:12px;color:var(--amber);font-weight:600;margin-bottom:10px">
-        ⚠️ Los siguientes trades podrían pertenecer a más de un bot — elegí cuál es el correcto:
-      </div>
-      ${ambiguous.map(({ magic, info, candidates }) => `
-        <div style="border:1px solid var(--amber-border);border-radius:var(--radius-lg);padding:12px;margin-bottom:8px;background:var(--amber-bg)">
-          <div style="font-size:12px;font-weight:700;margin-bottom:6px">
-            Magic <strong>${magic}</strong>
-            — comment: <em>"${info.topComment}"</em>
-            <span style="font-size:10px;color:var(--text3);margin-left:6px">${info.count} trades · ${info.symbols.slice(0,2).join('/')}</span>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            ${candidates.map(bot => `
-              <button onclick="resolveAmbiguity('${magic}','${bot.id}')"
-                style="font-size:12px;padding:5px 14px;border-color:var(--amber-border);background:#fff">
-                ${bot.name.slice(0, 50)}
-              </button>`).join('')}
-          </div>
-        </div>`).join('')}
-    </div>` : '';
-
-  // Orphans: magics con trades pero sin bot
-  const orphanHtml = orphanMagics.length ? `
-    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">
-        Magic numbers sin bot asignado (${orphanMagics.length})
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${orphanMagics.map(([magic, info]) =>
-          `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px">
-            <strong>${magic}</strong>
-            ${info.topComment ? `<span style="color:var(--text3)"> — "${info.topComment}"</span>` : ''}
-            <span style="color:var(--text3);margin-left:4px">${info.count} trades · ${info.symbols.slice(0,2).join('/')||'—'}</span>
-          </div>`).join('')}
-      </div>
-      <div style="font-size:10px;color:var(--text3);margin-top:6px">
-        Estos magic numbers tienen trades pero no están vinculados a ningún bot. Cargá su CSV para vincularlos.
-      </div>
-    </div>` : '';
-
-  // Stats de auto-linking
-  const statsHtml = autoLinked > 0 ? `
-    <div style="font-size:12px;color:var(--green);margin-bottom:12px">
-      ✓ ${autoLinked} bot${autoLinked > 1 ? 's' : ''} vinculado${autoLinked > 1 ? 's' : ''} automáticamente
-    </div>` : '';
-
-  document.getElementById('magic-link-table').innerHTML = statsHtml + ambiguousHtml + orphanHtml;
-}
-
-function toggleMagicPanel() {
-  const body = document.getElementById('magic-body');
-  const head = document.getElementById('magic-head');
-  const chev = document.getElementById('chev-magic');
-  const open = body.classList.contains('open');
-  body.classList.toggle('open', !open);
-  head.classList.toggle('open', !open);
-  chev.textContent = open ? '▶' : '▼';
-}
-
-function applyOneMagic(botId) {
-  const input = document.getElementById('magic-input-' + botId);
-  const val = parseInt(input?.value, 10);
-  if (!val || val <= 0) { alertErr('Ingresá un magic number válido (número entero positivo).'); return; }
-  const bot = DB.find(b => b.id === botId);
-  if (!bot) return;
-  bot.magic        = val;
-  bot.magic_locked = true; // no se toca más por el motor automático
-  if (window._lastTrades) window.LIVE = computeLiveMetrics(window._lastTrades);
-  markDirty();
-  renderMagicLinking();
-  renderAlerts();
-  render();
-  alertOk(`✓ Magic ${val} asignado a "${bot.name.slice(0,40)}${bot.name.length>40?'…':''}"`);
-}
-
-async function saveAllMagics() {
-  const unlinked = DB.filter(b => !b.magic);
-  let applied = 0;
-  for (const bot of unlinked) {
-    const input = document.getElementById('magic-input-' + bot.id);
-    const val = parseInt(input?.value, 10);
-    if (val && val > 0) { bot.magic = val; applied++; }
-  }
-  if (!applied) { alertErr('No hay magic numbers para guardar.'); return; }
-  const btn = document.getElementById('btn-save-magics');
-  const status = document.getElementById('magic-save-status');
-  btn.disabled = true; status.textContent = '⏳ Guardando...';
-  try {
-    await sb.upsertBots(DB);
-    dirty = false;
-    document.getElementById('save-notice').style.display = 'none';
-    localStorage.setItem('sqx_dashboard_state', JSON.stringify({ db: DB }));
-    if (window._lastTrades) window.LIVE = computeLiveMetrics(window._lastTrades);
-    status.textContent = `✓ ${applied} vinculación(es) guardada(s)`;
-    renderMagicLinking();
-    renderAlerts();
-    render();
-    alertOk(`✓ ${applied} magic number(s) guardado(s) en Supabase.`);
-  } catch(err) {
-    status.textContent = '✗ Error';
-    alertErr('Error: ' + err.message);
-  } finally { btn.disabled = false; }
-}
 
 function authShowRegister(e) {
   if (e) e.preventDefault();
@@ -2356,7 +1898,6 @@ try {
       if (Array.isArray(_lsParsed.db)) DB = _lsParsed.db;
     }
     // Merge del HTML embebido hacia el localStorage
-    // mt5Data: el embeddedDB es la fuente MT5 — siempre pisa (es el dato más fresco)
     // overviewData: solo se copia si el bot no tiene uno (dato ingresado manualmente)
     if (_embeddedDB.length > 0) {
       const _embMap = {};
@@ -2364,7 +1905,6 @@ try {
       DB.forEach(b => {
         const src = _embMap[b.id];
         if (src) {
-          if (src.mt5Data) b.mt5Data = src.mt5Data;
           if (!b.overviewData  && src.overviewData)  b.overviewData  = src.overviewData;
         }
       });
@@ -2487,7 +2027,6 @@ async function runManualCleanup() {
     localStorage.setItem('sqx_dashboard_state', JSON.stringify({ db: DB }));
     statusEl.textContent = `✓ Limpieza completa: ${repaired} fusionado(s), ${before - after} eliminado(s). Guardado en Supabase.`;
     render();
-    renderMagicLinking();
   } catch(e) {
     statusEl.textContent = '✗ Error al guardar: ' + e.message;
   }
@@ -2730,7 +2269,7 @@ function processFile(file) {
           // Si era stub o fed26_: adoptar nombre completo del CSV
           if (wasStub || (existing.id && existing.id.startsWith('fed26_')))
             existing.name = s.name;
-          // magic y magic_locked se preservan (no se tocan)
+
         };
 
         parsed.forEach(s => {
@@ -2846,7 +2385,6 @@ function repairDuplicateBots() {
       return nameToMagicCandidates(b.name).some(c => c === magicStr || magicStr.startsWith(c));
     });
     if (target) {
-      if (orphan.mt5Data) target.mt5Data = orphan.mt5Data;
       if (!target.magic) target.magic = orphan.magic;
       DB.splice(DB.indexOf(orphan), 1);
       merged++;
@@ -2866,13 +2404,6 @@ async function mergeAndCleanDuplicates(dryRun = false) {
     // Si ambos tienen trades Supabase con cantidades distintas → versiones distintas
     const la = _liveCount(a), lb = _liveCount(b);
     if (la > 0 && lb > 0 && la !== lb) return false;
-    // Si ambos tienen mt5Data con cantidades distintas → comparar último id numérico del nombre
-    // (solo si ninguno tiene nombre truncado — terminado en delimitador)
-    const ma = a.mt5Data?.tradeList?.length ?? 0, mb = b.mt5Data?.tradeList?.length ?? 0;
-    if (ma > 0 && mb > 0 && ma !== mb && !_isTruncated(a.name) && !_isTruncated(b.name)) {
-      const ia = _lastIdNum(a.name), ib = _lastIdNum(b.name);
-      if (ia !== null && ib !== null && ia !== ib) return false;
-    }
     if (_hasSQX(a) && _hasSQX(b)) {
       const pfA = _getBotPF(a), pfB = _getBotPF(b);
       const ddA = _getBotDD(a), ddB = _getBotDD(b);
@@ -2944,14 +2475,10 @@ async function mergeAndCleanDuplicates(dryRun = false) {
       // SQX data: transferir si el ganador no lo tiene
       for (const k of ['is','oos','overviewData','pseudocodigoData'])
         if (!winner[k] && loser[k]) { winner[k] = loser[k]; console.log(`  → ${k} transferido`); }
-      // mt5Data: del que lo tenga (winner primero)
-      if (!winner.mt5Data && loser.mt5Data) { winner.mt5Data = loser.mt5Data; console.log(`  → mt5Data transferido`); }
       // magic: del bot con más trades live; si empate o 0 → winner conserva el suyo
       if (_liveCount(loser) > _liveCount(winner)) {
-        winner.magic = loser.magic; winner.magic_locked = true;
+        winner.magic = loser.magic;
         console.log(`  → magic transferido: ${loser.magic} (más trades live)`);
-      } else if (loser.magic_locked) {
-        winner.magic_locked = true;
       }
       // name: humanizar
       winner.name = winner.name.replace(/_+/g, ' ').trim();
@@ -3106,7 +2633,6 @@ function importMt5CSV(csvText) {
     // 1. Exact match por magic number (bots con magic ya asignado)
     const bot = DB.find(b => String(b.magic) === String(magic));
     if (bot) {
-      bot.mt5Data = mfxData;
       matched++;
     } else {
       // 2. Comment → Strategy Name (vínculo principal SQX ↔ MT5)
@@ -3121,7 +2647,6 @@ function importMt5CSV(csvText) {
       const commentBot = commentMatches.length === 1 ? commentMatches[0] : null;
       if (commentBot) {
         commentBot.magic = parseInt(magic);
-        commentBot.mt5Data = mfxData;
         matched++;
       } else {
         // 3. Prefix match: fallback para bots con magic asignado en formato largo (ej. 2719 vs 271900)
@@ -3132,7 +2657,6 @@ function importMt5CSV(csvText) {
           return cm.startsWith(bm) || bm.startsWith(cm);
         });
         if (prefixBot) {
-          prefixBot.mt5Data = mfxData;
           matched++;
         } else {
           // 4. Name-digits match — fallback legacy si comment está vacío
@@ -3163,7 +2687,6 @@ function importMt5CSV(csvText) {
 
           if (candidate) {
             candidate.magic = parseInt(magic);
-            candidate.mt5Data = mfxData;
             matched++;
           } else if (!esAmbiguo) {
             // Sin match en ningún paso → crear bot nuevo (magic verdaderamente desconocido)
@@ -3183,8 +2706,7 @@ function importMt5CSV(csvText) {
               sqn: null, stag: null, zp: null,
               is:  null,
               oos: null,
-              overviewData:  null,
-              mt5Data:  mfxData,
+              overviewData: null,
             });
             created++;
           }
@@ -3203,7 +2725,6 @@ function importMt5CSV(csvText) {
   console.group('[MFX Import]');
   console.log('Magics en CSV:', Object.keys(tradesByMagic).join(', '));
   console.log('Actualizados:', matched, '| Creados:', created, '| Reparados:', repaired);
-  DB.forEach(b => { if (b.mt5Data) console.log(`  ✓ Bot "${b.name}" (magic ${b.magic}) — PF ${b.mt5Data.pf}`); });
   console.groupEnd();
   updateRankingCache();
 }
@@ -3211,13 +2732,12 @@ function importMt5CSV(csvText) {
 // ── RANKING CACHE — sincronización automática con ranking.html ─
 function updateRankingCache() {
   try {
-    // Incluye bots con mt5Data (legado) Y bots con magic + datos live de Supabase
     const live = window.LIVE || {};
     const rankingBots = DB
-      .filter(b => b.mt5Data || (b.magic && live[String(b.magic)]))
+      .filter(b => b.magic && live[String(b.magic)])
       .map(b => {
         const liveData = b.magic ? live[String(b.magic)] : null;
-        const src = liveData || b.mt5Data || {};
+        const src = liveData || {};
         return {
           name:   b.name   || '—',
           magic:  b.magic  || '—',
@@ -3304,7 +2824,7 @@ function getFiltered() {
     if (filt === 'passed') return s.sqxFilter === 'PASSED';
     if (filt === 'live') {
       const lv = window.LIVE || {};
-      return !!(s.mt5Data || (s.magic && lv[String(s.magic)]));
+      return !!(s.magic && lv[String(s.magic)]);
     }
     return true;
   });
@@ -3322,7 +2842,7 @@ function render() {
       const fl=evalS(s).length;
       if(fl===0)ok++;else if(fl<=2)warn++;else fail++;
       if(s.source==='csv')csv++;
-      if(s.mt5Data || (s.magic && lv[String(s.magic)])) live++;
+      if(s.magic && lv[String(s.magic)]) live++;
     });
     document.getElementById('s-tot').textContent = DB.length;
     document.getElementById('s-ok').textContent = ok;
@@ -3342,7 +2862,7 @@ function render() {
   }
   const _getLivePf = s => {
     const live = window.LIVE && s.magic ? window.LIVE[String(s.magic)] : null;
-    return live?.pf ?? s.mt5Data?.pf ?? null;
+    return live?.pf ?? null;
   };
   let sorted = [...rows];
   if (sk) {
@@ -3371,7 +2891,7 @@ function render() {
       : `<span class="src-tag">${s.source==='csv'?'CSV':'MANUAL'}</span>`;
     const nm = s.name.length>28?s.name.slice(0,28)+'…':s.name;
     const hasOv = s.overviewData ? ' 📋' : '';
-    const hasMfx = (s.mt5Data || (window.LIVE && s.magic && window.LIVE[String(s.magic)])) ? ' 📊' : '';
+    const hasMfx = (window.LIVE && s.magic && window.LIVE[String(s.magic)]) ? ' 📊' : '';
     const hasPsc = s.pseudocodigoData ? ' 📝' : '';
     const dirCell = s.direction==='Long'?'<span class="dir-long">LONG</span>':s.direction==='Short'?'<span class="dir-short">SHORT</span>':s.direction==='Both'?'<span class="dir-both">BOTH</span>':'<span style="color:#c0c4ce">—</span>';
     const seasonChip = getSeasonChip(s.symbol);
@@ -3476,7 +2996,7 @@ function expandRow(idx) {
   tr.appendChild(td);
   dataRow.insertAdjacentElement('afterend', tr);
   const liveForBot = (window.LIVE && s.magic) ? window.LIVE[String(s.magic)] : null;
-  const mfxForChart = s.mt5Data || liveForBot;
+  const mfxForChart = liveForBot;
   if ((s.overviewData && s.overviewData.monthlyData && s.overviewData.monthlyData.length > 0) || mfxForChart) {
     setTimeout(() => renderOverviewChart(s.overviewData ? s.overviewData.monthlyData : null, mfxForChart, 'ov-chart-' + idx), 50);
   }
@@ -3490,7 +3010,7 @@ function buildFichaHTML(s, idx) {
   const stLabel = st==='ok'?'✓':st==='warn'?'◑':'✗';
   const badgeCls = st==='ok'?'badge-ok':st==='warn'?'badge-warn':'badge-fail';
   const ov = s.overviewData;
-  const mfx = s.mt5Data || (window.LIVE && s.magic ? window.LIVE[String(s.magic)] : null);
+  const mfx = window.LIVE && s.magic ? window.LIVE[String(s.magic)] : null;
   const psc = s.pseudocodigoData;
 
   // Metrics comparison table
@@ -3555,7 +3075,6 @@ function buildFichaHTML(s, idx) {
             if (!bot) return;
             const v = parseInt(el.value);
             bot.magic = isNaN(v) ? null : v;
-            bot.magic_locked = !!bot.magic;
             markDirty();
             saveToSupabase();
             render();
@@ -4086,11 +3605,9 @@ function loadMt5CsvFile(botId, idx, input) {
         input.value = '';
         return;
       }
-      bot.mt5Data = parsedAll;
       const uniqueMagics = [...new Set(parsedAll.tradeList.map(t => t.magic).filter(Boolean))];
       if (errEl) { errEl.textContent = `Cargados sin filtro de magic (${uniqueMagics.join(', ')}). Verificá que el CSV sea del bot correcto.`; errEl.style.display = 'block'; }
     } else {
-      bot.mt5Data = parsed;
       if (errEl) errEl.style.display = 'none';
     }
     input.value = '';
@@ -4109,7 +3626,6 @@ function processMt5(botId, idx) {
   const bot = DB.find(b => b.id === botId); if (!bot) return;
   const parsed = parseMt5(text);
   if (!parsed || parsed.trades === null) { if(errEl){errEl.textContent='No se pudo parsear. Verificá que sea texto de MT5.';errEl.style.display='block';} return; }
-  bot.mt5Data = parsed;
   markDirty();
   collapseRow(idx); expandedRow = null;
   setTimeout(() => { expandRow(idx); expandedRow = idx; }, 60);
@@ -4703,8 +4219,9 @@ function buildDnaBots() {
       const stage = ph === 'live' ? 'live' : ph === 'descartado' ? 'descartado' : 'incubacion';
       const allConds = [...(p.condicionesLong || []), ...(p.condicionesShort || [])];
       const signal = allConds.slice(0, 3).join(' AND ') || b.name;
-      const ddPct = b.mt5Data?.ddPct ?? null;
-      const pf    = b.mt5Data?.pf    ?? null;
+      const _blive = window.LIVE?.[String(b.magic)];
+      const ddPct = _blive?.ddPct ?? null;
+      const pf    = _blive?.pf    ?? null;
       return { id: b.name, asset: b.symbol || '—', tf: b.tf || '—', dir, entry, stage, inds, signal, ddPct, pf };
     })
     .filter(b => {
@@ -5257,8 +4774,7 @@ function _applyAccountFilter() {
   window._filteredMagics = sel.size > 0
     ? new Set(trades.map(t => String(t.magic)).filter(m => m && m !== '0'))
     : null;
-  window.LIVE          = computeLiveMetrics(trades, sel.size > 0);
-  window._magicSummary = buildMagicSummary(trades);
+  window.LIVE          = computeLiveMetrics(trades);
   renderAccountCheckboxes();
   render();
   renderAlerts();
@@ -5266,19 +4782,18 @@ function _applyAccountFilter() {
 
 function openRanking() {
   try {
-    const rankingBots = DB.filter(b => b.mt5Data).map(b => ({
-      name:   b.name   || '—',
-      magic:  b.magic  || '—',
-      symbol: b.symbol || '—',
-      dpf:    b.dpf !== undefined ? b.dpf : null,
-      estado: b.estado || b.phase || '—',
-      mfx: {
-        pf:        b.mt5Data.pf       ?? null,
-        ddPct:     b.mt5Data.ddPct    ?? null,
-        winRate:   b.mt5Data.winRate  ?? null,
-        tradeList: b.mt5Data.tradeList || [],
-      },
-    }));
+    const _rlive = window.LIVE || {};
+    const rankingBots = DB.filter(b => b.magic && _rlive[String(b.magic)]).map(b => {
+      const src = _rlive[String(b.magic)];
+      return {
+        name:   b.name   || '—',
+        magic:  b.magic  || '—',
+        symbol: b.symbol || '—',
+        dpf:    b.dpf !== undefined ? b.dpf : null,
+        estado: b.estado || b.phase || '—',
+        mfx: { pf: src.pf ?? null, ddPct: src.ddPct ?? null, winRate: src.winRate ?? null, tradeList: src.tradeList || [] },
+      };
+    });
     localStorage.setItem('sqx_ranking_bots', JSON.stringify(rankingBots));
     localStorage.setItem('sqx_overlap_ts', Date.now().toString());
   } catch(e) {
@@ -5360,8 +4875,9 @@ loadSeasonData();
   function wrGetBots() {
     let bots = [];
     if (typeof DB === "undefined" || !Array.isArray(DB)) return bots;
-    DB.filter(b => b.mt5Data).forEach(b => {
-      const mfx = b.mt5Data;
+    const _wrlive = window.LIVE || {};
+    DB.filter(b => b.magic && _wrlive[String(b.magic)]).forEach(b => {
+      const mfx = _wrlive[String(b.magic)];
       const pf_live = mfx.pf      ?? null;
       const dd_live = mfx.ddPct   ?? null;
       const wr      = mfx.winRate ?? null;
