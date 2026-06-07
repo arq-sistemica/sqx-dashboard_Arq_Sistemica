@@ -49,9 +49,9 @@ function _rowToBot(row) {
     sqxFilter: row.filter,
     added:     row.added,
     notes:     row.notes  || '',
-    sqn:       row.full_sqn,
-    stag:      row.full_stag,
-    zp:        row.full_zp,
+    sqn:       row.full_sqn ?? row.overview_data?.sqn  ?? null,
+    stag:      row.full_stag ?? row.overview_data?.stag ?? null,
+    zp:        row.full_zp   ?? row.overview_data?.zp   ?? null,
     is: {
       pf:        row.is_pf,
       cagr:      row.is_cagr,
