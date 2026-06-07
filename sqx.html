@@ -401,6 +401,7 @@ async function handleScanSQX(files) {
   const _nN = n => { const r = (n||'').toLowerCase().replace(/[^a-z0-9]/g,''); return r.startsWith('wfm') ? r.slice(3) : r; };
   const applyMerge = (existing, s) => {
     existing.is = s.is; existing.oos = s.oos; existing.sqxFilter = s.sqxFilter;
+    existing.standalone = s.standalone;
     existing.symbol = existing.symbol || s.symbol;
     existing.tf = existing.tf || s.tf;
     existing.source = 'csv';
