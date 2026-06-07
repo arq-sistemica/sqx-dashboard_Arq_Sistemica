@@ -137,10 +137,9 @@ td.num{text-align:right}
         <th class="left" onclick="sortBy('symbol')">Par<span id="s-symbol"></span></th>
         <th class="left" onclick="sortBy('tf')">TF<span id="s-tf"></span></th>
         <th onclick="sortBy('isPf')">PF<span id="s-isPf"> ▼</span></th>
-        <th onclick="sortBy('isWr')">WR%<span id="s-isWr"></span></th>
+        <th onclick="sortBy('isWr2')">WR%<span id="s-isWr2"></span></th>
         <th onclick="sortBy('isRetdd')">Ret/DD<span id="s-isRetdd"></span></th>
-        <th onclick="sortBy('isDd')">DD%<span id="s-isDd"></span></th>
-        <th onclick="sortBy('isStag')">Stagnation<span id="s-isStag"></span></th>
+        <th onclick="sortBy('isMaxDd')">Max DD%<span id="s-isMaxDd"></span></th>
         <th onclick="sortBy('isComplex')">Complexity<span id="s-isComplex"></span></th>
         <th onclick="sortBy('isEntry')">Entry<span id="s-isEntry"></span></th>
         <th onclick="sortBy('isFit')">Fitness<span id="s-isFit"></span></th>
@@ -236,25 +235,15 @@ var KEY = {
   name:       b => (b.name||'').toLowerCase(),
   symbol:     b => b.symbol||'',
   tf:         b => b.tf||'',
-  isPf:       b => b.is?.pf       ?? -Infinity,
-  oosPf:      b => b.oos?.pf      ?? -Infinity,
-  isWr:       b => b.is?.wr       ?? -Infinity,
-  oosWr:      b => b.oos?.wr      ?? -Infinity,
-  isRetdd:    b => b.is?.retdd    ?? -Infinity,
-  oosRetdd:   b => b.oos?.retdd   ?? -Infinity,
-  isDd:       b => b.is?.dd       ?? Infinity,
-  oosDd:      b => b.oos?.dd      ?? Infinity,
-  isStag:     b => b.is?.stag     ?? Infinity,
-  oosStag:    b => b.oos?.stag    ?? Infinity,
-  isComplex:  b => b.is?.complexity  ?? Infinity,
-  oosComplex: b => b.oos?.complexity ?? Infinity,
-  isEntry:    b => b.is?.entry_indicators  ?? -Infinity,
-  oosEntry:   b => b.oos?.entry_indicators ?? -Infinity,
-  isFit:      b => b.is?.fitness   ?? -Infinity,
-  oosFit:     b => b.oos?.fitness  ?? -Infinity,
-  isStab:     b => b.is?.stability ?? -Infinity,
-  oosStab:    b => b.oos?.stability?? -Infinity,
-  filter:     b => b.sqxFilter||'',
+  isPf:      b => b.is?.pf                    ?? -Infinity,
+  isWr2:     b => b.standalone?.winning_percent ?? -Infinity,
+  isRetdd:   b => b.is?.retdd                 ?? -Infinity,
+  isMaxDd:   b => b.standalone?.max_dd_pct    ?? Infinity,
+  isComplex: b => b.standalone?.complexity    ?? Infinity,
+  isEntry:   b => b.standalone?.entry_indicators ?? -Infinity,
+  isFit:     b => b.is?.fitness               ?? -Infinity,
+  isStab:    b => b.is?.stability             ?? -Infinity,
+  filter:    b => b.sqxFilter||'',
 };
 function sortBy(col) {
   if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
@@ -286,12 +275,11 @@ function renderTable() {
       <td class="left">${b.symbol||'—'}</td>
       <td class="left">${b.tf||'—'}</td>
       <td class="${pfColor(b.is?.pf)}">${fmt(b.is?.pf)}</td>
-      <td class="${wrColor(b.is?.wr)}">${fmt(b.is?.wr,1)}%</td>
+      <td class="${wrColor(b.standalone?.winning_percent)}">${fmt(b.standalone?.winning_percent,1)}%</td>
       <td class="${retddColor(b.is?.retdd)}">${fmt(b.is?.retdd)}</td>
-      <td class="${ddColor(b.is?.dd)}">${fmt(b.is?.dd,1)}%</td>
-      <td class="${b.is?.stag==null?'na':b.is.stag<=20?'pass':b.is.stag<=40?'warn':'fail'}">${fmt(b.is?.stag,1)}</td>
-      <td>${fmt(b.is?.complexity,0)}</td>
-      <td>${fmt(b.is?.entry_indicators,0)}</td>
+      <td class="${ddColor(b.standalone?.max_dd_pct)}">${fmt(b.standalone?.max_dd_pct,1)}%</td>
+      <td>${fmt(b.standalone?.complexity,0)}</td>
+      <td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${b.standalone?.entry_indicators||''}">${b.standalone?.entry_indicators||'—'}</td>
       <td class="${fitColor(b.is?.fitness)}">${fmt(b.is?.fitness)}</td>
       <td class="${stabColor(b.is?.stability)}">${fmt(b.is?.stability)}</td>
       <td class="left">${filterBadge(b.sqxFilter)}</td>

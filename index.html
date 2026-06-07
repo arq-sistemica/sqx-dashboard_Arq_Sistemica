@@ -2007,8 +2007,13 @@ const SQX_COL_KEYS = {
   'drawdown': 'dd', 'win/loss ratio': 'wr', 'ret/dd ratio': 'retdd',
   'cagr/max dd %': 'cagrdd', 'fitness': 'fitness', 'exposure': 'exposure',
   'r expectancy': 'rexp', 'sqn': 'sqn', 'stagnation': 'stag', 'z-score probability': 'zp',
+  'max dd': 'max_dd_pct', 'winning percent': 'winning_percent',
   'entry indicators': 'entry_indicators', 'entry indicator': 'entry_indicators', 'complexity': 'complexity',
 };
+const SQX_SKIP_STANDALONE = new Set([
+  'Strategy Name','Filters result','Symbol (IS)','TimeFrame (IS)',
+  'Mini equity chart (IS)','Mini equity chart (OOS)',
+]);
 function _colKey(header) {
   const low = header.toLowerCase().trim();
   for (const [pattern, key] of Object.entries(SQX_COL_KEYS)) {
@@ -2031,9 +2036,11 @@ function parseCSV(text) {
 
   const isColumns  = [];
   const oosColumns = [];
+  const standaloneColumns = [];
   headers.forEach((h, i) => {
     if (h.endsWith('(IS)'))  isColumns.push({ i, key: _colKey(h.replace(/\s*\(IS\)\s*$/, '')) });
-    if (h.endsWith('(OOS)')) oosColumns.push({ i, key: _colKey(h.replace(/\s*\(OOS\)\s*$/, '')) });
+    else if (h.endsWith('(OOS)')) oosColumns.push({ i, key: _colKey(h.replace(/\s*\(OOS\)\s*$/, '')) });
+    else if (!SQX_SKIP_STANDALONE.has(h) && h !== headers[iName] && h !== headers[iFilter]) standaloneColumns.push({ i, key: _colKey(h) });
   });
 
   return lines.slice(1).filter(l => l.trim()).map(line => {
@@ -2043,9 +2050,14 @@ function parseCSV(text) {
     const nameStr  = g(iName);
     const symRaw   = g(iSym);
     const magicStr = nameStr.replace(/\D/g, '');
-    const isObj = {}, oosObj = {};
+    const isObj = {}, oosObj = {}, standaloneObj = {};
     isColumns.forEach( ({ i, key }) => { isObj[key]  = n(i); });
     oosColumns.forEach(({ i, key }) => { oosObj[key] = n(i); });
+    standaloneColumns.forEach(({ i, key }) => {
+      const raw = g(i);
+      const num = parseFloat(raw);
+      standaloneObj[key] = isNaN(num) ? (raw || null) : num;
+    });
     return {
       id:        magicStr || (Date.now().toString(36) + Math.random().toString(36).slice(2)),
       magic:     magicStr ? Number(magicStr) : null,
@@ -2056,11 +2068,12 @@ function parseCSV(text) {
       source:    'csv',
       added:     new Date().toISOString().slice(0,10),
       notes:     '',
-      sqn:  isObj.sqn  ?? oosObj.sqn  ?? null,
-      stag: isObj.stag ?? oosObj.stag ?? null,
-      zp:   isObj.zp   ?? oosObj.zp   ?? null,
-      is:   isObj,
-      oos:  oosObj,
+      sqn:       isObj.sqn  ?? oosObj.sqn  ?? null,
+      stag:      isObj.stag ?? oosObj.stag ?? null,
+      zp:        isObj.zp   ?? oosObj.zp   ?? null,
+      is:        isObj,
+      oos:       oosObj,
+      standalone: standaloneObj,
     };
   });
 }

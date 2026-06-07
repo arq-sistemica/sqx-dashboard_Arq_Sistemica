@@ -78,7 +78,8 @@ function _rowToBot(row) {
       stability: row.oos_stability,
       fitness:   row.oos_fitness,
     },
-    overviewData: row.overview_data || null,
+    standalone:   row.overview_data?._standalone || null,
+    overviewData: row.overview_data ? (({ _standalone, ...rest }) => Object.keys(rest).length ? rest : null)(row.overview_data) : null,
     pseudocodigo: row.pseudocodigo  || null,
   };
 }
@@ -117,7 +118,9 @@ function _botToRow(bot) {
     oos_cagrdd:    bot.oos?.cagrdd    ?? null,
     oos_stability: bot.oos?.stability ?? null,
     oos_fitness:   bot.oos?.fitness   ?? null,
-    overview_data: bot.overviewData || null,
+    overview_data: (bot.standalone && Object.keys(bot.standalone).length)
+      ? { ...(bot.overviewData || {}), _standalone: bot.standalone }
+      : bot.overviewData || null,
     pseudocodigo:  bot.pseudocodigo || null,
   };
 }
