@@ -64,8 +64,6 @@ function _rowToBot(row) {
       cagrdd:    row.is_cagrdd,
       stability: row.is_stability,
       fitness:   row.is_fitness,
-      exposure:  row.is_exposure,
-      rexp:      row.is_rexp,
     },
     oos: {
       pf:        row.oos_pf,
@@ -108,8 +106,6 @@ function _botToRow(bot) {
     is_cagrdd:    bot.is?.cagrdd    ?? null,
     is_stability: bot.is?.stability ?? null,
     is_fitness:   bot.is?.fitness   ?? null,
-    is_exposure:  bot.is?.exposure  ?? null,
-    is_rexp:      bot.is?.rexp      ?? null,
     oos_pf:        bot.oos?.pf        ?? null,
     oos_cagr:      bot.oos?.cagr      ?? null,
     oos_wr:        bot.oos?.wr        ?? null,
