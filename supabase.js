@@ -121,10 +121,6 @@ function _botToRow(bot) {
     oos_cagrdd:    bot.oos?.cagrdd    ?? null,
     oos_stability: bot.oos?.stability ?? null,
     oos_fitness:   bot.oos?.fitness   ?? null,
-    full_sqn:         bot.sqn  ?? bot.overviewData?.sqn      ?? null,
-    full_stag:        bot.stag ?? bot.overviewData?.stag     ?? null,
-    full_zp:          bot.zp   ?? bot.overviewData?.zp       ?? null,
-    full_str_quality:           bot.overviewData?.strQuality ?? null,
     overview_data: bot.overviewData || null,
     pseudocodigo:  bot.pseudocodigo || null,
   };
