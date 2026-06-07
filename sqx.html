@@ -113,6 +113,7 @@ td.num{text-align:right}
     <button class="btn" onclick="document.getElementById('pseudo-input').click()">📝 Scan Pseudocódigos</button>
     <input type="file" id="overview-input" accept=".json" style="display:none" onchange="handleImportOverview(this.files);this.value=''">
     <button class="btn" onclick="document.getElementById('overview-input').click()">📥 Importar Overview backup</button>
+    <button class="btn" style="border-color:#fcc;color:var(--red)" onclick="deleteAllBots()">🗑 Borrar todo</button>
   </div>
 </div>
 
@@ -145,6 +146,7 @@ td.num{text-align:right}
         <th onclick="sortBy('isFit')">Fitness<span id="s-isFit"></span></th>
         <th onclick="sortBy('isStab')">Stability<span id="s-isStab"></span></th>
         <th class="left" onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
+        <th></th>
       </tr>
     </thead>
     <tbody id="bots-tbody"></tbody>
@@ -283,6 +285,7 @@ function renderTable() {
       <td class="${fitColor(b.is?.fitness)}">${fmt(b.is?.fitness)}</td>
       <td class="${stabColor(b.is?.stability)}">${fmt(b.is?.stability)}</td>
       <td class="left">${filterBadge(b.sqxFilter)}</td>
+      <td onclick="event.stopPropagation()"><button style="height:24px;padding:0 8px;font-size:11px;border-color:#fcc;color:var(--red);background:var(--bg)" onclick="deleteSingleBot('${id}')">✕</button></td>
     </tr>`;
   }).join('');
 
@@ -372,6 +375,30 @@ function buildDetail(bot) {
   }
 
   return html;
+}
+
+// ─── Borrar bots ─────────────────────────────────────────────────────
+async function deleteSingleBot(id) {
+  const bot = DB.find(b => String(b.magic || b.id) === id);
+  if (!bot) return;
+  if (!confirm(`¿Borrar "${bot.name}"?`)) return;
+  DB = DB.filter(b => String(b.magic || b.id) !== id);
+  renderTable();
+  if (sb.isAuthenticated()) {
+    try { await sb.deleteBot(Number(id)); } catch(e) { console.warn('deleteBot failed', e.message); }
+  }
+}
+
+async function deleteAllBots() {
+  if (!DB.length) return;
+  if (!confirm(`¿Borrar los ${DB.length} bots de SQX? Esta acción no se puede deshacer.`)) return;
+  const ids = DB.map(b => Number(b.magic || b.id)).filter(Boolean);
+  DB = [];
+  renderTable();
+  if (sb.isAuthenticated()) {
+    try { await Promise.all(ids.map(id => sb.deleteBot(id))); } catch(e) { console.warn('deleteAll failed', e.message); }
+  }
+  alertOk('✓ Todos los bots eliminados.');
 }
 
 // ─── Scan SQX ────────────────────────────────────────────────────────
