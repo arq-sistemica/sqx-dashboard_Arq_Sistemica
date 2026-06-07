@@ -338,18 +338,12 @@ function buildDetail(bot) {
 
   html += '<div class="detail-section"><div class="detail-title">In-Sample (IS)</div>';
   html += metricsBlock([
-    ['PF',        fmt(is.pf),           pfColor(is.pf)],
-    ['WR%',       fmt(is.wr,1)+'%',     wrColor(is.wr)],
-    ['DD%',       fmt(is.dd,1)+'%',     ddColor(is.dd)],
-    ['Trades',    is.trades??'—',       tradesColor(is.trades)],
-    ['CAGR%',     fmt(is.cagr,1)+'%',  cagrColor(is.cagr)],
-    ['Sharpe',    fmt(is.sharpe),       sharpeColor(is.sharpe)],
-    ['Fitness',   fmt(is.fitness),      fitColor(is.fitness)],
-    ['Stability', fmt(is.stability),    stabColor(is.stability)],
-    ['Ret/DD',    fmt(is.retdd),        retddColor(is.retdd)],
-    ['CAGR/DD',   fmt(is.cagrdd),       cagrddColor(is.cagrdd)],
-    ['Net P%',    fmt(is.np,1)+'%',     npColor(is.np)],
-    ['SQN',       fmt(bot.sqn),         sqnColor(bot.sqn)],
+    ['Trades',  is.trades??'—',        tradesColor(is.trades)],
+    ['CAGR%',   fmt(is.cagr,1)+'%',   cagrColor(is.cagr)],
+    ['Sharpe',  fmt(is.sharpe),        sharpeColor(is.sharpe)],
+    ['CAGR/DD', fmt(is.cagrdd),        cagrddColor(is.cagrdd)],
+    ['Net P%',  fmt(is.np,1)+'%',      npColor(is.np)],
+    ['SQN',     fmt(bot.sqn),          sqnColor(bot.sqn)],
   ]);
   html += '</div>';
 
