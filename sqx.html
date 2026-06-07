@@ -133,28 +133,39 @@ td.num{text-align:right}
   <table>
     <thead>
       <tr>
-        <th class="left" onclick="sortBy('name')">Nombre<span id="s-name"></span></th>
-        <th class="left" onclick="sortBy('symbol')">Par<span id="s-symbol"></span></th>
-        <th class="left" onclick="sortBy('tf')">TF<span id="s-tf"></span></th>
-        <th onclick="sortBy('isPf')">PF IS<span id="s-isPf"> ▼</span></th>
-        <th onclick="sortBy('oosPf')">PF OOS<span id="s-oosPf"></span></th>
-        <th onclick="sortBy('isWr')">WR% IS<span id="s-isWr"></span></th>
-        <th onclick="sortBy('oosWr')">WR% OOS<span id="s-oosWr"></span></th>
-        <th onclick="sortBy('isRetdd')">Ret/DD IS<span id="s-isRetdd"></span></th>
-        <th onclick="sortBy('oosRetdd')">Ret/DD OOS<span id="s-oosRetdd"></span></th>
-        <th onclick="sortBy('isDd')">DD% IS<span id="s-isDd"></span></th>
-        <th onclick="sortBy('oosDd')">DD% OOS<span id="s-oosDd"></span></th>
-        <th onclick="sortBy('isStag')">Stag IS<span id="s-isStag"></span></th>
-        <th onclick="sortBy('oosStag')">Stag OOS<span id="s-oosStag"></span></th>
-        <th onclick="sortBy('isComplex')">Complex IS<span id="s-isComplex"></span></th>
-        <th onclick="sortBy('oosComplex')">Complex OOS<span id="s-oosComplex"></span></th>
-        <th onclick="sortBy('isEntry')">Entry IS<span id="s-isEntry"></span></th>
-        <th onclick="sortBy('oosEntry')">Entry OOS<span id="s-oosEntry"></span></th>
-        <th onclick="sortBy('isFit')">Fitness IS<span id="s-isFit"></span></th>
-        <th onclick="sortBy('oosFit')">Fitness OOS<span id="s-oosFit"></span></th>
-        <th onclick="sortBy('isStab')">Stab IS<span id="s-isStab"></span></th>
-        <th onclick="sortBy('oosStab')">Stab OOS<span id="s-oosStab"></span></th>
-        <th class="left" onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
+        <th class="left" rowspan="2" onclick="sortBy('name')" style="vertical-align:bottom">Nombre<span id="s-name"></span></th>
+        <th class="left" rowspan="2" onclick="sortBy('symbol')" style="vertical-align:bottom">Par<span id="s-symbol"></span></th>
+        <th class="left" rowspan="2" onclick="sortBy('tf')" style="vertical-align:bottom">TF<span id="s-tf"></span></th>
+        <th colspan="2" style="text-align:center;border-bottom:none">PF</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">WR%</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">Ret/DD</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">DD%</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">Stagnation</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">Complexity</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">Entry</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">Fitness</th>
+        <th colspan="2" style="text-align:center;border-bottom:none">Stability</th>
+        <th class="left" rowspan="2" onclick="sortBy('filter')" style="vertical-align:bottom">Filtro<span id="s-filter"></span></th>
+      </tr>
+      <tr>
+        <th onclick="sortBy('isPf')"      style="font-size:9px">IS<span id="s-isPf"> ▼</span></th>
+        <th onclick="sortBy('oosPf')"     style="font-size:9px">OOS<span id="s-oosPf"></span></th>
+        <th onclick="sortBy('isWr')"      style="font-size:9px">IS<span id="s-isWr"></span></th>
+        <th onclick="sortBy('oosWr')"     style="font-size:9px">OOS<span id="s-oosWr"></span></th>
+        <th onclick="sortBy('isRetdd')"   style="font-size:9px">IS<span id="s-isRetdd"></span></th>
+        <th onclick="sortBy('oosRetdd')"  style="font-size:9px">OOS<span id="s-oosRetdd"></span></th>
+        <th onclick="sortBy('isDd')"      style="font-size:9px">IS<span id="s-isDd"></span></th>
+        <th onclick="sortBy('oosDd')"     style="font-size:9px">OOS<span id="s-oosDd"></span></th>
+        <th onclick="sortBy('isStag')"    style="font-size:9px">IS<span id="s-isStag"></span></th>
+        <th onclick="sortBy('oosStag')"   style="font-size:9px">OOS<span id="s-oosStag"></span></th>
+        <th onclick="sortBy('isComplex')" style="font-size:9px">IS<span id="s-isComplex"></span></th>
+        <th onclick="sortBy('oosComplex')"style="font-size:9px">OOS<span id="s-oosComplex"></span></th>
+        <th onclick="sortBy('isEntry')"   style="font-size:9px">IS<span id="s-isEntry"></span></th>
+        <th onclick="sortBy('oosEntry')"  style="font-size:9px">OOS<span id="s-oosEntry"></span></th>
+        <th onclick="sortBy('isFit')"     style="font-size:9px">IS<span id="s-isFit"></span></th>
+        <th onclick="sortBy('oosFit')"    style="font-size:9px">OOS<span id="s-oosFit"></span></th>
+        <th onclick="sortBy('isStab')"    style="font-size:9px">IS<span id="s-isStab"></span></th>
+        <th onclick="sortBy('oosStab')"   style="font-size:9px">OOS<span id="s-oosStab"></span></th>
       </tr>
     </thead>
     <tbody id="bots-tbody"></tbody>
@@ -257,8 +268,8 @@ var KEY = {
   oosStag:    b => b.oos?.stag    ?? Infinity,
   isComplex:  b => b.is?.complexity  ?? Infinity,
   oosComplex: b => b.oos?.complexity ?? Infinity,
-  isEntry:    b => b.is?.entry_indicator  ?? -Infinity,
-  oosEntry:   b => b.oos?.entry_indicator ?? -Infinity,
+  isEntry:    b => b.is?.entry_indicators  ?? -Infinity,
+  oosEntry:   b => b.oos?.entry_indicators ?? -Infinity,
   isFit:      b => b.is?.fitness   ?? -Infinity,
   oosFit:     b => b.oos?.fitness  ?? -Infinity,
   isStab:     b => b.is?.stability ?? -Infinity,
@@ -306,8 +317,8 @@ function renderTable() {
       <td class="${b.oos?.stag==null?'na':b.oos.stag<=20?'pass':b.oos.stag<=40?'warn':'fail'}">${fmt(b.oos?.stag,1)}</td>
       <td>${fmt(b.is?.complexity,0)}</td>
       <td>${fmt(b.oos?.complexity,0)}</td>
-      <td>${fmt(b.is?.entry_indicator,0)}</td>
-      <td>${fmt(b.oos?.entry_indicator,0)}</td>
+      <td>${fmt(b.is?.entry_indicators,0)}</td>
+      <td>${fmt(b.oos?.entry_indicators,0)}</td>
       <td class="${fitColor(b.is?.fitness)}">${fmt(b.is?.fitness)}</td>
       <td class="${fitColor(b.oos?.fitness)}">${fmt(b.oos?.fitness)}</td>
       <td class="${stabColor(b.is?.stability)}">${fmt(b.is?.stability)}</td>
