@@ -12,57 +12,61 @@
   --text:#111318;--text2:#4a5060;--text3:#9098a8;
   --green:#1a7f4b;--green-bg:#eaf7f0;--green-border:#b2dfc8;
   --red:#b91c1c;--red-bg:#fef2f2;--red-border:#fcc;
-  --amber:#92400e;--amber-bg:#fffbeb;
+  --amber:#92400e;--amber-bg:#fffbeb;--amber-border:#fde68a;
   --accent:#4f46e5;--accent-light:#eef2ff;
-  --radius:6px;
+  --radius:6px;--radius-lg:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5}
 
-.page-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);gap:12px;flex-wrap:wrap}
-.page-topbar h1{font-size:15px;font-weight:600}
+.page-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg);gap:12px;flex-wrap:wrap}
+.page-topbar h1{font-size:15px;font-weight:700;letter-spacing:-0.2px}
+.page-topbar .sub{font-size:12px;color:var(--text3);margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-#sync-status{font-size:12px;color:var(--text3)}
 
-.btn{padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;font-size:13px;white-space:nowrap}
-.btn:hover{background:var(--bg3)}
-select.filter-sel{padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text2)}
+button{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:all 0.12s;font-family:inherit}
+button:hover{background:var(--bg3);color:var(--text);border-color:#adb5bd}
 
-.filters-bar{display:flex;align-items:center;gap:10px;padding:8px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
-.filter-label{font-size:12px;color:var(--text3)}
-.filter-count{margin-left:auto;font-size:12px;color:var(--text3)}
+.filters-bar{display:flex;align-items:center;gap:8px;padding:8px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg)}
+.filter-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
+select.filter-sel{height:26px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;background:var(--bg);color:var(--text2);font-family:inherit}
+.filter-count{margin-left:auto;font-size:11px;color:var(--text3)}
 
+.table-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:clip;margin:16px 24px}
 .table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:var(--bg2);border-bottom:2px solid var(--border);padding:7px 10px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
-thead th:hover{background:var(--bg3)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--bg2);padding:8px 10px;text-align:right;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+thead th:hover{color:var(--text2);background:var(--bg3)}
+thead th.left{text-align:left}
 tbody tr{border-bottom:1px solid var(--border);cursor:pointer}
+tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:var(--bg2)}
 tbody tr.expanded{background:var(--accent-light)}
-tbody td{padding:7px 10px;vertical-align:middle}
-td.num{text-align:right}
+td{padding:8px 10px;text-align:right;color:var(--text2);white-space:nowrap}
+td.left{text-align:left;color:var(--text);font-weight:600}
 td.spark{text-align:center;padding:4px 10px}
 
-.num-good{color:var(--green)}
-.num-mid{color:var(--amber)}
-.num-bad{color:var(--red)}
+.pass{color:var(--green)!important;font-weight:600}
+.fail{color:var(--red)!important;font-weight:600}
+.warn{color:#d97706!important;font-weight:600}
+.na{color:var(--text3)!important}
 
-.detail-row td{padding:0;background:var(--bg)}
-.detail-inner{padding:16px 20px;border-top:2px solid var(--accent-light)}
-.detail-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.detail-row td{padding:0!important;white-space:normal}
+.detail-inner{padding:20px 24px;border-top:2px solid var(--accent-light);background:var(--bg)}
+.detail-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
 
 .trade-table{width:100%;border-collapse:collapse;font-size:12px}
-.trade-table th{background:var(--bg2);border-bottom:1px solid var(--border);padding:5px 8px;text-align:left;white-space:nowrap}
-.trade-table td{padding:5px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.trade-table th{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 10px;text-align:left;white-space:nowrap;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
+.trade-table td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:12px;color:var(--text2)}
 .trade-table tr:last-child td{border-bottom:none}
-.trade-p{color:var(--green)}.trade-n{color:var(--red)}
+.trade-p{color:var(--green);font-weight:600}.trade-n{color:var(--red);font-weight:600}
 
 .equity-svg{display:block;width:100%;height:64px;margin-top:8px}
 
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;display:none;max-width:500px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.12)}
 .toast-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .toast-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
 </style>
 </head>
 <body>
@@ -75,7 +79,7 @@ td.spark{text-align:center;padding:4px 10px}
     <div id="sync-status" style="font-size:12px;color:var(--text3);margin-top:2px">Cargando...</div>
   </div>
   <div class="topbar-right">
-    <button class="btn" onclick="loadData()">↻ Actualizar</button>
+    <button onclick="loadData()">↻ Actualizar</button>
   </div>
 </div>
 
@@ -87,24 +91,26 @@ td.spark{text-align:center;padding:4px 10px}
   <span class="filter-count" id="f-count"></span>
 </div>
 
+<div class="table-card">
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
-        <th onclick="sortBy('name')">Bot<span id="s-name"></span></th>
-        <th onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
+        <th class="left" onclick="sortBy('name')">Bot<span id="s-name"></span></th>
+        <th class="left" onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
         <th onclick="sortBy('magic')">Magic<span id="s-magic"></span></th>
-        <th onclick="sortBy('account')">Cuenta<span id="s-account"></span></th>
-        <th onclick="sortBy('trades')" class="num">Trades<span id="s-trades"></span></th>
-        <th onclick="sortBy('pf')" class="num">PF<span id="s-pf"> ▼</span></th>
-        <th onclick="sortBy('dd')" class="num">DD%<span id="s-dd"></span></th>
-        <th onclick="sortBy('wr')" class="num">WR%<span id="s-wr"></span></th>
-        <th onclick="sortBy('netProfit')" class="num">Net P&amp;L<span id="s-netProfit"></span></th>
+        <th class="left" onclick="sortBy('account')">Cuenta<span id="s-account"></span></th>
+        <th onclick="sortBy('trades')">Trades<span id="s-trades"></span></th>
+        <th onclick="sortBy('pf')">PF<span id="s-pf"> ▼</span></th>
+        <th onclick="sortBy('dd')">DD%<span id="s-dd"></span></th>
+        <th onclick="sortBy('wr')">WR%<span id="s-wr"></span></th>
+        <th onclick="sortBy('netProfit')">Net P&amp;L<span id="s-netProfit"></span></th>
         <th class="spark">Equity</th>
       </tr>
     </thead>
     <tbody id="mt5-tbody"></tbody>
   </table>
+</div>
 </div>
 
 <script>
@@ -136,10 +142,10 @@ function fmt(v, dec) {
   if (v === null || v === undefined) return '—';
   return Number(v).toFixed(dec ?? 2);
 }
-function pfColor(v)  { return v === null || v === undefined ? '' : v >= 1.5 ? 'num-good' : v >= 1.0 ? 'num-mid' : 'num-bad'; }
-function ddColor(v)  { return v === null || v === undefined ? '' : v <= 10  ? 'num-good' : v <= 20  ? 'num-mid' : 'num-bad'; }
-function wrColor(v)  { return v === null || v === undefined ? '' : v >= 55  ? 'num-good' : v >= 45  ? 'num-mid' : 'num-bad'; }
-function npColor(v)  { return v === null || v === undefined ? '' : v > 0 ? 'num-good' : v < 0 ? 'num-bad' : ''; }
+function pfColor(v)  { return v === null || v === undefined ? 'na' : v >= 1.5 ? 'pass' : v >= 1.0 ? 'warn' : 'fail'; }
+function ddColor(v)  { return v === null || v === undefined ? 'na' : v <= 10  ? 'pass' : v <= 20  ? 'warn' : 'fail'; }
+function wrColor(v)  { return v === null || v === undefined ? 'na' : v >= 55  ? 'pass' : v >= 45  ? 'warn' : 'fail'; }
+function npColor(v)  { return v === null || v === undefined ? 'na' : v > 0 ? 'pass' : v < 0 ? 'fail' : ''; }
 
 // ─── Sparkline SVG (80×30) ───────────────────────────────────────────
 function sparkline(tradeList) {
@@ -290,15 +296,15 @@ function renderTable() {
   tbody.innerHTML = rows.map(r => {
     const name = r.name.length > 38 ? r.name.slice(0,36)+'…' : r.name;
     return `<tr data-magic="${r.magic}" onclick="toggleDetail(${r.magic})">
-      <td title="${r.name}">${name}</td>
-      <td>${r.symbol}</td>
+      <td class="left" title="${r.name}">${name}</td>
+      <td class="left">${r.symbol}</td>
       <td style="font-variant-numeric:tabular-nums;color:var(--text3)">${r.magic}</td>
-      <td>${r.account}</td>
-      <td class="num">${r.trades}</td>
-      <td class="num ${pfColor(r.pf)}">${fmt(r.pf)}</td>
-      <td class="num ${ddColor(r.ddPct)}">${fmt(r.ddPct,1)}%</td>
-      <td class="num ${wrColor(r.winRate)}">${fmt(r.winRate,1)}%</td>
-      <td class="num ${npColor(r.netProfit)}">${r.netProfit >= 0 ? '+' : ''}${fmt(r.netProfit,2)}</td>
+      <td class="left">${r.account}</td>
+      <td>${r.trades}</td>
+      <td class="${pfColor(r.pf)}">${fmt(r.pf)}</td>
+      <td class="${ddColor(r.ddPct)}">${fmt(r.ddPct,1)}%</td>
+      <td class="${wrColor(r.winRate)}">${fmt(r.winRate,1)}%</td>
+      <td class="${npColor(r.netProfit)}">${r.netProfit >= 0 ? '+' : ''}${fmt(r.netProfit,2)}</td>
       <td class="spark">${sparkline(r.tradeList)}</td>
     </tr>`;
   }).join('');

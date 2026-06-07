@@ -14,65 +14,82 @@
   --red:#b91c1c;--red-bg:#fef2f2;--red-border:#fcc;
   --amber:#92400e;--amber-bg:#fffbeb;--amber-border:#fde68a;
   --accent:#4f46e5;--accent-light:#eef2ff;
-  --radius:6px;
+  --radius:6px;--radius-lg:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5}
 
-.page-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg2);gap:12px;flex-wrap:wrap}
-.page-topbar h1{font-size:15px;font-weight:600}
+/* page header */
+.page-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg);gap:12px;flex-wrap:wrap}
+.page-topbar h1{font-size:15px;font-weight:700;letter-spacing:-0.2px}
+.page-topbar .sub{font-size:12px;color:var(--text3);margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-#sync-status{font-size:12px;color:var(--text3)}
 
-.btn{padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;font-size:13px;white-space:nowrap}
-.btn:hover{background:var(--bg3)}
+/* buttons */
+button{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:all 0.12s;font-family:inherit}
+button:hover{background:var(--bg3);color:var(--text);border-color:#adb5bd}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#4338ca;color:#fff;border-color:#4338ca}
 
-.filters-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg)}
-.filter-label{font-size:12px;color:var(--text3)}
-.filter-btn{padding:3px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;font-size:12px}
-.filter-btn.active{background:var(--accent-light);color:var(--accent);border-color:var(--accent);font-weight:600}
-select.filter-sel{padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--bg);color:var(--text2)}
-.filter-count{margin-left:auto;font-size:12px;color:var(--text3)}
+/* filter bar */
+.filters-bar{display:flex;align-items:center;gap:6px;padding:8px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg)}
+.filter-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
+.fbtn{height:26px;padding:0 11px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;font-family:inherit}
+.fbtn:hover{background:var(--bg3);color:var(--text)}
+.fbtn.active{background:var(--accent-light);border-color:#c7d2fe;color:var(--accent);font-weight:600}
+select.filter-sel{height:26px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;background:var(--bg);color:var(--text2);font-family:inherit}
+.filter-count{margin-left:auto;font-size:11px;color:var(--text3)}
 
+/* table card */
+.table-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:clip;margin:16px 24px}
 .table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:var(--bg2);border-bottom:2px solid var(--border);padding:7px 10px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
-thead th:hover{background:var(--bg3)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--bg2);padding:8px 10px;text-align:right;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+thead th:hover{color:var(--text2);background:var(--bg3)}
+thead th.left{text-align:left}
 tbody tr{border-bottom:1px solid var(--border);cursor:pointer}
+tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:var(--bg2)}
 tbody tr.expanded{background:var(--accent-light)}
-tbody td{padding:7px 10px;vertical-align:middle}
+td{padding:8px 10px;text-align:right;color:var(--text2);white-space:nowrap}
+td.left{text-align:left;color:var(--text);font-weight:600}
 td.num{text-align:right}
 
-.badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:600}
+/* badges */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
 .badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-.badge-gray{background:var(--bg3);color:var(--text3)}
-.num-good{color:var(--green)}
-.num-mid{color:var(--amber)}
-.num-bad{color:var(--red)}
+.badge-gray{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+.pass{color:var(--green)!important;font-weight:600}
+.fail{color:var(--red)!important;font-weight:600}
+.warn{color:#d97706!important;font-weight:600}
+.na{color:var(--text3)!important}
 
-.detail-row td{padding:0;background:var(--bg)}
-.detail-inner{padding:16px 20px;border-top:2px solid var(--accent-light)}
-.detail-section{margin-bottom:16px}
-.detail-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
-.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
-.metric-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px}
-.metric-item .m-label{font-size:11px;color:var(--text3)}
-.metric-item .m-value{font-size:14px;font-weight:600;color:var(--text);margin-top:2px}
+/* expanded detail */
+.detail-row td{padding:0!important;white-space:normal}
+.detail-inner{padding:20px 24px;border-top:2px solid var(--accent-light);background:var(--bg)}
+.detail-section{margin-bottom:20px}
+.detail-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
+.metric-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px}
+.metric-item .m-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;font-weight:600}
+.metric-item .m-value{font-size:15px;font-weight:700;color:var(--text);margin-top:3px}
 
-.monthly-table{border-collapse:collapse;font-size:11px}
-.monthly-table th,.monthly-table td{border:1px solid var(--border);padding:3px 6px;text-align:right}
-.monthly-table th{background:var(--bg2);font-weight:600}
-.monthly-table td.year-col{text-align:left;font-weight:600;background:var(--bg2)}
-.m-pos{color:var(--green)}.m-neg{color:var(--red)}
+/* monthly table */
+.monthly-table{border-collapse:collapse;font-size:11px;width:100%}
+.monthly-table th,.monthly-table td{border:1px solid var(--border);padding:4px 6px;text-align:right}
+.monthly-table th{background:var(--bg2);font-weight:700;color:var(--text3);font-size:10px;text-transform:uppercase}
+.monthly-table td.year-col{text-align:left;font-weight:700;background:var(--bg2);color:var(--text)}
+.m-pos{color:var(--green);font-weight:600}.m-neg{color:var(--red);font-weight:600}
 
-.pseudo-block{font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:monospace;color:var(--text)}
+/* pseudocode */
+.pseudo-block{font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:'Segoe UI Mono',Consolas,monospace;color:var(--text);line-height:1.6}
 
+/* toast */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;display:none;max-width:520px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.12)}
 .toast-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .toast-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
 </style>
 </head>
 <body>
@@ -96,9 +113,9 @@ td.num{text-align:right}
 
 <div class="filters-bar">
   <span class="filter-label">Filtro:</span>
-  <button class="filter-btn active" id="f-all"    onclick="setFilter('all')">Todos</button>
-  <button class="filter-btn"        id="f-passed" onclick="setFilter('passed')">✓ PASSED</button>
-  <button class="filter-btn"        id="f-failed" onclick="setFilter('failed')">✗ FAILED</button>
+  <button class="fbtn active" id="f-all"    onclick="setFilter('all')">Todos</button>
+  <button class="fbtn"        id="f-passed" onclick="setFilter('passed')">✓ PASSED</button>
+  <button class="fbtn"        id="f-failed" onclick="setFilter('failed')">✗ FAILED</button>
   <span class="filter-label" style="margin-left:8px">Symbol:</span>
   <select class="filter-sel" id="f-symbol" onchange="renderTable()"><option value="">Todos</option></select>
   <span class="filter-label">TF:</span>
@@ -106,21 +123,23 @@ td.num{text-align:right}
   <span class="filter-count" id="f-count"></span>
 </div>
 
+<div class="table-card">
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
-        <th onclick="sortBy('name')">Nombre<span id="s-name"></span></th>
-        <th onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
-        <th onclick="sortBy('tf')">TF<span id="s-tf"></span></th>
-        <th onclick="sortBy('isPf')" class="num">PF<span id="s-isPf"> ▼</span></th>
-        <th onclick="sortBy('isWr')" class="num">WR%<span id="s-isWr"></span></th>
-        <th onclick="sortBy('isDd')" class="num">DD%<span id="s-isDd"></span></th>
-        <th onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
+        <th class="left" onclick="sortBy('name')">Nombre<span id="s-name"></span></th>
+        <th class="left" onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
+        <th class="left" onclick="sortBy('tf')">TF<span id="s-tf"></span></th>
+        <th onclick="sortBy('isPf')">PF<span id="s-isPf"> ▼</span></th>
+        <th onclick="sortBy('isWr')">WR%<span id="s-isWr"></span></th>
+        <th onclick="sortBy('isDd')">DD%<span id="s-isDd"></span></th>
+        <th class="left" onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
       </tr>
     </thead>
     <tbody id="bots-tbody"></tbody>
   </table>
+</div>
 </div>
 
 <script>
@@ -151,9 +170,9 @@ function fmt(v, dec) {
   if (v === null || v === undefined) return '—';
   return Number(v).toFixed(dec ?? 2);
 }
-function pfColor(v)  { return v === null || v === undefined ? '' : v >= 1.5 ? 'num-good' : v >= 1.0 ? 'num-mid' : 'num-bad'; }
-function ddColor(v)  { return v === null || v === undefined ? '' : v <= 10  ? 'num-good' : v <= 20  ? 'num-mid' : 'num-bad'; }
-function wrColor(v)  { return v === null || v === undefined ? '' : v >= 55  ? 'num-good' : v >= 45  ? 'num-mid' : 'num-bad'; }
+function pfColor(v)  { return v === null || v === undefined ? 'na' : v >= 1.5 ? 'pass' : v >= 1.0 ? 'warn' : 'fail'; }
+function ddColor(v)  { return v === null || v === undefined ? 'na' : v <= 10  ? 'pass' : v <= 20  ? 'warn' : 'fail'; }
+function wrColor(v)  { return v === null || v === undefined ? 'na' : v >= 55  ? 'pass' : v >= 45  ? 'warn' : 'fail'; }
 
 function filterBadge(f) {
   if (!f) return '<span class="badge badge-gray">—</span>';
@@ -231,13 +250,13 @@ function renderTable() {
     const name = (b.name||'—');
     const nameShort = name.length > 42 ? name.slice(0, 40) + '…' : name;
     return `<tr data-id="${id}" onclick="toggleDetail('${id}')">
-      <td title="${name}">${nameShort}</td>
-      <td>${b.symbol||'—'}</td>
-      <td>${b.tf||'—'}</td>
-      <td class="num ${pfColor(b.is?.pf)}">${fmt(b.is?.pf)}</td>
-      <td class="num ${wrColor(b.is?.wr)}">${fmt(b.is?.wr,1)}%</td>
-      <td class="num ${ddColor(b.is?.dd)}">${fmt(b.is?.dd,1)}%</td>
-      <td>${filterBadge(b.sqxFilter)}</td>
+      <td class="left" title="${name}">${nameShort}</td>
+      <td class="left">${b.symbol||'—'}</td>
+      <td class="left">${b.tf||'—'}</td>
+      <td class="${pfColor(b.is?.pf)}">${fmt(b.is?.pf)}</td>
+      <td class="${wrColor(b.is?.wr)}">${fmt(b.is?.wr,1)}%</td>
+      <td class="${ddColor(b.is?.dd)}">${fmt(b.is?.dd,1)}%</td>
+      <td class="left">${filterBadge(b.sqxFilter)}</td>
     </tr>`;
   }).join('');
 
