@@ -56,6 +56,7 @@
       '<div class="nav-links">' + links + '</div>' +
       '<div class="nav-right">' +
       '<span class="nav-brand">Arq. Sistémica</span>' +
+      '<button class="nav-logout" onclick="if(typeof showConfig===\'function\')showConfig()">⚙ Config</button>' +
       '<button class="nav-logout" onclick="if(typeof authLogout===\'function\')authLogout()">⎋ Cerrar sesión</button>' +
       '</div>';
 
