@@ -143,6 +143,7 @@ td.num{text-align:right}
         <th onclick="sortBy('isMaxDd')">Max DD%<span id="s-isMaxDd"></span></th>
         <th onclick="sortBy('isComplex')">Complexity<span id="s-isComplex"></span></th>
         <th onclick="sortBy('isEntry')">Entry<span id="s-isEntry"></span></th>
+        <th onclick="sortBy('isTrades')">Trades<span id="s-isTrades"></span></th>
         <th onclick="sortBy('isFit')">Fitness<span id="s-isFit"></span></th>
         <th onclick="sortBy('isStab')">Stability<span id="s-isStab"></span></th>
         <th class="left" onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
@@ -243,6 +244,7 @@ var KEY = {
   isMaxDd:   b => b.standalone?.max_dd_pct    ?? Infinity,
   isComplex: b => b.standalone?.complexity    ?? Infinity,
   isEntry:   b => b.standalone?.entry_indicators ?? -Infinity,
+  isTrades:  b => b.is?.trades                ?? -Infinity,
   isFit:     b => b.is?.fitness               ?? -Infinity,
   isStab:    b => b.is?.stability             ?? -Infinity,
   filter:    b => b.sqxFilter||'',
@@ -282,6 +284,7 @@ function renderTable() {
       <td class="${ddColor(b.standalone?.max_dd_pct)}">${fmt(b.standalone?.max_dd_pct,1)}%</td>
       <td>${fmt(b.standalone?.complexity,0)}</td>
       <td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${b.standalone?.entry_indicators||''}">${b.standalone?.entry_indicators||'—'}</td>
+      <td class="${tradesColor(b.is?.trades)}">${b.is?.trades??'—'}</td>
       <td class="${fitColor(b.is?.fitness)}">${fmt(b.is?.fitness)}</td>
       <td class="${stabColor(b.is?.stability)}">${fmt(b.is?.stability)}</td>
       <td class="left">${filterBadge(b.sqxFilter)}</td>
@@ -338,7 +341,6 @@ function buildDetail(bot) {
 
   html += '<div class="detail-section"><div class="detail-title">In-Sample (IS)</div>';
   html += metricsBlock([
-    ['Trades',  is.trades??'—',        tradesColor(is.trades)],
     ['CAGR%',   fmt(is.cagr,1)+'%',   cagrColor(is.cagr)],
     ['Sharpe',  fmt(is.sharpe),        sharpeColor(is.sharpe)],
     ['CAGR/DD', fmt(is.cagrdd),        cagrddColor(is.cagrdd)],
