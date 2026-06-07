@@ -116,9 +116,6 @@ td.num{text-align:right}
         <th onclick="sortBy('isPf')" class="num">IS PF<span id="s-isPf"> ▼</span></th>
         <th onclick="sortBy('isWr')" class="num">IS WR%<span id="s-isWr"></span></th>
         <th onclick="sortBy('isDd')" class="num">IS DD%<span id="s-isDd"></span></th>
-        <th onclick="sortBy('oosPf')" class="num">OOS PF<span id="s-oosPf"></span></th>
-        <th onclick="sortBy('oosWr')" class="num">OOS WR%<span id="s-oosWr"></span></th>
-        <th onclick="sortBy('oosDd')" class="num">OOS DD%<span id="s-oosDd"></span></th>
         <th onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
       </tr>
     </thead>
@@ -240,9 +237,6 @@ function renderTable() {
       <td class="num ${pfColor(b.is?.pf)}">${fmt(b.is?.pf)}</td>
       <td class="num ${wrColor(b.is?.wr)}">${fmt(b.is?.wr,1)}%</td>
       <td class="num ${ddColor(b.is?.dd)}">${fmt(b.is?.dd,1)}%</td>
-      <td class="num ${pfColor(b.oos?.pf)}">${fmt(b.oos?.pf)}</td>
-      <td class="num ${wrColor(b.oos?.wr)}">${fmt(b.oos?.wr,1)}%</td>
-      <td class="num ${ddColor(b.oos?.dd)}">${fmt(b.oos?.dd,1)}%</td>
       <td>${filterBadge(b.sqxFilter)}</td>
     </tr>`;
   }).join('');
@@ -311,21 +305,6 @@ function buildDetail(bot) {
   ]);
   html += '</div>';
 
-  html += '<div class="detail-section"><div class="detail-title">Out-of-Sample (OOS)</div>';
-  html += metricsBlock([
-    ['PF',        fmt(oos.pf),          pfColor(oos.pf)],
-    ['WR%',       fmt(oos.wr,1)+'%',    wrColor(oos.wr)],
-    ['DD%',       fmt(oos.dd,1)+'%',    ddColor(oos.dd)],
-    ['Trades',    oos.trades??'—',      ''],
-    ['CAGR%',     fmt(oos.cagr,1)+'%', ''],
-    ['Sharpe',    fmt(oos.sharpe),      ''],
-    ['Fitness',   fmt(oos.fitness),     ''],
-    ['Stability', fmt(oos.stability),   ''],
-    ['Ret/DD',    fmt(oos.retdd),       ''],
-    ['CAGR/DD',   fmt(oos.cagrdd),      ''],
-    ['Net P%',    fmt(oos.np,1)+'%',    ''],
-  ]);
-  html += '</div>';
 
   if (bot.overviewData?.monthlyData?.length) {
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
