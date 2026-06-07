@@ -142,10 +142,10 @@ function fmt(v, dec) {
   if (v === null || v === undefined) return '—';
   return Number(v).toFixed(dec ?? 2);
 }
-function pfColor(v)  { return v === null || v === undefined ? 'na' : v >= 1.5 ? 'pass' : v >= 1.0 ? 'warn' : 'fail'; }
-function ddColor(v)  { return v === null || v === undefined ? 'na' : v <= 10  ? 'pass' : v <= 20  ? 'warn' : 'fail'; }
-function wrColor(v)  { return v === null || v === undefined ? 'na' : v >= 55  ? 'pass' : v >= 45  ? 'warn' : 'fail'; }
-function npColor(v)  { return v === null || v === undefined ? 'na' : v > 0 ? 'pass' : v < 0 ? 'fail' : ''; }
+function pfColor(v)  { return v==null?'na': v>=1.30?'pass': v>=1.20?'warn':'fail'; }
+function ddColor(v)  { return v==null?'na': v<=10  ?'pass': v<=20  ?'warn':'fail'; }
+function wrColor(v)  { return v==null?'na': v>=55  ?'pass': v>=45  ?'warn':'fail'; }
+function npColor(v)  { return v==null?'na': v>0    ?'pass':          'fail'; }
 
 // ─── Sparkline SVG (80×30) ───────────────────────────────────────────
 function sparkline(tradeList) {

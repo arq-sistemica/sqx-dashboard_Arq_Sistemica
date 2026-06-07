@@ -74,6 +74,10 @@ td.num{text-align:right}
 .metric-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px}
 .metric-item .m-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;font-weight:600}
 .metric-item .m-value{font-size:15px;font-weight:700;color:var(--text);margin-top:3px}
+.metric-item .m-value.pass{color:var(--green)}
+.metric-item .m-value.warn{color:#d97706}
+.metric-item .m-value.fail{color:var(--red)}
+.metric-item .m-value.na{color:var(--text3)}
 
 /* monthly table */
 .monthly-table{border-collapse:collapse;font-size:11px;width:100%}
@@ -170,9 +174,18 @@ function fmt(v, dec) {
   if (v === null || v === undefined) return '—';
   return Number(v).toFixed(dec ?? 2);
 }
-function pfColor(v)  { return v === null || v === undefined ? 'na' : v >= 1.5 ? 'pass' : v >= 1.0 ? 'warn' : 'fail'; }
-function ddColor(v)  { return v === null || v === undefined ? 'na' : v <= 10  ? 'pass' : v <= 20  ? 'warn' : 'fail'; }
-function wrColor(v)  { return v === null || v === undefined ? 'na' : v >= 55  ? 'pass' : v >= 45  ? 'warn' : 'fail'; }
+function pfColor(v)     { return v==null?'na': v>=1.30?'pass': v>=1.20?'warn':'fail'; }
+function ddColor(v)     { return v==null?'na': v<=10  ?'pass': v<=20  ?'warn':'fail'; }
+function wrColor(v)     { return v==null?'na': v>=55  ?'pass': v>=45  ?'warn':'fail'; }
+function cagrColor(v)   { return v==null?'na': v>=8   ?'pass': v>=5   ?'warn':'fail'; }
+function sharpeColor(v) { return v==null?'na': v>=0.50?'pass': v>=0.30?'warn':'fail'; }
+function tradesColor(v) { return v==null?'na': v>=500 ?'pass': v>=200 ?'warn':'fail'; }
+function retddColor(v)  { return v==null?'na': v>=2   ?'pass': v>=1   ?'warn':'fail'; }
+function cagrddColor(v) { return v==null?'na': v>=1   ?'pass': v>=0.5 ?'warn':'fail'; }
+function fitColor(v)    { return v==null?'na': v>=0.8 ?'pass': v>=0.6 ?'warn':'fail'; }
+function stabColor(v)   { return v==null?'na': v>=0.8 ?'pass': v>=0.6 ?'warn':'fail'; }
+function npColor(v)     { return v==null?'na': v>0    ?'pass':          'fail'; }
+function sqnColor(v)    { return v==null?'na': v>=1.6 ?'pass': v>=1.0 ?'warn':'fail'; }
 
 function filterBadge(f) {
   if (!f) return '<span class="badge badge-gray">—</span>';
@@ -312,15 +325,15 @@ function buildDetail(bot) {
     ['PF',        fmt(is.pf),           pfColor(is.pf)],
     ['WR%',       fmt(is.wr,1)+'%',     wrColor(is.wr)],
     ['DD%',       fmt(is.dd,1)+'%',     ddColor(is.dd)],
-    ['Trades',    is.trades??'—',       ''],
-    ['CAGR%',     fmt(is.cagr,1)+'%',  ''],
-    ['Sharpe',    fmt(is.sharpe),       ''],
-    ['Fitness',   fmt(is.fitness),      ''],
-    ['Stability', fmt(is.stability),    ''],
-    ['Ret/DD',    fmt(is.retdd),        ''],
-    ['CAGR/DD',   fmt(is.cagrdd),       ''],
-    ['Net P%',    fmt(is.np,1)+'%',     ''],
-    ['SQN',       fmt(bot.sqn),         ''],
+    ['Trades',    is.trades??'—',       tradesColor(is.trades)],
+    ['CAGR%',     fmt(is.cagr,1)+'%',  cagrColor(is.cagr)],
+    ['Sharpe',    fmt(is.sharpe),       sharpeColor(is.sharpe)],
+    ['Fitness',   fmt(is.fitness),      fitColor(is.fitness)],
+    ['Stability', fmt(is.stability),    stabColor(is.stability)],
+    ['Ret/DD',    fmt(is.retdd),        retddColor(is.retdd)],
+    ['CAGR/DD',   fmt(is.cagrdd),       cagrddColor(is.cagrdd)],
+    ['Net P%',    fmt(is.np,1)+'%',     npColor(is.np)],
+    ['SQN',       fmt(bot.sqn),         sqnColor(bot.sqn)],
   ]);
   html += '</div>';
 
