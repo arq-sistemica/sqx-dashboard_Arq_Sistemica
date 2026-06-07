@@ -419,6 +419,14 @@ async function handleScanSQX(files) {
     DB.push(clean); added++;
   });
 
+  // DEBUG temporal — verificar standalone
+  const _dbgSample = Object.values(byMagic)[0];
+  console.log('[SQX DEBUG] primer bot parseado:', _dbgSample?.name);
+  console.log('[SQX DEBUG] standalone:', JSON.stringify(_dbgSample?.standalone));
+  console.log('[SQX DEBUG] is.retdd:', _dbgSample?.is?.retdd);
+  const _dbgFirst = DB[0];
+  console.log('[SQX DEBUG] DB[0].standalone:', JSON.stringify(_dbgFirst?.standalone));
+
   populateFilters();
   renderTable();
 
