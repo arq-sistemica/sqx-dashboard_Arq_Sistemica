@@ -89,6 +89,8 @@ td.num{text-align:right}
     <button class="btn" onclick="document.getElementById('sqx-input').click()">⚙️ Scan carpeta SQX</button>
     <input type="file" id="pseudo-input" webkitdirectory style="display:none" onchange="handleScanPseudo(this.files);this.value=''">
     <button class="btn" onclick="document.getElementById('pseudo-input').click()">📝 Scan Pseudocódigos</button>
+    <input type="file" id="overview-input" accept=".json" style="display:none" onchange="handleImportOverview(this.files);this.value=''">
+    <button class="btn" onclick="document.getElementById('overview-input').click()">📥 Importar Overview backup</button>
   </div>
 </div>
 
@@ -443,6 +445,38 @@ async function handleScanPseudo(files) {
     } catch(e) { console.warn('scanPseudo: upsert failed', e.message); }
   }
   alertOk(`✓ Pseudocódigos — ${matched} bot(s) actualizado(s)${unmatched ? ', ' + unmatched + ' sin match' : ''}.`);
+}
+
+// ─── Importar overview_backup.json ───────────────────────────────────
+async function handleImportOverview(files) {
+  if (!files.length) return;
+  let json;
+  try { json = JSON.parse(await files[0].text()); }
+  catch(e) { alertErr('JSON inválido: ' + e.message); return; }
+
+  const entries = Object.entries(json);
+  if (!entries.length) { alertErr('Archivo vacío'); return; }
+
+  const byMagic = {};
+  DB.forEach(b => { if (b.magic != null) byMagic[String(b.magic)] = b; });
+
+  let matched = 0, missed = 0;
+  const toUpsert = [];
+  for (const [magic, overviewData] of entries) {
+    const bot = byMagic[magic];
+    if (!bot) { missed++; continue; }
+    bot.overviewData = overviewData;
+    matched++;
+    toUpsert.push(bot);
+  }
+
+  if (toUpsert.length) {
+    try { await sb.upsertBots(toUpsert); }
+    catch(e) { alertErr('Error al guardar: ' + e.message); return; }
+  }
+
+  renderTable();
+  alertOk(`✓ Overview importado — ${matched} bot(s) actualizados, ${missed} sin match.`);
 }
 
 // ─── parseCSV + splitLine (copiado de index.html) ────────────────────
