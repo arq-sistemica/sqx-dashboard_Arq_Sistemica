@@ -2001,51 +2001,65 @@ function markDirty() { dirty = true; document.getElementById('save-notice').styl
 function updateDbCount() { document.getElementById('db-count').textContent = DB.length > 0 ? DB.length + ' bots guardados' : ''; }
 
 // ── CSV PARSER ─────────────────────────────────────────────────
+const SQX_COL_KEYS = {
+  'profit factor': 'pf', 'net profit': 'np', '# of trades': 'trades',
+  'sharpe ratio': 'sharpe', 'annual % return': 'cagr', 'stability': 'stability',
+  'drawdown': 'dd', 'win/loss ratio': 'wr', 'ret/dd ratio': 'retdd',
+  'cagr/max dd %': 'cagrdd', 'fitness': 'fitness', 'exposure': 'exposure',
+  'r expectancy': 'rexp', 'sqn': 'sqn', 'stagnation': 'stag', 'z-score probability': 'zp',
+};
+function _colKey(header) {
+  const low = header.toLowerCase().trim();
+  for (const [pattern, key] of Object.entries(SQX_COL_KEYS)) {
+    if (low.includes(pattern)) return key;
+  }
+  return low.replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+}
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) throw new Error('Archivo vacío.');
   const sep = lines[0].includes(';') ? ';' : ',';
   const headers = lines[0].split(sep).map(h => h.replace(/"/g,'').trim());
   const col = name => headers.indexOf(name);
-  const C = {
-    name:col('Strategy Name'), filter:col('Filters result'),
-    sym:col('Symbol (IS)'), tf:col('TimeFrame (IS)'),
-    np_is:col('Net profit (IS)'), tr_is:col('# of trades (IS)'),
-    pf_is:col('Profit factor (IS)'), sh_is:col('Sharpe Ratio (IS)'),
-    ann_is:col('Annual % Return (IS)'), stab_is:col('Stability (IS)'),
-    dd_is:col('Drawdown (IS)'), wl_is:col('Win/Loss ratio (IS)'),
-    rdd_is:col('Ret/DD Ratio (IS)'), cdd_is:col('CAGR/Max DD % (IS)'),
-    fit_is:col('Fitness (IS)'), exp_is:col('Exposure (IS)'), rex_is:col('R Expectancy (IS)'),
-    np_oos:col('Net profit (OOS)'), tr_oos:col('# of trades (OOS)'),
-    pf_oos:col('Profit factor (OOS)'), sh_oos:col('Sharpe Ratio (OOS)'),
-    ann_oos:col('Annual % Return (OOS)'), stab_oos:col('Stability (OOS)'),
-    dd_oos:col('Drawdown (OOS)'), wl_oos:col('Win/Loss ratio (OOS)'),
-    rdd_oos:col('Ret/DD Ratio (OOS)'), cdd_oos:col('CAGR/Max DD % (OOS)'),
-    fit_oos:col('Fitness (OOS)'),
-  };
-  if (C.name === -1 || C.pf_is === -1) throw new Error('No parece un Databank CSV de SQX.');
+
+  const iName   = col('Strategy Name');
+  const iFilter = col('Filters result');
+  const iSym    = col('Symbol (IS)');
+  const iTf     = col('TimeFrame (IS)');
+  if (iName === -1) throw new Error('No parece un Databank CSV de SQX.');
+
+  const isColumns  = [];
+  const oosColumns = [];
+  headers.forEach((h, i) => {
+    if (h.endsWith('(IS)'))  isColumns.push({ i, key: _colKey(h.replace(/\s*\(IS\)\s*$/, '')) });
+    if (h.endsWith('(OOS)')) oosColumns.push({ i, key: _colKey(h.replace(/\s*\(OOS\)\s*$/, '')) });
+  });
+
   return lines.slice(1).filter(l => l.trim()).map(line => {
     const cols = splitLine(line, sep);
     const g = i => (i >= 0 && cols[i] !== undefined) ? cols[i].replace(/"/g,'').trim() : '';
     const n = i => { const v = parseFloat(g(i)); return isNaN(v) ? null : v; };
-    const symRaw   = g(C.sym);
-    const symClean = symRaw.split('_')[0] || symRaw;
-    const nameStr  = g(C.name);
+    const nameStr  = g(iName);
+    const symRaw   = g(iSym);
     const magicStr = nameStr.replace(/\D/g, '');
-    const magic    = magicStr ? Number(magicStr) : null;
+    const isObj = {}, oosObj = {};
+    isColumns.forEach( ({ i, key }) => { isObj[key]  = n(i); });
+    oosColumns.forEach(({ i, key }) => { oosObj[key] = n(i); });
     return {
       id:        magicStr || (Date.now().toString(36) + Math.random().toString(36).slice(2)),
-      magic:     magic,
+      magic:     magicStr ? Number(magicStr) : null,
       name:      nameStr,
-      symbol:    symClean,
-      tf:        g(C.tf),
-      sqxFilter: g(C.filter),
+      symbol:    symRaw.split('_')[0] || symRaw,
+      tf:        g(iTf),
+      sqxFilter: g(iFilter),
       source:    'csv',
       added:     new Date().toISOString().slice(0,10),
       notes:     '',
-      sqn: null, stag: null, zp: null,
-      is:  { np:n(C.np_is),  trades:n(C.tr_is),  pf:n(C.pf_is),  sharpe:n(C.sh_is),  cagr:n(C.ann_is),  stability:n(C.stab_is),  dd:n(C.dd_is),  wr:n(C.wl_is),  retdd:n(C.rdd_is),  cagrdd:n(C.cdd_is),  fitness:n(C.fit_is),  exposure:n(C.exp_is),  rexp:n(C.rex_is) },
-      oos: { np:n(C.np_oos), trades:n(C.tr_oos), pf:n(C.pf_oos), sharpe:n(C.sh_oos), cagr:n(C.ann_oos), stability:n(C.stab_oos), dd:n(C.dd_oos), wr:n(C.wl_oos), retdd:n(C.rdd_oos), cagrdd:n(C.cdd_oos), fitness:n(C.fit_oos) }
+      sqn:  isObj.sqn  ?? oosObj.sqn  ?? null,
+      stag: isObj.stag ?? oosObj.stag ?? null,
+      zp:   isObj.zp   ?? oosObj.zp   ?? null,
+      is:   isObj,
+      oos:  oosObj,
     };
   });
 }
