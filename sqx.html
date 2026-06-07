@@ -126,6 +126,13 @@ td.num{text-align:right}
   <select class="filter-sel" id="f-symbol" onchange="renderTable()"><option value="">Todos</option></select>
   <span class="filter-label">TF:</span>
   <select class="filter-sel" id="f-tf" onchange="renderTable()"><option value="">Todos</option></select>
+  <span class="filter-label">Dir:</span>
+  <select class="filter-sel" id="f-dir" onchange="renderTable()">
+    <option value="">Todos</option>
+    <option value="Long">Long</option>
+    <option value="Short">Short</option>
+    <option value="Both">Both</option>
+  </select>
   <span class="filter-count" id="f-count"></span>
 </div>
 
@@ -240,6 +247,8 @@ function getFiltered() {
     if (filterMode === 'failed' &&  (b.sqxFilter||'').toUpperCase().includes('PASSED')) return false;
     if (sym && b.symbol !== sym) return false;
     if (tf  && b.tf !== tf)     return false;
+    const dir = document.getElementById('f-dir').value;
+    if (dir && getDirection(b.pseudocodigo) !== dir) return false;
     return true;
   });
 }
