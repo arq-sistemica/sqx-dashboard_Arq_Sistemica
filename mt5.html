@@ -651,32 +651,18 @@ async function impConfirm() {
   const btn = document.getElementById('imp-confirm-btn');
   btn.disabled = true;
 
-  const endpoint = 'https://ofrbktacgwbwsgpftoky.supabase.co/functions/v1/record-trade';
-  const token    = sb.getToken();
-  // Obtener el UserToken del EA desde user_tokens
-  let eaToken = '';
-  try {
-    const tokens = await sb.getMyTokens();
-    if (tokens && tokens.length) eaToken = tokens[0].token;
-  } catch(e) {}
+  const SUPABASE_URL = 'https://ofrbktacgwbwsgpftoky.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_OReO6Y5yhrK-BmPWf3fOhw_ODQ1-0_-';
+  const endpoint     = `${SUPABASE_URL}/rest/v1/trades`;
+  const authToken    = sb.getToken();
 
-  if (!eaToken) { alertErr('No se encontró token EA. Verificá en el dashboard.'); btn.disabled=false; return; }
-
-  let ok=0, dup=0, err=0;
-  for (let i=0; i < _impTrades.length; i++) {
-    const t = _impTrades[i];
-    btn.textContent = `Importando ${i+1}/${_impTrades.length}...`;
-
-    // Generar ticket sintético para trades históricos (no tienen ticket real de MT5)
-    // Usamos magic + timestamp de cierre como identificador único
-    // Ticket sintético: hash de magic + open_time + close_time + symbol — único por trade
+  const rows = _impTrades.map(t => {
     const hashStr = `${t.magic}_${t.open_time}_${t.close_time}_${t.symbol}`;
     let hash = 0;
     for (let c = 0; c < hashStr.length; c++) hash = Math.imul(31, hash) + hashStr.charCodeAt(c) | 0;
-    const syntheticTicket = Math.abs(hash) + 9000000000; // rango alto para no colisionar con tickets reales de MT5
+    const syntheticTicket = Math.abs(hash) + 9000000000;
 
-    const payload = {
-      token:            eaToken,
+    return {
       ticket:           syntheticTicket,
       account_id:       'historical',
       account_label:    t.account_label,
@@ -686,8 +672,8 @@ async function impConfirm() {
       magic:            t.magic,
       symbol:           t.symbol,
       type:             t.type,
-      open_time:        t.open_time.replace('T',' '),
-      close_time:       t.close_time.replace('T',' '),
+      open_time:        t.open_time,
+      close_time:       t.close_time,
       lots:             t.lots,
       open_price:       t.open_price,
       close_price:      t.close_price,
@@ -698,30 +684,39 @@ async function impConfirm() {
       swap:             t.swap,
       comment:          'myfxbook_import',
     };
+  });
 
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok)              ok++;
-      else if (res.status===409) dup++;
-      else                     err++;
-    } catch(e) { err++; }
+  btn.textContent = `Importando ${rows.length} trades...`;
 
-    await new Promise(r => setTimeout(r, 80));
-  }
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${authToken}`,
+        'apikey':        SUPABASE_KEY,
+        'Prefer':        'resolution=ignore-duplicates',
+      },
+      body: JSON.stringify(rows),
+    });
 
-  btn.disabled   = false;
-  btn.textContent = `Importar ${_impTrades.length} trades a Supabase`;
-  alertOk(`Historial importado — ${ok} nuevos | ${dup} duplicados ignorados | ${err} errores`);
+    btn.disabled    = false;
+    btn.textContent = `Importar ${_impTrades.length} trades a Supabase`;
 
-  if (ok > 0) {
-    await loadData();
-    document.getElementById('imp-raw').value = '';
-    document.getElementById('imp-preview').style.display = 'none';
-    _impTrades = [];
+    if (res.ok) {
+      alertOk(`Historial importado — ${rows.length} trades enviados`);
+      await loadData();
+      document.getElementById('imp-raw').value = '';
+      document.getElementById('imp-preview').style.display = 'none';
+      _impTrades = [];
+    } else {
+      const txt = await res.text();
+      alertErr(`Error ${res.status}: ${txt}`);
+    }
+  } catch(e) {
+    btn.disabled    = false;
+    btn.textContent = `Importar ${_impTrades.length} trades a Supabase`;
+    alertErr('Error de red: ' + e.message);
   }
 }
 </script>
