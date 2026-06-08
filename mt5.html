@@ -114,6 +114,66 @@ td.spark{text-align:center;padding:4px 10px}
 </div>
 </div>
 
+<!-- ═══ IMPORTADOR HISTORIAL MANUAL ═══════════════════════════════════ -->
+<div style="margin:8px 24px 0">
+  <button id="btn-importer-toggle" onclick="toggleImporter()" style="font-size:11px;color:var(--text3);border:1px dashed var(--border2);background:transparent">
+    ▶ Importar historial manual
+  </button>
+</div>
+
+<div id="importer-panel" style="display:none;margin:8px 24px 24px;border:1px solid var(--border2);border-radius:var(--radius-lg);background:var(--bg2);padding:20px">
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">
+    Importar historial manual — MyFxBook
+  </div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Bot</div>
+      <select id="imp-bot" style="height:30px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;background:var(--bg);min-width:260px">
+        <option value="">— seleccioná un bot —</option>
+      </select>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Cuenta</div>
+      <select id="imp-account" style="height:30px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;background:var(--bg)">
+        <option value="">— seleccioná cuenta —</option>
+      </select>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Capital base (USD)</div>
+      <input id="imp-capital" type="number" value="10000" min="1"
+        style="height:30px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;background:var(--bg);width:110px">
+    </div>
+  </div>
+
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Pegá las filas de MyFxBook (con header)</div>
+    <textarea id="imp-raw" rows="6" placeholder="Magía&#9;Fecha de apertura&#9;Fecha de cierre&#9;Símbolo&#9;Acción&#9;Lotes&#9;SL (Precio)&#9;TP (Precio)&#9;Precio de apertura&#9;Precio de cierre&#9;Pips&#9;Beneficio neto&#9;Swap&#9;Comisiones..."
+      style="width:100%;padding:8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:11px;font-family:monospace;resize:vertical;background:var(--bg)"></textarea>
+  </div>
+
+  <button onclick="impParse()" style="background:var(--accent);color:#fff;border-color:var(--accent);margin-bottom:16px">
+    Parsear y previsualizar
+  </button>
+
+  <div id="imp-preview" style="display:none">
+    <div id="imp-preview-title" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px"></div>
+    <div style="overflow-x:auto;margin-bottom:14px">
+      <table class="trade-table" id="imp-preview-table">
+        <thead><tr>
+          <th>Apertura</th><th>Cierre</th><th>Symbol</th><th>Tipo</th>
+          <th>Lots</th><th>Open</th><th>Close</th><th>SL</th><th>TP</th>
+          <th>Profit</th><th>Swap</th><th>Comisión</th>
+        </tr></thead>
+        <tbody id="imp-preview-tbody"></tbody>
+      </table>
+    </div>
+    <div id="imp-warn" style="font-size:11px;color:var(--amber);margin-bottom:10px"></div>
+    <button id="imp-confirm-btn" onclick="impConfirm()" style="background:var(--green);color:#fff;border-color:var(--green)"></button>
+  </div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
 <script>
 var _allTrades = [];
 var _botsByMagic = {};
@@ -406,6 +466,246 @@ async function init() {
   await loadData();
 }
 document.addEventListener('DOMContentLoaded', init);
+
+// ─── Importador historial manual ──────────────────────────────────────
+var _impTrades = [];
+
+function toggleImporter() {
+  const panel = document.getElementById('importer-panel');
+  const btn   = document.getElementById('btn-importer-toggle');
+  const open  = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  btn.textContent = (open ? '▼' : '▶') + ' Importar historial manual';
+  if (open) populateImporterSelects();
+}
+
+function populateImporterSelects() {
+  // Bots
+  const botSel = document.getElementById('imp-bot');
+  const prev   = botSel.value;
+  botSel.innerHTML = '<option value="">— seleccioná un bot —</option>';
+  Object.entries(_botsByMagic)
+    .sort((a,b) => (a[1].name||'').localeCompare(b[1].name||''))
+    .forEach(([magic, bot]) => {
+      const opt = document.createElement('option');
+      opt.value  = magic;
+      opt.textContent = `${bot.name || '?'} — magic ${magic}`;
+      if (magic === prev) opt.selected = true;
+      botSel.appendChild(opt);
+    });
+
+  // Cuentas — toma las que ya están en _allTrades
+  const acctSel  = document.getElementById('imp-account');
+  const prevAcct = acctSel.value;
+  const accounts = [...new Set(_allTrades.map(t => t.account_label).filter(Boolean))].sort();
+  acctSel.innerHTML = '<option value="">— seleccioná cuenta —</option>' +
+    accounts.map(a => `<option${a===prevAcct?' selected':''}>${a}</option>`).join('');
+}
+
+function impParse() {
+  const raw     = document.getElementById('imp-raw').value.trim();
+  const magic   = document.getElementById('imp-bot').value;
+  const account = document.getElementById('imp-account').value;
+
+  if (!magic)   { alertErr('Seleccioná un bot primero');    return; }
+  if (!account) { alertErr('Seleccioná una cuenta primero'); return; }
+  if (!raw)     { alertErr('Pegá los datos de MyFxBook');   return; }
+
+  // Normalizar: MyFxBook parte "SL\n(Precio)" y "TP\n(Precio)" en líneas separadas
+  // Merge de líneas que son continuación de un header (empiezan con "(" y no son fecha)
+  const rawLines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    const l = rawLines[i];
+    if (lines.length > 0 && l.startsWith('(') && !l.match(/^\d{2}\.\d{2}\.\d{4}/)) {
+      lines[lines.length - 1] += ' ' + l;
+    } else {
+      lines.push(l);
+    }
+  }
+  const trades = [];
+  const warns  = [];
+
+  // Detectar índices de columnas desde el header
+  const headerLine = lines.find(l => l.toLowerCase().includes('fecha de apertura'));
+  if (!headerLine) { alertErr('No se encontró la fila de headers. Incluí la primera fila de MyFxBook.'); return; }
+
+  const headers = headerLine.split('\t').map(h => h.trim().toLowerCase()
+    .replace(/\n/g,' ').replace(/\s+/g,' '));
+
+  const idx = {
+    openTime:   headers.findIndex(h => h.includes('fecha de apertura')),
+    closeTime:  headers.findIndex(h => h.includes('fecha de cierre')),
+    symbol:     headers.findIndex(h => h.includes('símbolo') || h.includes('simbolo')),
+    action:     headers.findIndex(h => h.includes('acción') || h.includes('accion')),
+    lots:       headers.findIndex(h => h.includes('lotes')),
+    sl:         headers.findIndex(h => h.includes('s/l') || (h.includes('sl') && h.includes('precio'))),
+    tp:         headers.findIndex(h => h.includes('t/p') || (h.includes('tp') && h.includes('precio'))),
+    openPrice:  headers.findIndex(h => h.includes('precio de apertura')),
+    closePrice: headers.findIndex(h => h.includes('precio de cierre')),
+    profit:     headers.findIndex(h => h.includes('beneficio neto') || h.includes('beneficio')),
+    swap:       headers.findIndex(h => h.includes('swap')),
+    commission: headers.findIndex(h => h.includes('comision') || h.includes('comisión')),
+  };
+
+  const dataLines = lines.filter(l => !l.toLowerCase().includes('fecha de apertura'));
+
+  dataLines.forEach((line, i) => {
+    const cols = line.split('\t');
+
+    // Ignorar depósitos y filas sin symbol
+    const sym = idx.symbol >= 0 ? (cols[idx.symbol]||'').trim() : '';
+    if (!sym) return;
+
+    // Parsear fecha MM.DD.YYYY HH:MM → ISO
+    function parseDate(s) {
+      if (!s || s === '-') return null;
+      s = s.trim();
+      const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
+      if (!m) return null;
+      return `${m[3]}-${m[1]}-${m[2]}T${m[4]}:${m[5]}:00`;
+    }
+
+    function parseNum(s) {
+      if (!s || s.trim() === '-') return 0;
+      return parseFloat(s.replace(/,/g,'').trim()) || 0;
+    }
+
+    const openTime  = parseDate(idx.openTime  >= 0 ? cols[idx.openTime]  : '');
+    const closeTime = parseDate(idx.closeTime >= 0 ? cols[idx.closeTime] : '');
+
+    if (!openTime || !closeTime) {
+      warns.push(`Fila ${i+1}: fecha inválida — omitida`);
+      return;
+    }
+
+    const action = (idx.action >= 0 ? cols[idx.action] : '').trim().toLowerCase();
+    const type   = (action === 'comprar' || action === 'buy') ? 'buy' : 'sell';
+
+    trades.push({
+      magic:        Number(magic),
+      account_label: account,
+      symbol:       sym,
+      type,
+      open_time:    openTime,
+      close_time:   closeTime,
+      lots:         parseNum(idx.lots       >= 0 ? cols[idx.lots]       : '0'),
+      open_price:   parseNum(idx.openPrice  >= 0 ? cols[idx.openPrice]  : '0'),
+      close_price:  parseNum(idx.closePrice >= 0 ? cols[idx.closePrice] : '0'),
+      sl:           parseNum(idx.sl         >= 0 ? cols[idx.sl]         : '0'),
+      tp:           parseNum(idx.tp         >= 0 ? cols[idx.tp]         : '0'),
+      profit:       parseNum(idx.profit     >= 0 ? cols[idx.profit]     : '0'),
+      swap:         parseNum(idx.swap       >= 0 ? cols[idx.swap]       : '0'),
+      commission:   parseNum(idx.commission >= 0 ? cols[idx.commission] : '0'),
+    });
+  });
+
+  _impTrades = trades;
+
+  // Preview
+  const tbody = document.getElementById('imp-preview-tbody');
+  tbody.innerHTML = trades.map(t => `<tr>
+    <td>${t.open_time.replace('T',' ').slice(0,16)}</td>
+    <td>${t.close_time.replace('T',' ').slice(0,16)}</td>
+    <td>${t.symbol}</td>
+    <td>${t.type}</td>
+    <td>${t.lots}</td>
+    <td>${t.open_price}</td>
+    <td>${t.close_price}</td>
+    <td>${t.sl||'—'}</td>
+    <td>${t.tp||'—'}</td>
+    <td class="${t.profit>=0?'trade-p':'trade-n'}">${t.profit>=0?'+':''}${t.profit.toFixed(2)}</td>
+    <td>${t.swap.toFixed(2)}</td>
+    <td>${t.commission.toFixed(2)}</td>
+  </tr>`).join('');
+
+  document.getElementById('imp-preview-title').textContent =
+    `${trades.length} trades detectados — verificá antes de importar`;
+  document.getElementById('imp-warn').textContent = warns.join(' | ');
+  document.getElementById('imp-confirm-btn').textContent = `Importar ${trades.length} trades a Supabase`;
+  document.getElementById('imp-preview').style.display = trades.length ? 'block' : 'none';
+
+  if (!trades.length) alertErr('No se detectaron trades válidos. Revisá el formato.');
+}
+
+async function impConfirm() {
+  if (!_impTrades.length) return;
+  const btn = document.getElementById('imp-confirm-btn');
+  btn.disabled = true;
+
+  const endpoint = 'https://ofrbktacgwbwsgpftoky.supabase.co/functions/v1/record-trade';
+  const token    = sb.getToken();
+  // Obtener el UserToken del EA desde user_tokens
+  let eaToken = '';
+  try {
+    const tokens = await sb.getMyTokens();
+    if (tokens && tokens.length) eaToken = tokens[0].token;
+  } catch(e) {}
+
+  if (!eaToken) { alertErr('No se encontró token EA. Verificá en el dashboard.'); btn.disabled=false; return; }
+
+  let ok=0, dup=0, err=0;
+  for (let i=0; i < _impTrades.length; i++) {
+    const t = _impTrades[i];
+    btn.textContent = `Importando ${i+1}/${_impTrades.length}...`;
+
+    // Generar ticket sintético para trades históricos (no tienen ticket real de MT5)
+    // Usamos magic + timestamp de cierre como identificador único
+    // Ticket sintético: hash de magic + open_time + close_time + symbol — único por trade
+    const hashStr = `${t.magic}_${t.open_time}_${t.close_time}_${t.symbol}`;
+    let hash = 0;
+    for (let c = 0; c < hashStr.length; c++) hash = Math.imul(31, hash) + hashStr.charCodeAt(c) | 0;
+    const syntheticTicket = Math.abs(hash) + 9000000000; // rango alto para no colisionar con tickets reales de MT5
+
+    const payload = {
+      token:            eaToken,
+      ticket:           syntheticTicket,
+      account_id:       'historical',
+      account_label:    t.account_label,
+      account_broker:   'MyFxBook Import',
+      account_server:   'historical',
+      account_currency: 'USD',
+      magic:            t.magic,
+      symbol:           t.symbol,
+      type:             t.type,
+      open_time:        t.open_time.replace('T',' '),
+      close_time:       t.close_time.replace('T',' '),
+      lots:             t.lots,
+      open_price:       t.open_price,
+      close_price:      t.close_price,
+      sl:               t.sl,
+      tp:               t.tp,
+      profit:           t.profit,
+      commission:       t.commission,
+      swap:             t.swap,
+      comment:          'myfxbook_import',
+    };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok)              ok++;
+      else if (res.status===409) dup++;
+      else                     err++;
+    } catch(e) { err++; }
+
+    await new Promise(r => setTimeout(r, 80));
+  }
+
+  btn.disabled   = false;
+  btn.textContent = `Importar ${_impTrades.length} trades a Supabase`;
+  alertOk(`Historial importado — ${ok} nuevos | ${dup} duplicados ignorados | ${err} errores`);
+
+  if (ok > 0) {
+    await loadData();
+    document.getElementById('imp-raw').value = '';
+    document.getElementById('imp-preview').style.display = 'none';
+    _impTrades = [];
+  }
+}
 </script>
 </body>
 </html>
