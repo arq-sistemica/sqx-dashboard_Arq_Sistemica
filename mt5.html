@@ -656,6 +656,8 @@ async function impConfirm() {
   const endpoint     = `${SUPABASE_URL}/rest/v1/trades`;
   const authToken    = sb.getToken();
 
+  const userId = JSON.parse(atob(authToken.split('.')[1])).sub;
+
   const rows = _impTrades.map(t => {
     const hashStr = `${t.magic}_${t.open_time}_${t.close_time}_${t.symbol}`;
     let hash = 0;
@@ -663,6 +665,7 @@ async function impConfirm() {
     const syntheticTicket = Math.abs(hash) + 9000000000;
 
     return {
+      user_id:       userId,
       ticket:        syntheticTicket,
       account_id:    'historical',
       account_label: t.account_label,
