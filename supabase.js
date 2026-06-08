@@ -262,4 +262,27 @@ const sb = {
     if (!r.ok) return [];
     return r.json();
   },
+
+  async getPrefs() {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/user_prefs?select=prefs&limit=1`,
+      { headers: _sbHeaders(sb.getToken()) }
+    );
+    if (!r.ok) return {};
+    const rows = await r.json();
+    return rows[0]?.prefs || {};
+  },
+
+  async savePrefs(prefs) {
+    const uid = sb.getUserId();
+    if (!uid) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/user_prefs`, {
+      method: 'POST',
+      headers: {
+        ..._sbHeaders(sb.getToken()),
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ user_id: uid, prefs, updated_at: new Date().toISOString() }),
+    });
+  },
 };

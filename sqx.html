@@ -767,22 +767,52 @@ function parseCSV(text) {
   });
 }
 
+// ─── Preferencias ─────────────────────────────────────────────────────
+function collectPrefs() {
+  return {
+    filterMode,
+    sortCol,
+    sortDir,
+    symbol: document.getElementById('f-symbol')?.value || '',
+    tf:     document.getElementById('f-tf')?.value     || '',
+    dir:    document.getElementById('f-dir')?.value    || '',
+  };
+}
+function applyPrefs(p) {
+  if (!p) return;
+  if (p.filterMode) {
+    filterMode = p.filterMode;
+    ['all','passed','failed'].forEach(m => document.getElementById('f-' + m)?.classList.toggle('active', m === filterMode));
+  }
+  if (p.sortCol) sortCol = p.sortCol;
+  if (p.sortDir) sortDir = p.sortDir;
+  if (p.symbol) { const s = document.getElementById('f-symbol'); if (s) s.value = p.symbol; }
+  if (p.tf)     { const s = document.getElementById('f-tf');     if (s) s.value = p.tf; }
+  if (p.dir)    { const s = document.getElementById('f-dir');    if (s) s.value = p.dir; }
+}
+async function persistPrefs() {
+  if (sb.isAuthenticated()) await sb.savePrefs(collectPrefs()).catch(() => {});
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────
 async function init() {
   if (typeof sb === 'undefined' || !sb.isAuthenticated()) { window.location.href = 'index.html'; return; }
-  setSyncStatus('Cargando bots...', '');
+  setSyncStatus('Cargando...', '');
   try {
-    DB = await sb.getBots();
+    const [bots, prefs] = await Promise.all([sb.getBots(), sb.getPrefs()]);
+    DB = bots;
+    populateFilters();
+    applyPrefs(prefs);
+    renderTable();
     setSyncStatus(DB.length + ' bots cargados', '#1a7f4b');
     setTimeout(() => setSyncStatus('', ''), 3000);
-    populateFilters();
-    renderTable();
   } catch(e) {
     setSyncStatus('Error al cargar', '#b91c1c');
     alertErr('Error cargando bots: ' + e.message);
   }
 }
 document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('beforeunload', persistPrefs);
 </script>
 </body>
 </html>
