@@ -160,6 +160,7 @@ td.num{text-align:right}
     <thead>
       <tr>
         <th class="left" onclick="sortBy('name')">Nombre<span id="s-name"></span></th>
+        <th onclick="sortBy('magic')">Magic<span id="s-magic"></span></th>
         <th class="left" onclick="sortBy('symbol')">Par<span id="s-symbol"></span></th>
         <th class="left" onclick="sortBy('dir')">Dir<span id="s-dir"></span></th>
         <th class="left" onclick="sortBy('tf')">TF<span id="s-tf"></span></th>
@@ -274,6 +275,7 @@ function getFiltered() {
 // ─── Sorting ──────────────────────────────────────────────────────────
 var KEY = {
   name:       b => (b.name||'').toLowerCase(),
+  magic:      b => b.magic || 0,
   symbol:     b => b.symbol||'',
   tf:         b => b.tf||'',
   isPf:      b => b.is?.pf                    ?? -Infinity,
@@ -411,6 +413,7 @@ function renderTable() {
     const nameShort = name.length > 42 ? name.slice(0, 40) + '…' : name;
     return `<tr data-id="${id}" onclick="toggleDetail('${id}')">
       <td class="left" title="${name}">${nameShort}</td>
+      <td style="font-variant-numeric:tabular-nums;color:var(--text3);text-align:right">${b.magic||'—'}</td>
       <td class="left">${b.symbol||'—'}</td>
       <td class="left ${dirColor(getDirection(b.pseudocodigo))}">${getDirection(b.pseudocodigo)||'—'}</td>
       <td class="left">${b.tf||'—'}</td>
