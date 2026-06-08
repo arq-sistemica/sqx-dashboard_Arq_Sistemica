@@ -95,6 +95,16 @@ td.num{text-align:right}
 .dtab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 .dtab-btn:hover:not(.active){color:var(--text2)}
 .dtab-panel{display:none}.dtab-panel.active{display:block}
+/* summary donuts */
+.summary-panel{display:flex;align-items:center;gap:32px;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg);flex-wrap:wrap}
+.summary-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.donut-card{display:flex;align-items:center;gap:14px}
+.donut-meta{display:flex;flex-direction:column;gap:4px}
+.donut-meta-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px}
+.donut-meta-row{font-size:12px;font-weight:600;color:var(--text2)}
+.donut-meta-row span{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.summary-divider{width:1px;height:80px;background:var(--border);flex-shrink:0}
+.summary-context{font-size:12px;color:var(--text2);font-weight:600;margin-left:auto;white-space:nowrap}
 
 /* toast */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;display:none;max-width:520px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.12)}
@@ -141,6 +151,8 @@ td.num{text-align:right}
   </select>
   <span class="filter-count" id="f-count"></span>
 </div>
+
+<div id="summary-panel" class="summary-panel" style="display:none"></div>
 
 <div class="table-card">
 <div class="table-wrap">
@@ -284,6 +296,102 @@ function sortBy(col) {
   renderTable();
 }
 
+// ─── Summary panel ────────────────────────────────────────────────────
+function renderSummaryPanel() {
+  const panel = document.getElementById('summary-panel');
+  if (!panel) return;
+  const bots = getFiltered();
+  if (!bots.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'flex';
+
+  const C = 226.19; // 2 * π * 36
+
+  // dirección
+  const withDir = bots.filter(b => getDirection(b.pseudocodigo));
+  const longN  = withDir.filter(b => getDirection(b.pseudocodigo) === 'Long').length;
+  const shortN = withDir.filter(b => getDirection(b.pseudocodigo) === 'Short').length;
+  const longPct  = withDir.length ? Math.round(longN  / withDir.length * 100) : 0;
+  const shortPct = withDir.length ? Math.round(shortN / withDir.length * 100) : 0;
+  const longArc  = longPct  / 100 * C;
+  const shortArc = shortPct / 100 * C;
+
+  // PF promedio
+  const pfVals = bots.map(b => b.is?.pf).filter(v => v != null);
+  const pfAvg  = pfVals.length ? pfVals.reduce((a,b)=>a+b,0)/pfVals.length : null;
+  const pfArc  = pfAvg != null ? Math.min(pfAvg/2,1)*C : 0;
+  const pfCol  = pfAvg == null ? '#e0e3e8' : pfAvg>=1.30?'#1a7f4b':pfAvg>=1.20?'#d97706':'#b91c1c';
+
+  // DD% promedio
+  const ddVals = bots.map(b => b.standalone?.max_dd_pct).filter(v => v != null);
+  const ddAvg  = ddVals.length ? ddVals.reduce((a,b)=>a+b,0)/ddVals.length : null;
+  const ddArc  = ddAvg != null ? Math.min(ddAvg/25,1)*C : 0;
+  const ddCol  = ddAvg == null ? '#e0e3e8' : ddAvg<=10?'#1a7f4b':ddAvg<=20?'#d97706':'#b91c1c';
+
+  const sym = document.getElementById('f-symbol').value;
+  const tf  = document.getElementById('f-tf').value;
+  const ctx = [sym||'Todos los pares', tf||''].filter(Boolean).join(' · ');
+
+  function svg(arcs, centerTxt, subTxt) {
+    let circles = `<circle cx="50" cy="50" r="36" fill="none" stroke="#e0e3e8" stroke-width="13"/>`;
+    let offset = 0;
+    arcs.forEach(([arc, color]) => {
+      if (arc > 0) {
+        circles += `<circle cx="50" cy="50" r="36" fill="none" stroke="${color}" stroke-width="13"
+          stroke-dasharray="${arc} ${C}" stroke-dashoffset="${-offset}" transform="rotate(-90 50 50)" stroke-linecap="butt"/>`;
+        offset += arc;
+      }
+    });
+    return `<svg viewBox="0 0 100 100" width="90" height="90" style="flex-shrink:0">
+      ${circles}
+      <text x="50" y="47" text-anchor="middle" font-size="14" font-weight="700" fill="#111318">${centerTxt}</text>
+      <text x="50" y="62" text-anchor="middle" font-size="9" fill="#9098a8">${subTxt}</text>
+    </svg>`;
+  }
+
+  const dirSvg = withDir.length
+    ? svg([[longArc,'#1a7f4b'],[shortArc,'#b91c1c']], longPct+'%', 'Long')
+    : svg([[0,'#e0e3e8']], '—', 'sin datos');
+
+  const pfSvg = pfAvg != null
+    ? svg([[pfArc, pfCol]], pfAvg.toFixed(2), 'PF')
+    : svg([[0,'#e0e3e8']], '—', 'PF');
+
+  const ddSvg = ddAvg != null
+    ? svg([[ddArc, ddCol]], ddAvg.toFixed(1)+'%', 'DD')
+    : svg([[0,'#e0e3e8']], '—', 'DD');
+
+  panel.innerHTML = `
+    <div class="donut-card" style="cursor:default">
+      ${dirSvg}
+      <div class="donut-meta">
+        <div class="donut-meta-title">Dirección</div>
+        <div class="donut-meta-row"><span style="background:#1a7f4b"></span>Long &nbsp;${longN}</div>
+        <div class="donut-meta-row"><span style="background:#b91c1c"></span>Short ${shortN}</div>
+        ${withDir.length < bots.length ? `<div style="font-size:10px;color:var(--text3)">${bots.length-withDir.length} sin pseudo</div>` : ''}
+      </div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="donut-card">
+      ${pfSvg}
+      <div class="donut-meta">
+        <div class="donut-meta-title">PF Promedio</div>
+        <div class="donut-meta-row" style="font-size:18px;color:${pfCol}">${pfAvg!=null?pfAvg.toFixed(2):'—'}</div>
+        <div style="font-size:10px;color:var(--text3)">${pfVals.length} bots</div>
+      </div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="donut-card">
+      ${ddSvg}
+      <div class="donut-meta">
+        <div class="donut-meta-title">DD% Promedio</div>
+        <div class="donut-meta-row" style="font-size:18px;color:${ddCol}">${ddAvg!=null?ddAvg.toFixed(1)+'%':'—'}</div>
+        <div style="font-size:10px;color:var(--text3)">${ddVals.length} bots</div>
+      </div>
+    </div>
+    <div class="summary-context">${ctx}<br><span style="font-size:11px;color:var(--text3);font-weight:400">${bots.length} bot${bots.length!==1?'s':''}</span></div>
+  `;
+}
+
 // ─── Render tabla ─────────────────────────────────────────────────────
 function renderTable() {
   const bots = getFiltered();
@@ -325,6 +433,7 @@ function renderTable() {
     if (bot) insertDetailRow(expandedId, bot);
     else expandedId = null;
   }
+  renderSummaryPanel();
 }
 
 // ─── Ficha expandible ─────────────────────────────────────────────────
