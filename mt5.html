@@ -87,7 +87,11 @@ td.spark{text-align:center;padding:4px 10px}
 <div class="filters-bar">
   <span id="acct-wrap" style="display:none;align-items:center;gap:6px">
     <span class="filter-label">Cuenta:</span>
-    <select class="filter-sel" id="f-account" onchange="applyAccountFilter()"><option value="">Todas</option></select>
+    <select class="filter-sel" id="f-account" onchange="applyFilters()"><option value="">Todas</option></select>
+  </span>
+  <span style="display:flex;align-items:center;gap:6px">
+    <span class="filter-label">Symbol:</span>
+    <select class="filter-sel" id="f-symbol" onchange="applyFilters()"><option value="">Todos</option></select>
   </span>
   <span class="filter-count" id="f-count"></span>
 </div>
@@ -305,11 +309,20 @@ function populateAccountFilter() {
   sel.innerHTML = '<option value="">Todas</option>' +
     accounts.map(a => `<option${a===prev?' selected':''}>${a}</option>`).join('');
   document.getElementById('acct-wrap').style.display = accounts.length > 1 ? 'flex' : 'none';
+
+  const symbols = [...new Set(_allTrades.map(t => t.symbol).filter(Boolean))].sort();
+  const symSel = document.getElementById('f-symbol');
+  const prevSym = symSel.value;
+  symSel.innerHTML = '<option value="">Todos</option>' +
+    symbols.map(s => `<option${s===prevSym?' selected':''}>${s}</option>`).join('');
 }
 
-function applyAccountFilter() {
+function applyFilters() {
   const acct = document.getElementById('f-account').value;
-  const filtered = acct ? _allTrades.filter(t => (t.account_label || String(t.account_id)) === acct) : _allTrades;
+  const sym  = document.getElementById('f-symbol').value;
+  let filtered = _allTrades;
+  if (acct) filtered = filtered.filter(t => (t.account_label || String(t.account_id)) === acct);
+  if (sym)  filtered = filtered.filter(t => t.symbol === sym);
   LIVE = computeLiveMetrics(filtered);
   renderTable();
 }
