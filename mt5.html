@@ -60,7 +60,7 @@ td.spark{text-align:center;padding:4px 10px}
 .trade-table th{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 10px;text-align:left;white-space:nowrap;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
 .trade-table td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:12px;color:var(--text2)}
 .trade-table tr:last-child td{border-bottom:none}
-.trade-p{color:var(--green);font-weight:600}.trade-n{color:var(--red);font-weight:600}
+.trade-p{color:var(--green);font-weight:600;background:#f0faf4}.trade-n{color:var(--red);font-weight:600;background:#fff5f5}
 
 .equity-svg{display:block;width:100%;height:64px;margin-top:8px}
 
@@ -439,7 +439,7 @@ function buildDetail(magic, d) {
   let lastMonth = null;
   let monthParity = 0;
   last50.forEach(t => {
-    const month = t.closeDate.slice(0, 7); // "YYYY-MM"
+    const month = t.closeDate.slice(0, 7);
     if (month !== lastMonth) { lastMonth = month; monthParity = 1 - monthParity; }
     const rowBg = monthParity === 0 ? '' : 'background:#f1f3f5;';
     html += `<tr style="${rowBg}">
