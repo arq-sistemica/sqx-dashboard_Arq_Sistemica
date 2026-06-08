@@ -423,8 +423,13 @@ function buildDetail(magic, d) {
   html += '<div style="overflow-x:auto"><table class="trade-table"><thead><tr>' +
     '<th>Cierre</th><th>Symbol</th><th>Tipo</th><th>Lots</th><th>Open</th><th>Close</th><th>Net P&L</th><th>Acum.</th>' +
     '</tr></thead><tbody>';
+  let lastMonth = null;
+  let monthParity = 0;
   last50.forEach(t => {
-    html += `<tr>
+    const month = t.closeDate.slice(0, 7); // "YYYY-MM"
+    if (month !== lastMonth) { lastMonth = month; monthParity = 1 - monthParity; }
+    const rowBg = monthParity === 0 ? '' : 'background:#f1f3f5;';
+    html += `<tr style="${rowBg}">
       <td>${t.closeDate}</td>
       <td>${t.symbol}</td>
       <td>${t.action}</td>
