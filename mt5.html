@@ -247,8 +247,35 @@ function equityCurve(tradeList) {
   const cx = i  => (PL + i / (n||1) * cW).toFixed(1);
   const cy = pct => (PT + (1 - (pct - minP) / rangeP) * cH).toFixed(1);
 
+  const zeroY = cy(0);
+
+  // Segmentos coloreados: verde > 0, rojo <= 0, con interpolación en cruce del cero
+  const points = pcts.map((p, i) => ({ x: parseFloat(cx(i)), y: parseFloat(cy(p)), v: p }));
+  const segments = []; // [{color, pts:[{x,y}]}]
+  let cur = { color: points[0].v >= 0 ? '#1a7f4b' : '#b91c1c', pts: [points[0]] };
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i-1], b = points[i];
+    if ((a.v >= 0) !== (b.v >= 0)) {
+      // interpolación del cruce
+      const t = Math.abs(a.v) / (Math.abs(a.v) + Math.abs(b.v));
+      const xi = +(a.x + t * (b.x - a.x)).toFixed(1);
+      const yi = +zeroY;
+      cur.pts.push({ x: xi, y: yi });
+      segments.push(cur);
+      cur = { color: b.v >= 0 ? '#1a7f4b' : '#b91c1c', pts: [{ x: xi, y: yi }] };
+    }
+    cur.pts.push(b);
+  }
+  segments.push(cur);
+
+  const linesSvg = segments.map(s => {
+    const d = s.pts.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }).join('');
+
+  // Fill area (usando color del último valor)
   const coords  = pcts.map((p, i) => `${cx(i)},${cy(p)}`).join(' ');
-  const zeroY   = cy(0);
+  const colorBgFill = pcts[pcts.length-1] >= 0 ? '#eaf7f0' : '#fef2f2';
   const fillPts = `${cx(0)},${zeroY} ${coords} ${cx(n)},${zeroY}`;
 
   // Y: ~5 niveles equidistantes que incluyan 0
@@ -286,8 +313,8 @@ function equityCurve(tradeList) {
     ${yGridSvg}
     ${xTicksSvg.join('')}
     <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+cH}" stroke="#d1d5db" stroke-width="1"/>
-    <polygon points="${fillPts}" fill="${colorBg}" opacity="0.6"/>
-    <polyline points="${coords}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    <polygon points="${fillPts}" fill="${colorBgFill}" opacity="0.6"/>
+    ${linesSvg}
     ${yLabelsSvg}
   </svg>`;
 }
