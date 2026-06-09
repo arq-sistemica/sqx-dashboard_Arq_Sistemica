@@ -157,9 +157,14 @@ td.spark{text-align:center;padding:4px 10px}
       style="width:100%;padding:8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:11px;font-family:monospace;resize:vertical;background:var(--bg)"></textarea>
   </div>
 
-  <button onclick="impParse()" style="background:var(--accent);color:#fff;border-color:var(--accent);margin-bottom:16px">
-    Parsear y previsualizar
-  </button>
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+    <button onclick="impParse()" style="background:var(--accent);color:#fff;border-color:var(--accent)">
+      Parsear y previsualizar
+    </button>
+    <button onclick="impDeleteBot()" style="background:#fff;color:var(--red);border:1px solid var(--red)">
+      Borrar trades de este bot
+    </button>
+  </div>
 
   <div id="imp-preview" style="display:none">
     <div id="imp-preview-title" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px"></div>
@@ -771,6 +776,37 @@ function impParse() {
   document.getElementById('imp-preview').style.display = trades.length ? 'block' : 'none';
 
   if (!trades.length) alertErr('No se detectaron trades válidos. Revisá el formato.');
+}
+
+async function impDeleteBot() {
+  const magic   = document.getElementById('imp-bot').value;
+  const botName = document.getElementById('imp-bot').selectedOptions[0]?.text || magic;
+  if (!magic) { alertErr('Seleccioná un bot primero'); return; }
+  if (!confirm(`¿Borrar TODOS los trades importados de MyFxBook para "${botName}"?\nEsta acción no se puede deshacer.`)) return;
+
+  const authToken = sb.getToken();
+  const userId    = JSON.parse(atob(authToken.split('.')[1])).sub;
+  const endpoint  = `${SUPABASE_URL}/rest/v1/trades?magic=eq.${magic}&account_id=eq.historical&comment=eq.myfxbook_import&user_id=eq.${userId}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'apikey': SUPABASE_KEY,
+        'Prefer': 'return=minimal',
+      },
+    });
+    if (res.ok) {
+      alertOk(`Trades de "${botName}" eliminados correctamente`);
+      await loadData();
+    } else {
+      const txt = await res.text();
+      alertErr(`Error ${res.status}: ${txt}`);
+    }
+  } catch(e) {
+    alertErr('Error de red: ' + e.message);
+  }
 }
 
 async function impConfirm() {
