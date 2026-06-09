@@ -525,33 +525,73 @@ function toggleDetail(magic) {
   tr.insertAdjacentElement('afterend', detail);
 }
 
-function buildDetail(magic, d) {
-  const last50 = d.tradeList.slice(-50).reverse();
-  let html = '<div class="detail-title">Equity curve</div>';
-  html += equityCurve(d.tradeList);
-  html += '<div class="detail-title" style="margin-top:14px">Últimos ' + Math.min(50, d.tradeList.length) + ' trades</div>';
-  html += '<div style="overflow-x:auto"><table class="trade-table"><thead><tr>' +
-    '<th>Cierre</th><th>Symbol</th><th>Tipo</th><th>Lots</th><th>Open</th><th>Close</th><th>Net P&L</th><th>Acum.</th>' +
-    '</tr></thead><tbody>';
-  let lastMonth = null;
-  let monthParity = 0;
-  last50.forEach(t => {
+// DEMO: 'paged' o 'scroll' — cambiá para ver ambas opciones en local
+var TRADE_LIST_MODE = 'scroll'; // 'paged' | 'scroll'
+var PAGE_SIZE = 20;
+
+function buildTradeRows(list) {
+  let html = '', lastMonth = null, monthParity = 0;
+  list.forEach(t => {
     const month = t.closeDate.slice(0, 7);
     if (month !== lastMonth) { lastMonth = month; monthParity = 1 - monthParity; }
     const rowBg = monthParity === 0 ? '' : 'background:#f1f3f5;';
     html += `<tr style="${rowBg}">
-      <td>${t.closeDate}</td>
-      <td>${t.symbol}</td>
-      <td>${t.action}</td>
-      <td>${t.lots??'—'}</td>
-      <td>${t.openPrice??'—'}</td>
-      <td>${t.closePrice??'—'}</td>
+      <td>${t.closeDate}</td><td>${t.symbol}</td><td>${t.action}</td>
+      <td>${t.lots??'—'}</td><td>${t.openPrice??'—'}</td><td>${t.closePrice??'—'}</td>
       <td class="${t.netProfit>=0?'trade-p':'trade-n'}">${t.netProfit>=0?'+':''}${fmt(t.netProfit,2)}</td>
       <td class="${t.cumProfit>=0?'trade-p':'trade-n'}">${fmt(t.cumProfit,2)}</td>
     </tr>`;
   });
-  html += '</tbody></table></div>';
   return html;
+}
+
+function buildTradeTable(id, list, wrapStyle) {
+  return `<div style="${wrapStyle}overflow-x:auto">
+    <table class="trade-table" id="${id}"><thead><tr>
+      <th>Cierre</th><th>Symbol</th><th>Tipo</th><th>Lots</th><th>Open</th><th>Close</th><th>Net P&L</th><th>Acum.</th>
+    </tr></thead><tbody>${buildTradeRows(list)}</tbody></table></div>`;
+}
+
+function buildDetail(magic, d) {
+  const all = d.tradeList.slice().reverse();
+  let html = '<div class="detail-title">Equity curve</div>';
+  html += equityCurve(d.tradeList);
+  html += `<div class="detail-title" style="margin-top:14px">${all.length} trades</div>`;
+
+  if (TRADE_LIST_MODE === 'scroll') {
+    // ── OPCIÓN A: scroll fijo 280px ─────────────────────────────────
+    html += buildTradeTable('tbl-' + magic, all, 'max-height:280px;overflow-y:auto;');
+
+  } else {
+    // ── OPCIÓN B: paginado 20 por página ────────────────────────────
+    const totalPages = Math.ceil(all.length / PAGE_SIZE);
+    const page = 1;
+    const slice = all.slice(0, PAGE_SIZE);
+    html += buildTradeTable('tbl-' + magic, slice, '');
+    if (totalPages > 1) {
+      html += `<div data-page="1" data-total="${totalPages}" id="page-nav-${magic}" style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px">
+        <button onclick="tradePageNav(${magic},-1)" style="padding:2px 10px">‹</button>
+        <span id="page-lbl-${magic}">1 / ${totalPages}</span>
+        <button onclick="tradePageNav(${magic},1)" style="padding:2px 10px">›</button>
+      </div>`;
+    }
+  }
+  return html;
+}
+
+function tradePageNav(magic, dir) {
+  const d = LIVE[String(magic)]; if (!d) return;
+  const nav = document.getElementById('page-nav-' + magic); if (!nav) return;
+  const totalPages = +nav.dataset.total;
+  let page = +nav.dataset.page + dir;
+  page = Math.max(1, Math.min(totalPages, page));
+  nav.dataset.page = page;
+  const all = d.tradeList.slice().reverse();
+  const slice = all.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  const tbody = document.querySelector(`#tbl-${magic} tbody`);
+  if (tbody) tbody.innerHTML = buildTradeRows(slice);
+  const lbl = document.getElementById(`page-lbl-${magic}`);
+  if (lbl) lbl.textContent = `${page} / ${totalPages}`;
 }
 
 // ─── Carga de datos ───────────────────────────────────────────────────
