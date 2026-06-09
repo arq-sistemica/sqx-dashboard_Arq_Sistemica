@@ -110,8 +110,8 @@ td.spark{text-align:center;padding:4px 10px}
         <th onclick="sortBy('dd')">DD%<span id="s-dd"></span></th>
         <th onclick="sortBy('wr')">WR%<span id="s-wr"></span></th>
         <th onclick="sortBy('netProfit')">Net P&amp;L<span id="s-netProfit"></span></th>
-        <th onclick="sortBy('retPct')">Ret%<span id="s-retPct"></span></th>
         <th class="spark">Equity</th>
+        <th onclick="sortBy('retPct')">Ret%<span id="s-retPct"></span></th>
       </tr>
     </thead>
     <tbody id="mt5-tbody"></tbody>
@@ -431,8 +431,8 @@ function renderTable() {
       <td class="${ddColor(r.ddPct)}">${fmt(r.ddPct,1)}%</td>
       <td class="${wrColor(r.winRate)}">${fmt(r.winRate,1)}%</td>
       <td class="${npColor(r.netProfit)}">${r.netProfit >= 0 ? '+' : ''}${fmt(r.netProfit,2)}</td>
-      <td class="${npColor(r.retPct)}">${r.retPct >= 0 ? '+' : ''}${fmt(r.retPct,2)}%</td>
       <td class="spark">${sparkline(r.tradeList)}</td>
+      <td class="${npColor(r.retPct)}">${r.retPct >= 0 ? '+' : ''}${fmt(r.retPct,2)}%</td>
     </tr>`;
   }).join('');
 
