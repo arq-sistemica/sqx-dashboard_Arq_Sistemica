@@ -270,8 +270,9 @@ function computeLiveMetrics(trades) {
     const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
     const pf = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
     const winRate = list.length ? +(wins.length/list.length*100).toFixed(1) : 0;
-    let peak=0,eq=0,maxDD=0;
-    netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+    const BASE = 10000;
+    let peak=BASE,eq=BASE,maxDD=0;
+    netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; const dd=(peak-eq)/peak; if(dd>maxDD)maxDD=dd; });
     let cum=0;
     const tradeList = list.map(t => {
       const np = +((t.profit||0)+(t.commission||0)+(t.swap||0)).toFixed(2);
