@@ -295,7 +295,7 @@ function equityCurve(tradeList) {
   // solo línea del cero en Y
   const yGridSvg = `<line x1="${PL}" y1="${cy(0)}" x2="${PL+cW}" y2="${cy(0)}" stroke="#9ca3af" stroke-width="1"/>`;
   const yLabelsSvg = yTicks.map(v =>
-    `<text x="${PL-5}" y="${+cy(v)+3.5}" text-anchor="end" font-size="8" font-weight="700" fill="#9ca3af">${v>=0?'+':''}${v.toFixed(1)}%</text>`
+    `<text x="${PL-5}" y="${+cy(v)+3.5}" text-anchor="end" font-size="8" fill="#4b5563">${v>=0?'+':''}${v.toFixed(1)}%</text>`
   ).join('');
 
   // X: ticks semanales (cada ~7 días) basados en fechas reales
@@ -310,7 +310,7 @@ function equityCurve(tradeList) {
     const x = (PL + frac * cW).toFixed(1);
     const label = wk.toISOString().slice(5,10).replace('-','/');
     xTicksSvg.push(
-      `<text x="${x}" y="${H-7}" text-anchor="middle" font-size="8" font-weight="700" fill="#9ca3af">${label}</text>`
+      `<text x="${x}" y="${H-7}" text-anchor="middle" font-size="8" fill="#4b5563">${label}</text>`
     );
     wk.setTime(wk.getTime() + weekMs);
   }
