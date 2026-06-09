@@ -110,6 +110,7 @@ td.spark{text-align:center;padding:4px 10px}
         <th onclick="sortBy('dd')">DD%<span id="s-dd"></span></th>
         <th onclick="sortBy('wr')">WR%<span id="s-wr"></span></th>
         <th onclick="sortBy('netProfit')">Net P&amp;L<span id="s-netProfit"></span></th>
+        <th onclick="sortBy('retPct')">Ret%<span id="s-retPct"></span></th>
         <th class="spark">Equity</th>
       </tr>
     </thead>
@@ -390,6 +391,7 @@ var KEY = {
   dd:        r => r.ddPct,
   wr:        r => r.winRate,
   netProfit: r => r.netProfit,
+  retPct:    r => r.retPct,
 };
 function sortBy(col) {
   if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
@@ -404,9 +406,10 @@ function renderTable() {
   const rows = Object.entries(LIVE).map(([magic, d]) => {
     const bot = _botsByMagic[magic];
     const sym = d.tradeList.length ? d.tradeList[d.tradeList.length-1].symbol : (bot?.symbol || '—');
+    const retPct = +(d.netProfit / 10000 * 100).toFixed(2);
     return { magic: Number(magic), name: bot?.name || '—', symbol: sym, account: d.account||'—',
       trades: d.trades, pf: d.pf, ddPct: d.ddPct, winRate: d.winRate, netProfit: d.netProfit,
-      tradeList: d.tradeList };
+      retPct, tradeList: d.tradeList };
   });
 
   const fn = KEY[sortCol] || (() => '');
@@ -431,6 +434,7 @@ function renderTable() {
       <td class="${ddColor(r.ddPct)}">${fmt(r.ddPct,1)}%</td>
       <td class="${wrColor(r.winRate)}">${fmt(r.winRate,1)}%</td>
       <td class="${npColor(r.netProfit)}">${r.netProfit >= 0 ? '+' : ''}${fmt(r.netProfit,2)}</td>
+      <td class="${npColor(r.retPct)}">${r.retPct >= 0 ? '+' : ''}${fmt(r.retPct,2)}%</td>
       <td class="spark">${sparkline(r.tradeList)}</td>
     </tr>`;
   }).join('');
