@@ -655,7 +655,7 @@ async function impConfirm() {
 
   const SUPABASE_URL = 'https://ofrbktacgwbwsgpftoky.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_OReO6Y5yhrK-BmPWf3fOhw_ODQ1-0_-';
-  const endpoint     = `${SUPABASE_URL}/rest/v1/trades`;
+  const endpoint     = `${SUPABASE_URL}/rest/v1/trades?on_conflict=ticket,account_id`;
   const authToken    = sb.getToken();
 
   const userId = JSON.parse(atob(authToken.split('.')[1])).sub;
