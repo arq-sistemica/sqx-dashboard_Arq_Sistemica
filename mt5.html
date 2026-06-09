@@ -696,7 +696,7 @@ async function impConfirm() {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${authToken}`,
         'apikey':        SUPABASE_KEY,
-        'Prefer':        'resolution=ignore-duplicates',
+        'Prefer':        'resolution=ignore-duplicates,return=minimal',
       },
       body: JSON.stringify(rows),
     });
@@ -704,8 +704,8 @@ async function impConfirm() {
     btn.disabled    = false;
     btn.textContent = `Importar ${_impTrades.length} trades a Supabase`;
 
-    if (res.ok) {
-      alertOk(`Historial importado — ${rows.length} trades enviados`);
+    if (res.ok || res.status === 409) {
+      alertOk(res.status === 409 ? `Trades ya existentes — ignorados sin error` : `Historial importado — ${rows.length} trades enviados`);
       await loadData();
       document.getElementById('imp-raw').value = '';
       document.getElementById('imp-preview').style.display = 'none';
