@@ -226,21 +226,53 @@ function sparkline(tradeList) {
     `<polyline points="${coords}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
 }
 
-// ─── Equity curve SVG (expandida, 100%×64) ──────────────────────────
+// ─── Equity curve SVG con ejes X/Y ───────────────────────────────────
 function equityCurve(tradeList) {
   if (!tradeList || tradeList.length < 2) return '';
-  const pts = tradeList.map(t => t.cumProfit);
-  const minY = Math.min(0, ...pts), maxY = Math.max(...pts);
-  const rangeY = maxY - minY || 1, n = pts.length - 1;
-  const W = 600, H = 56;
-  const coords = pts.map((y, i) =>
-    (i / (n||1) * W).toFixed(1) + ',' + ((1 - (y - minY) / rangeY) * H).toFixed(1)
-  ).join(' ');
+  const PL = 58, PB = 22, PT = 8, PR = 12;
+  const W = 620, H = 110;
+  const cW = W - PL - PR, cH = H - PT - PB;
+
+  const pts  = tradeList.map(t => t.cumProfit);
+  const dates = tradeList.map(t => t.closeDate ? t.closeDate.slice(0,7) : '');
+  const minY = Math.min(0, ...pts), maxY = Math.max(0, ...pts);
+  const rangeY = maxY - minY || 1;
+  const n = pts.length - 1;
   const color = pts[pts.length-1] >= 0 ? '#1a7f4b' : '#b91c1c';
-  const zeroY = ((1 - (0 - minY) / rangeY) * H).toFixed(1);
-  return `<svg viewBox="0 0 ${W} ${H}" class="equity-svg" preserveAspectRatio="none">` +
-    `<line x1="0" y1="${zeroY}" x2="${W}" y2="${zeroY}" stroke="var(--border)" stroke-width="1"/>` +
-    `<polyline points="${coords}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+  const colorBg = pts[pts.length-1] >= 0 ? '#eaf7f0' : '#fef2f2';
+
+  const cx = i => (PL + i / (n||1) * cW).toFixed(1);
+  const cy = y => (PT + (1 - (y - minY) / rangeY) * cH).toFixed(1);
+
+  const coords = pts.map((y, i) => `${cx(i)},${cy(y)}`).join(' ');
+  const zeroY  = cy(0);
+  const fillPts = `${cx(0)},${zeroY} ${coords} ${cx(n)},${zeroY}`;
+
+  // Y labels: min, 0, max
+  const yLabels = [...new Set([minY, 0, maxY])].sort((a,b)=>a-b);
+  const yLabelsSvg = yLabels.map(v =>
+    `<text x="${PL-6}" y="${+cy(v)+4}" text-anchor="end" font-size="10" fill="#888">${v>=0?'+':''}${v.toFixed(0)}</text>`
+  ).join('');
+
+  // Y grid lines
+  const yGridSvg = yLabels.map(v =>
+    `<line x1="${PL}" y1="${cy(v)}" x2="${PL+cW}" y2="${cy(v)}" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="${v===0?'none':'3,3'}"/>`
+  ).join('');
+
+  // X labels: primer, medio, último mes
+  const xIdxs = [0, Math.floor(n/2), n];
+  const xLabelsSvg = xIdxs.map(i =>
+    `<text x="${cx(i)}" y="${H-6}" text-anchor="middle" font-size="10" fill="#888">${dates[i]||''}</text>`
+  ).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="equity-svg" preserveAspectRatio="none" style="height:110px">
+    ${yGridSvg}
+    <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+cH}" stroke="#d1d5db" stroke-width="1"/>
+    <polygon points="${fillPts}" fill="${colorBg}" opacity="0.7"/>
+    <polyline points="${coords}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    ${yLabelsSvg}
+    ${xLabelsSvg}
+  </svg>`;
 }
 
 // ─── computeLiveMetrics (copiado de index.html) ──────────────────────
