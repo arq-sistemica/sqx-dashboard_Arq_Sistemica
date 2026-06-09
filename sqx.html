@@ -95,6 +95,9 @@ td.num{text-align:right}
 .dtab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 .dtab-btn:hover:not(.active){color:var(--text2)}
 .dtab-panel{display:none}.dtab-panel.active{display:block}
+.kpi-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px}
+.kpi-sm-lbl{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.kpi-sm-val{font-size:13px;font-weight:600;color:var(--text)}
 /* summary donuts */
 .summary-panel{display:flex;align-items:center;justify-content:center;gap:32px;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg);flex-wrap:wrap}
 .summary-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
@@ -129,6 +132,7 @@ td.num{text-align:right}
     <button class="btn" onclick="document.getElementById('pseudo-input').click()">📝 Scan Pseudocódigos</button>
     <input type="file" id="overview-input" accept=".json" style="display:none" onchange="handleImportOverview(this.files);this.value=''">
     <button class="btn" onclick="document.getElementById('overview-input').click()">📥 Importar Overview backup</button>
+    <button class="btn" id="btn-apikey" onclick="configAnthropicKey()" title="Configurar Anthropic API Key para análisis IA">🔑 API Key</button>
     <button class="btn" style="border-color:#fcc;color:var(--red)" onclick="deleteAllBots()">🗑 Borrar todo</button>
   </div>
 </div>
@@ -518,9 +522,14 @@ function buildDetail(bot) {
     <button style="margin-top:6px" onclick="saveOverview('${id}')">💾 Parsear y guardar</button>`;
 
   // ── pestaña Pseudocódigo ──────────────────────────────────────────
-  const tabPseudo = bot.pseudocodigo
-    ? `<pre class="pseudo-block">${bot.pseudocodigo.replace(/</g,'&lt;')}</pre>`
-    : `<div style="font-size:12px;color:var(--text3)">Sin pseudocódigo cargado. Usá "Scan Pseudocódigos".</div>`;
+  let tabPseudo;
+  if (bot.pseudocodigo) {
+    const psc = { botId: String(bot.magic||bot.id), parsed: parseSQXFile(bot.pseudocodigo), filename: bot.pseudocodigoData?.filename || '', aiExplanation: bot.pseudocodigoData?.aiExplanation || null };
+    tabPseudo = buildPseudocodigoHTML(psc) +
+      `<details style="margin-top:10px"><summary style="font-size:11px;color:var(--text3);cursor:pointer">📄 Ver pseudocódigo raw</summary><pre class="pseudo-block" style="margin-top:6px">${bot.pseudocodigo.replace(/</g,'&lt;')}</pre></details>`;
+  } else {
+    tabPseudo = `<div style="font-size:12px;color:var(--text3)">Sin pseudocódigo cargado. Usá "Scan Pseudocódigos".</div>`;
+  }
 
   return `
     <div class="dtab-bar">
@@ -541,6 +550,237 @@ function switchDTab(id, tab, btn) {
   });
   btn.closest('.dtab-bar').querySelectorAll('.dtab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+}
+
+// ─── Anthropic API Key config ────────────────────────────────────────
+function configAnthropicKey() {
+  const current = localStorage.getItem('anthropic_key') || '';
+  const val = prompt('Pegá tu Anthropic API Key (se guarda solo en este navegador):\n\nDejá vacío para borrarla.', current);
+  if (val === null) return; // canceló
+  if (val.trim()) {
+    localStorage.setItem('anthropic_key', val.trim());
+    alertOk('✓ API Key guardada');
+  } else {
+    localStorage.removeItem('anthropic_key');
+    alertOk('API Key borrada');
+  }
+  updateApiKeyBtn();
+}
+
+function updateApiKeyBtn() {
+  const btn = document.getElementById('btn-apikey');
+  if (!btn) return;
+  const has = !!localStorage.getItem('anthropic_key');
+  btn.style.borderColor = has ? '#c7d2fe' : '';
+  btn.style.color       = has ? '#4f46e5' : '';
+  btn.title = has ? 'API Key configurada — click para cambiar' : 'Configurar Anthropic API Key para análisis IA';
+}
+
+async function generateAIExplanation(rawText) {
+  const apiKey = localStorage.getItem('anthropic_key');
+  if (!apiKey) { alertErr('Configurá tu Anthropic API Key primero (botón 🔑 API Key)'); return null; }
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 500,
+      messages: [{ role: 'user', content: `Sos un analista de trading algorítmico. Leé este pseudocódigo de StrategyQuant X y explicá en español, con narrativa simple y directa, POR QUÉ esta estrategia ejecuta una entrada.\n\nNo listes condiciones técnicas en forma de lista. Escribí 3-5 oraciones corridas como si se lo explicaras a un trader que quiere entender el comportamiento sin ser programador. Usá frases como "espera que el mercado...", "entra cuando...", "la lógica detrás es...", "sale si...". Enfocate en el trasfondo y la intuición de la señal, no en la sintaxis.\n\nPseudocódigo:\n${rawText}` }]
+    })
+  });
+  if (!resp.ok) throw new Error(`Claude API: ${resp.status}`);
+  const data = await resp.json();
+  return data.content[0].text.trim();
+}
+
+async function triggerAIPseudo(botId) {
+  const bot = DB.find(b => String(b.magic||b.id) === botId);
+  if (!bot || !bot.pseudocodigo) { alertErr('Bot o pseudocódigo no encontrado'); return; }
+
+  const expEl = document.getElementById('ai-exp-' + botId);
+  if (expEl) expEl.innerHTML = '<span style="color:var(--text3)">🤖 Analizando con Claude AI...</span>';
+
+  try {
+    const aiExp = await generateAIExplanation(bot.pseudocodigo);
+    if (!aiExp) return;
+    bot.pseudocodigoData = { ...(bot.pseudocodigoData||{}), aiExplanation: aiExp };
+    if (expEl) expEl.innerHTML = aiExp.replace(/\n/g,'<br>');
+    // Actualizar badge en el header de la sección
+    const badgeContainer = expEl?.previousElementSibling;
+    if (badgeContainer && !badgeContainer.querySelector('.ai-badge')) {
+      badgeContainer.insertAdjacentHTML('afterbegin', '<span class="ai-badge" style="font-size:9px;background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe;padding:1px 7px;border-radius:10px;font-weight:600">✦ Claude AI</span>');
+    }
+    // Guardar en Supabase
+    if (sb.isAuthenticated()) {
+      try { await sb.upsertBots(DB); } catch(e) { console.warn('upsert failed:', e.message); }
+    }
+    alertOk('✓ Análisis IA guardado');
+  } catch(e) {
+    if (expEl) expEl.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    alertErr('Error al llamar Claude AI: ' + e.message);
+  }
+}
+
+// ─── Pseudocódigo: parse + render ────────────────────────────────────
+function parseSQXFile(text) {
+  const na = 'No especificado';
+  const r = { entradaTipo:na, ordenTipo:na, indicadores:na, filtros:na, sesion:na, stopLoss:na, takeProfit:na, moneyManagement:na, condicionesLong:[], condicionesShort:[], timeframe:na };
+
+  const tfM = text.match(/backtested\s+on\s+\S+\s*\/\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\b/i)
+           || text.match(/\btimeframe\s*(?:\([^)]*\))?\s*[:=]\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\b/i)
+           || text.match(/data\s+series[^\n]*\(\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\s*[,)]/i);
+  if (tfM) r.timeframe = tfM[1].toUpperCase();
+
+  const vars = {};
+  for (const m of text.matchAll(/(?:int|double|bool)\s+(\w+)\s*=\s*([^;\n]+)/gi))
+    vars[m[1].trim()] = m[2].trim();
+  const resolveVars = s => s.replace(/\b([A-Za-z_]\w*)\b/g, k => vars[k] ?? k);
+  const cleanExpr = s => s.replace(/Main\s+chart,?\s*/gi,'').replace(/\s+/g,' ').trim();
+
+  const longM  = text.match(/LongEntrySignal\s*=\s*([\s\S]*?);/i);
+  const shortM = text.match(/ShortEntrySignal\s*=\s*([\s\S]*?);/i);
+  const longExpr  = longM  ? longM[1].trim()  : 'false';
+  const shortExpr = shortM ? shortM[1].trim() : 'false';
+  const isFalseExpr = s => /^\(?\s*false(\s+and\s+false)*\s*\)?$/i.test(s.replace(/\s+/g,' ').trim());
+  const hasLongOrder  = /Open\s+Long\s+order/i.test(text);
+  const hasShortOrder = /Open\s+Short\s+order/i.test(text);
+  const hasLong  = hasLongOrder  || (!isFalseExpr(longExpr)  && !hasShortOrder);
+  const hasShort = hasShortOrder || (!isFalseExpr(shortExpr) && !hasLongOrder);
+
+  if (hasLong && hasShort) r.entradaTipo = 'Both (Buy + Sell)';
+  else if (hasLong)        r.entradaTipo = 'Buy (Long)';
+  else if (hasShort)       r.entradaTipo = 'Sell (Short)';
+
+  function splitAnd(expr) {
+    const parts = []; let depth = 0, buf = '';
+    const s = expr.replace(/^\s*\(+|\)+\s*;?\s*$/g,'');
+    for (let i = 0; i < s.length; i++) {
+      if (s[i]==='(') { depth++; buf+=s[i]; }
+      else if (s[i]===')') { depth--; buf+=s[i]; }
+      else if (depth===0 && /^and\b/i.test(s.slice(i))) {
+        const p = buf.trim().replace(/^\(+|\)+$/g,'').trim();
+        if (p.length>3) parts.push(cleanExpr(p));
+        buf=''; i+=2;
+      } else buf+=s[i];
+    }
+    const last = buf.trim().replace(/^\(+|\)+$/g,'').trim();
+    if (last.length>3) parts.push(cleanExpr(last));
+    return parts;
+  }
+
+  r.condicionesLong  = hasLong  ? splitAnd(longExpr)  : [];
+  r.condicionesShort = hasShort ? splitAnd(shortExpr) : [];
+
+  const orderM = text.match(/Open\s+(?:Long|Short)\s+order\s+at\s+(\w+)/i);
+  if (orderM) r.ordenTipo = orderM[1];
+
+  const sessM = text.match(/LimitSignalsTimeRange\s*=\s*true\s*\((\d{2,4})\s*-\s*(\d{2,4})/i);
+  if (sessM) {
+    const fmt = t => `${t.padStart(4,'0').slice(0,2)}:${t.padStart(4,'0').slice(2)}`;
+    r.sesion = `${fmt(sessM[1])} – ${fmt(sessM[2])}`;
+  }
+
+  const slM = text.match(/Stop\s+Loss\s*=\s*([^;\n]+)/i);
+  if (slM) r.stopLoss = cleanExpr(resolveVars(slM[1]));
+
+  const tsM = text.match(/Trailing\s+Stop\s*=\s*([^;\n]+)/i);
+  if (tsM) { const ts = cleanExpr(resolveVars(tsM[1])); r.stopLoss = r.stopLoss !== na ? `${r.stopLoss} + Trailing ${ts}` : `Trailing: ${ts}`; }
+
+  const tpM = text.match(/(?:Take\s+Profit|Profit\s+Target)\s*=\s*([^;\n]+)/i);
+  if (tpM) r.takeProfit = cleanExpr(resolveVars(tpM[1]));
+
+  const exitM = text.match(/Exit\s+After\s+(\w+)\s+bars/i);
+  if (exitM) { const bars = resolveVars(exitM[1]); const exitStr = `Máx. ${bars} barras`; r.takeProfit = r.takeProfit !== na ? `${r.takeProfit} / ${exitStr}` : exitStr; }
+
+  const mmM = text.match(/(?:Fixed\s+)?lot\s+size\s*[=:]\s*([^\n;]+)/i) || text.match(/risk\s*(?:per\s+trade)?\s*[=:]\s*([^\n;]+)/i);
+  if (mmM) r.moneyManagement = mmM[1].trim();
+
+  const IND_SKIP = /^(Open|Close|High|Low|Volume|True|False|And|Or|Not|Main|Exit|Enter|Signal|Order|Trade|Stop|Limit|Market|Long|Short|Buy|Sell|GetValue|SetValue|Print|Log|Alert|Return|If|Then|Else|End|Begin|Var|Int|Double|Bool|String)$/i;
+  const indPat = /\b([A-Z][A-Za-z]{2,})\s*\([^)]{1,120}\)/g;
+  const indNames = [...new Set([...text.matchAll(indPat)].map(m => m[1]).filter(name => !IND_SKIP.test(name)))];
+  if (indNames.length) {
+    r.indicadores = indNames.slice(0, 10).map(name => {
+      const call = text.match(new RegExp(`\\b${name}\\s*\\([^)]+\\)`, 'i'));
+      return call ? cleanExpr(call[0]) : name;
+    }).join(' | ');
+  }
+
+  const allConds = [...r.condicionesLong, ...r.condicionesShort];
+  if (allConds.length) r.filtros = [...new Set(allConds)].slice(0,6).join(' | ');
+
+  return r;
+}
+
+function buildEntradaExplanation(p) {
+  const na = 'No especificado';
+  const clean = s => s
+    .replace(/\[1\]/g, ' (barra anterior)')
+    .replace(/\[(\d+)\]/g, (_, n) => ` (hace ${n} barras)`)
+    .replace(/\bfor\s+(\d+)\s+bars\b/gi, 'durante $1 barras consecutivas')
+    .replace(/\bis\s+lower\s+than\b/gi, '<')
+    .replace(/\bis\s+higher\s+than\b/gi, '>')
+    .replace(/\s+/g,' ').trim();
+
+  const parts = [];
+  const dirs = { 'Both (Buy + Sell)':'en ambas direcciones (Long y Short)', 'Buy (Long)':'solo en Long (compras)', 'Sell (Short)':'solo en Short (ventas)' };
+  const dirTxt = dirs[p.entradaTipo];
+  const ordTxt = p.ordenTipo !== na ? `, con órdenes a ${p.ordenTipo}` : '';
+  if (dirTxt) parts.push(`Opera ${dirTxt}${ordTxt}.`);
+
+  if (p.condicionesLong?.length) {
+    const items = p.condicionesLong.map((c,i)=>`<strong>(${i+1})</strong> ${clean(c)}`).join('<br>');
+    parts.push(`<em>Entrada Long</em> — se dispara cuando se cumplen todas:<br>${items}`);
+  }
+  if (p.condicionesShort?.length) {
+    const items = p.condicionesShort.map((c,i)=>`<strong>(${i+1})</strong> ${clean(c)}`).join('<br>');
+    parts.push(`<em>Entrada Short</em> — se dispara cuando se cumplen todas:<br>${items}`);
+  }
+  if (!p.condicionesLong?.length && !p.condicionesShort?.length && p.indicadores !== na)
+    parts.push(`Señal basada en: ${p.indicadores}.`);
+
+  if (p.sesion !== na) parts.push(`Horario operativo: ${p.sesion}.`);
+
+  const exits = [];
+  if (p.stopLoss !== na)   exits.push(`Stop Loss: ${p.stopLoss}`);
+  if (p.takeProfit !== na) exits.push(`Salida: ${p.takeProfit}`);
+  if (exits.length) parts.push(exits.join(' — '));
+
+  if (p.moneyManagement !== na) parts.push(`Sizing: ${p.moneyManagement}.`);
+
+  return parts.length ? parts.join('<br><br>') : 'No se detectaron condiciones. Verificá que el archivo sea un Pseudo Source Code exportado desde SQX.';
+}
+
+function buildPseudocodigoHTML(psc) {
+  if (!psc) return '';
+  const p = psc.parsed;
+  const na = 'No especificado';
+  const card = (lbl, val) => `<div class="kpi-sm"><div class="kpi-sm-lbl">${lbl}</div><div class="kpi-sm-val" style="font-size:12px;font-weight:600;color:${val===na?'var(--text3)':'var(--text)'};white-space:normal;line-height:1.4">${val}</div></div>`;
+  const fname = psc.filename ? `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">📄 ${psc.filename}</div>` : '';
+  const explanation = buildEntradaExplanation(p);
+  return `${fname}
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+    ${card('ENTRADA', p.entradaTipo)}
+    ${card('ORDEN', p.ordenTipo)}
+    ${card('SESIÓN', p.sesion)}
+    ${card('MONEY MGMT', p.moneyManagement)}
+    ${card('STOP LOSS', p.stopLoss)}
+    ${card('TAKE PROFIT', p.takeProfit)}
+    ${card('INDICADORES', p.indicadores)}
+    ${card('FILTROS', p.filtros)}
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid #4f46e5;border-radius:var(--radius);padding:12px 14px">
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      ¿Por qué entra?
+      ${psc.aiExplanation ? '<span style="font-size:9px;background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe;padding:1px 7px;border-radius:10px;font-weight:600">✦ Claude AI</span>' : ''}
+      <button onclick="triggerAIPseudo('${psc.botId}')" style="margin-left:auto;font-size:11px;padding:2px 10px;border:1px solid #c7d2fe;background:#eef2ff;color:#4f46e5;border-radius:10px;cursor:pointer;font-weight:600" title="Requiere Anthropic API Key">🤖 ${psc.aiExplanation ? 'Re-generar' : 'Analizar con IA'}</button>
+    </div>
+    <div id="ai-exp-${psc.botId}" style="font-size:13px;color:var(--text);line-height:1.8">${psc.aiExplanation ? psc.aiExplanation.replace(/\n/g,'<br>') : explanation}</div>
+  </div>`;
 }
 
 function parseSQXOverview(text) {
@@ -866,6 +1106,7 @@ async function persistPrefs() {
 // ─── Init ─────────────────────────────────────────────────────────────
 async function init() {
   if (typeof sb === 'undefined' || !sb.isAuthenticated()) { window.location.href = 'index.html'; return; }
+  updateApiKeyBtn();
   setSyncStatus('Cargando...', '');
   try {
     const [bots, prefs] = await Promise.all([sb.getBots(), sb.getPrefs()]);
