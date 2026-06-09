@@ -529,10 +529,44 @@ async function loadData() {
   }
 }
 
+// ─── Demo mode (local sin sesión) ────────────────────────────────────
+function loadDemo() {
+  const startMs = new Date('2026-01-06').getTime();
+  const dayMs = 86400000;
+  const demoTrades = [];
+  let cum = 0;
+  const pairs = [
+    { magic: 9991, name: 'Demo Bot A', symbol: 'EURUSD', pnls: [52,-30,80,-15,45,60,-90,35,70,-20,55,-40,90,25,-60,40,75,-35,50,80,-25,65,-45,30,85,-55,20,95,-10,70] },
+    { magic: 9992, name: 'Demo Bot B', symbol: 'GBPJPY', pnls: [-40,60,-20,90,30,-70,50,-15,80,-30,40,-60,70,20,-50,95,-25,60,-35,45,75,-80,30,55,-10,85,-45,65,-20,40] },
+  ];
+  const fakeTrades = [];
+  pairs.forEach(p => {
+    let c = 0;
+    p.pnls.forEach((profit, i) => {
+      const closeMs = startMs + i * 7 * dayMs + Math.random() * 5 * dayMs;
+      const closeDate = new Date(closeMs).toISOString().slice(0,16).replace('T',' ');
+      const openDate  = new Date(closeMs - 2 * dayMs).toISOString().slice(0,16).replace('T',' ');
+      c = +(c + profit).toFixed(2);
+      fakeTrades.push({ magic: p.magic, account_label: 'Demo', symbol: p.symbol,
+        profit, commission: 0, swap: 0, lots: 0.1,
+        open_price: 1.1000, close_price: 1.1010, open_time: openDate, close_time: closeDate });
+    });
+  });
+  _allTrades = fakeTrades;
+  _botsByMagic = { '9991': { name: 'Demo Bot A', magic: 9991, symbol: 'EURUSD' }, '9992': { name: 'Demo Bot B', magic: 9992, symbol: 'GBPJPY' } };
+  LIVE = computeLiveMetrics(fakeTrades);
+  populateAccountFilter();
+  renderTable();
+  setSyncStatus('MODO DEMO — datos ficticios', '#92400e');
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────
 async function init() {
-  if (typeof sb === 'undefined' || !sb.isAuthenticated()) { window.location.href = 'index.html'; return; }
-  // acct-wrap se muestra en populateAccountFilter() solo si hay > 1 cuenta
+  if (typeof sb === 'undefined' || !sb.isAuthenticated()) {
+    if (location.protocol === 'file:') { loadDemo(); return; }
+    window.location.href = 'index.html';
+    return;
+  }
   await loadData();
 }
 document.addEventListener('DOMContentLoaded', init);
