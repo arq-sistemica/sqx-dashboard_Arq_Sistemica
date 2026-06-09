@@ -492,19 +492,30 @@ function buildDetail(bot) {
   let tabOverview = '';
   if (bot.overviewData?.monthlyData?.length) {
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    // métricas resumen
+    const m = bot.overviewData.metrics || {};
+    if (Object.keys(m).length) {
+      tabOverview += `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:12px">
+        ${[['PF', m.pf], ['DD%', m.ddPct ? m.ddPct+'%' : '—'], ['WR%', m.wr ? m.wr+'%' : '—'],
+           ['Sharpe', m.sharpe], ['CAGR', m.cagr ? m.cagr+'%' : '—'], ['Trades', m.trades],
+           ['Net P&L', m.totalProfit ? '$'+m.totalProfit : '—']].map(([k,v]) =>
+          `<span style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 10px">
+            <span style="color:var(--text3)">${k}</span> <b>${v??'—'}</b></span>`).join('')}
+      </div>`;
+    }
     tabOverview += '<div style="overflow-x:auto;margin-bottom:12px"><table class="monthly-table"><thead><tr><th>Año</th>' +
       MONTHS.map(m => `<th>${m}</th>`).join('') + '<th>YTD</th></tr></thead><tbody>';
     bot.overviewData.monthlyData.forEach(row => {
       tabOverview += `<tr><td class="year-col">${row.year}</td>` +
-        row.months.map(v => v === null ? '<td>—</td>' :
-          `<td class="${v>=0?'m-pos':'m-neg'}">${v.toFixed(1)}%</td>`).join('') +
-        `<td class="${(row.ytd||0)>=0?'m-pos':'m-neg'}">${row.ytd!==null?row.ytd.toFixed(1)+'%':'—'}</td></tr>`;
+        row.months.map(v => v === null || v === 0 ? '<td style="color:var(--text3)">—</td>' :
+          `<td class="${v>=0?'m-pos':'m-neg'}">${v >= 0 ? '+' : ''}${v.toFixed(0)}</td>`).join('') +
+        `<td class="${(row.ytd||0)>=0?'m-pos':'m-neg'}" style="font-weight:700">${row.ytd!==null?( row.ytd>=0?'+':'')+row.ytd.toFixed(0):'—'}</td></tr>`;
     });
     tabOverview += '</tbody></table></div>';
   }
-  tabOverview += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Pegá aquí el JSON de Overview exportado desde SQX:</div>
-    <textarea id="ov-${id}" rows="5" style="width:100%;font-size:11px;font-family:Consolas,monospace;border:1px solid var(--border2);border-radius:var(--radius);padding:8px;resize:vertical;background:var(--bg2)">${bot.overviewData ? JSON.stringify(bot.overviewData, null, 2) : ''}</textarea>
-    <button style="margin-top:6px" onclick="saveOverview('${id}')">💾 Guardar Overview</button>`;
+  tabOverview += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Pegá el Overview completo copiado desde SQX:</div>
+    <textarea id="ov-${id}" rows="6" placeholder="TOTAL PROFIT&#10;$ 6038.41&#10;...&#10;MONTHLY PERFORMANCE ($)&#10;Year&#9;Jan&#9;Feb&#9;..." style="width:100%;font-size:11px;font-family:Consolas,monospace;border:1px solid var(--border2);border-radius:var(--radius);padding:8px;resize:vertical;background:var(--bg2)"></textarea>
+    <button style="margin-top:6px" onclick="saveOverview('${id}')">💾 Parsear y guardar</button>`;
 
   // ── pestaña Pseudocódigo ──────────────────────────────────────────
   const tabPseudo = bot.pseudocodigo
@@ -532,11 +543,65 @@ function switchDTab(id, tab, btn) {
   btn.classList.add('active');
 }
 
+function parseSQXOverview(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  const flat  = lines.join('\n');
+
+  function extractNum(label) {
+    const re = new RegExp(label + '[^\\d\\-]*([\\-\\d\\.]+)', 'i');
+    const m = flat.match(re);
+    return m ? parseFloat(m[1]) : null;
+  }
+
+  const metrics = {
+    totalProfit:    extractNum('TOTAL PROFIT'),
+    trades:         extractNum('# OF TRADES'),
+    pf:             extractNum('PROFIT FACTOR'),
+    dd:             extractNum('DRAWDOWN\\n\\$'),
+    ddPct:          extractNum('% DRAWDOWN'),
+    wr:             extractNum('WINNING PERCENTAGE'),
+    sharpe:         extractNum('SHARPE RATIO'),
+    cagr:           extractNum('CAGR'),
+    retdd:          extractNum('RETURN / DD RATIO'),
+    yearlyAvgPct:   extractNum('YEARLY AVG % RETURN'),
+    sqn:            extractNum('SQN SCORE'),
+  };
+
+  // Tabla mensual
+  const monthlyData = [];
+  const monthlyIdx = lines.findIndex(l => l.includes('MONTHLY PERFORMANCE'));
+  if (monthlyIdx >= 0) {
+    // buscar fila header Year Jan Feb ...
+    let headerIdx = -1;
+    for (let i = monthlyIdx; i < Math.min(monthlyIdx + 5, lines.length); i++) {
+      if (lines[i].toLowerCase().includes('year') && lines[i].toLowerCase().includes('jan')) {
+        headerIdx = i; break;
+      }
+    }
+    if (headerIdx >= 0) {
+      for (let i = headerIdx + 1; i < lines.length; i++) {
+        const cols = lines[i].split('\t');
+        if (!cols[0] || !/^\d{4}$/.test(cols[0].trim())) break;
+        const year = parseInt(cols[0]);
+        const months = [];
+        for (let m = 1; m <= 12; m++) {
+          const v = parseFloat(cols[m]);
+          months.push(isNaN(v) ? null : v === 0 ? null : v);
+        }
+        const ytd = parseFloat(cols[13]);
+        monthlyData.push({ year, months, ytd: isNaN(ytd) ? null : ytd });
+      }
+    }
+  }
+
+  return { metrics, monthlyData };
+}
+
 async function saveOverview(id) {
   const ta = document.getElementById('ov-' + id);
-  if (!ta) return;
-  let parsed;
-  try { parsed = JSON.parse(ta.value.trim()); } catch { alertErr('JSON inválido. Revisá el formato.'); return; }
+  if (!ta || !ta.value.trim()) return;
+  const parsed = parseSQXOverview(ta.value);
+  if (!parsed.monthlyData.length) { alertErr('No se encontró la tabla mensual. Asegurate de copiar el Overview completo desde SQX.'); return; }
   const bot = DB.find(b => String(b.magic || b.id) === id);
   if (!bot) return;
   bot.overviewData = parsed;
@@ -544,7 +609,8 @@ async function saveOverview(id) {
     try { await sb.upsertBot(bot); setSyncStatus('✓ Overview guardado', '#1a7f4b'); setTimeout(() => setSyncStatus('',''), 3000); }
     catch(e) { alertErr('Error al guardar: ' + e.message); return; }
   }
-  alertOk('✓ Overview guardado.');
+  alertOk(`✓ Overview guardado — ${parsed.monthlyData.length} años, métricas extraídas.`);
+  render();
 }
 
 // ─── Borrar bots ─────────────────────────────────────────────────────
