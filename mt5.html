@@ -93,6 +93,14 @@ td.spark{text-align:center;padding:4px 10px}
     <span class="filter-label">Symbol:</span>
     <select class="filter-sel" id="f-symbol" onchange="applyFilters()"><option value="">Todos</option></select>
   </span>
+  <span style="display:flex;align-items:center;gap:6px">
+    <span class="filter-label">Dirección:</span>
+    <select class="filter-sel" id="f-dir" onchange="applyFilters()">
+      <option value="">Todas</option>
+      <option value="buy">Long</option>
+      <option value="sell">Short</option>
+    </select>
+  </span>
   <span class="filter-count" id="f-count"></span>
 </div>
 
@@ -414,9 +422,11 @@ function populateAccountFilter() {
 function applyFilters() {
   const acct = document.getElementById('f-account').value;
   const sym  = document.getElementById('f-symbol').value;
+  const dir  = document.getElementById('f-dir').value;
   let filtered = _allTrades;
   if (acct) filtered = filtered.filter(t => (t.account_label || String(t.account_id)) === acct);
   if (sym)  filtered = filtered.filter(t => t.symbol === sym);
+  if (dir)  filtered = filtered.filter(t => t.type === dir);
   LIVE = computeLiveMetrics(filtered);
   renderTable();
 }
