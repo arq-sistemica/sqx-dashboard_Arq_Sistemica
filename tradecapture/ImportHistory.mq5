@@ -142,7 +142,7 @@ bool SendTrade(ulong ticket, string accountId, string accountLabel, string userT
       userToken, ticket, accountId, accountLabel,
       broker, server, currency,
       magic, symbol,
-      (dealType == DEAL_TYPE_BUY ? "buy" : "sell"),
+      (dealType == DEAL_TYPE_BUY ? "sell" : "buy"),
       TimeToString(openTime,  TIME_DATE|TIME_SECONDS),
       TimeToString(closeTime, TIME_DATE|TIME_SECONDS),
       lots, openPrice, closePrice,
