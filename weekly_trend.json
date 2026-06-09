@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-05-31T16:54:21.935Z",
+  "generated_at": "2026-06-09T02:00:03.617Z",
   "sr_source": "cache",
   "sr_cache_date": "2026-05-31",
   "indices": {
     "DXY": {
-      "price": 98.942,
+      "price": 99.957,
       "trend": "BAJISTA",
       "zona": {
         "entre_r": "R Psicológica",
@@ -12,11 +12,11 @@
         "nearest_label": "R Psicológica",
         "nearest_tipo": "R",
         "nearest_precio": 100.5,
-        "dist_pct": 1.57
+        "dist_pct": 0.54
       }
     },
     "EXY": {
-      "price": 116.6,
+      "price": 115.345,
       "trend": "ALCISTA",
       "zona": {
         "entre_r": "R Fuerte",
@@ -24,55 +24,55 @@
         "nearest_label": "S Moderado",
         "nearest_tipo": "S",
         "nearest_precio": 114.75,
-        "dist_pct": 1.59
+        "dist_pct": 0.52
       }
     },
     "BXY": {
-      "price": 134.572,
+      "price": 133.5,
       "trend": "ALCISTA",
       "zona": {
-        "entre_r": "R Mega",
-        "entre_s": "R Fuerte",
+        "entre_r": "R Fuerte",
+        "entre_s": "S Moderado",
         "nearest_label": "R Fuerte",
         "nearest_tipo": "R",
         "nearest_precio": 134,
-        "dist_pct": 0.43
+        "dist_pct": 0.37
       }
     },
     "AXY": {
-      "price": 71.845,
+      "price": 70.45,
       "trend": "MUY ALCISTA",
       "zona": {
-        "entre_r": "R Mega",
-        "entre_s": "R Fuerte",
-        "nearest_label": "R Mega",
+        "entre_r": "R Fuerte",
+        "entre_s": "S Pivot",
+        "nearest_label": "R Fuerte",
         "nearest_tipo": "R",
-        "nearest_precio": 72.1,
-        "dist_pct": 0.35
+        "nearest_precio": 71.45,
+        "dist_pct": 1.42
       }
     },
     "JXY": {
-      "price": 62.781,
+      "price": 62.442,
       "trend": "BAJISTA",
       "zona": {
         "entre_r": "S Mayor",
         "entre_s": "S Crítico",
-        "nearest_label": "S Mayor",
+        "nearest_label": "S Crítico",
         "nearest_tipo": "S",
-        "nearest_precio": 63.5,
-        "dist_pct": 1.15
+        "nearest_precio": 62,
+        "dist_pct": 0.71
       }
     },
     "CXY": {
-      "price": 72.482,
+      "price": 71.713,
       "trend": "LATERAL",
       "zona": {
-        "entre_r": "R Fuerte",
+        "entre_r": "S Moderado",
         "entre_s": "S Moderado",
         "nearest_label": "S Moderado",
         "nearest_tipo": "S",
         "nearest_precio": 72.25,
-        "dist_pct": 0.32
+        "dist_pct": 0.75
       }
     }
   },
@@ -89,7 +89,7 @@
       },
       "estacionalidad": {
         "pos": 55,
-        "month": 4
+        "month": 5
       },
       "bots_dir": "Long"
     },
@@ -104,8 +104,8 @@
         "label": "Alineado"
       },
       "estacionalidad": {
-        "pos": 55,
-        "month": 4
+        "pos": 73,
+        "month": 5
       },
       "bots_dir": "Long"
     },
@@ -120,8 +120,8 @@
         "label": "Alineado"
       },
       "estacionalidad": {
-        "pos": 55,
-        "month": 4
+        "pos": 82,
+        "month": 5
       },
       "bots_dir": "Long"
     },
@@ -137,7 +137,7 @@
       },
       "estacionalidad": {
         "pos": 73,
-        "month": 4
+        "month": 5
       },
       "bots_dir": "Long"
     },
@@ -152,8 +152,8 @@
         "label": "Alineado"
       },
       "estacionalidad": {
-        "pos": 73,
-        "month": 4
+        "pos": 64,
+        "month": 5
       },
       "bots_dir": "Long"
     },
@@ -168,8 +168,8 @@
         "label": "Neutro"
       },
       "estacionalidad": {
-        "pos": 55,
-        "month": 4
+        "pos": 64,
+        "month": 5
       },
       "bots_dir": "Short"
     },
@@ -185,7 +185,7 @@
       },
       "estacionalidad": {
         "pos": 45,
-        "month": 4
+        "month": 5
       },
       "bots_dir": "Long"
     },
@@ -201,7 +201,7 @@
       },
       "estacionalidad": {
         "pos": 45,
-        "month": 4
+        "month": 5
       },
       "bots_dir": "Short"
     }
