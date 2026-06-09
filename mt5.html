@@ -273,10 +273,16 @@ function equityCurve(tradeList) {
     return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
   }).join('');
 
-  // Fill area (usando color del último valor)
-  const coords  = pcts.map((p, i) => `${cx(i)},${cy(p)}`).join(' ');
-  const colorBgFill = pcts[pcts.length-1] >= 0 ? '#eaf7f0' : '#fef2f2';
-  const fillPts = `${cx(0)},${zeroY} ${coords} ${cx(n)},${zeroY}`;
+  // Fill areas: verde encima del cero, rojo debajo — usando los mismos segmentos
+  const fillGreenPts = [], fillRedPts = [];
+  for (const s of segments) {
+    const above = s.color === '#1a7f4b';
+    const fpts = `${s.pts[0].x},${zeroY} ` + s.pts.map(p=>`${p.x},${p.y}`).join(' ') + ` ${s.pts[s.pts.length-1].x},${zeroY}`;
+    if (above) fillGreenPts.push(fpts); else fillRedPts.push(fpts);
+  }
+  const fillSvg =
+    fillGreenPts.map(p => `<polygon points="${p}" fill="#eaf7f0" opacity="0.7"/>`).join('') +
+    fillRedPts.map(p  => `<polygon points="${p}" fill="#fef2f2" opacity="0.7"/>`).join('');
 
   // Y: ~5 niveles equidistantes que incluyan 0
   const step = rangeP <= 5 ? 1 : rangeP <= 15 ? 2 : rangeP <= 40 ? 5 : rangeP <= 100 ? 10 : 20;
@@ -313,7 +319,7 @@ function equityCurve(tradeList) {
     ${yGridSvg}
     ${xTicksSvg.join('')}
     <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+cH}" stroke="#d1d5db" stroke-width="1"/>
-    <polygon points="${fillPts}" fill="${colorBgFill}" opacity="0.6"/>
+    ${fillSvg}
     ${linesSvg}
     ${yLabelsSvg}
   </svg>`;
