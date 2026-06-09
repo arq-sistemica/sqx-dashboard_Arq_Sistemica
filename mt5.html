@@ -405,7 +405,7 @@ function computeLiveMetrics(trades) {
 
 // ─── Cuenta filter ────────────────────────────────────────────────────
 function populateAccountFilter() {
-  const accounts = [...new Set(_allTrades.map(t => t.account_label || String(t.account_id)).filter(Boolean))].sort();
+  const accounts = [...new Set(_allTrades.map(t => t.account_label).filter(Boolean))].sort();
   const sel = document.getElementById('f-account');
   const prev = sel.value;
   sel.innerHTML = '<option value="">Todas</option>' +
@@ -424,7 +424,7 @@ function applyFilters() {
   const sym  = document.getElementById('f-symbol').value;
   const dir  = document.getElementById('f-dir').value;
   let filtered = _allTrades;
-  if (acct) filtered = filtered.filter(t => (t.account_label || String(t.account_id)) === acct);
+  if (acct) filtered = filtered.filter(t => t.account_label === acct);
   if (sym)  filtered = filtered.filter(t => t.symbol === sym);
   if (dir)  filtered = filtered.filter(t => t.type === dir);
   LIVE = computeLiveMetrics(filtered);
