@@ -574,7 +574,7 @@ function impParse() {
 
     // Ignorar depósitos y filas sin symbol
     const sym = idx.symbol >= 0 ? (cols[idx.symbol]||'').trim() : '';
-    if (!sym) return;
+    if (!sym) { warns.push(`Fila ${i+1}: sin símbolo — omitida (depósito/resumen)`); return; }
 
     // Parsear fecha MM.DD.YYYY HH:MM → ISO
     function parseDate(s) {
@@ -638,8 +638,9 @@ function impParse() {
     <td>${t.commission.toFixed(2)}</td>
   </tr>`).join('');
 
+  const skipped = dataLines.length - trades.length;
   document.getElementById('imp-preview-title').textContent =
-    `${trades.length} trades detectados — verificá antes de importar`;
+    `${trades.length} trades detectados${skipped > 0 ? ` (${skipped} filas omitidas — ver advertencias)` : ''} — verificá antes de importar`;
   document.getElementById('imp-warn').textContent = warns.join(' | ');
   document.getElementById('imp-confirm-btn').textContent = `Importar ${trades.length} trades a Supabase`;
   document.getElementById('imp-preview').style.display = trades.length ? 'block' : 'none';
