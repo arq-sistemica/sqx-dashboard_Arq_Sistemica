@@ -282,13 +282,15 @@ function equityCurve(tradeList) {
   const pcts  = pts.map(v => v / BASE * 100);
   const tDates = tradeList.map(t => t.closeDate ? t.closeDate.slice(0,10) : '');
   const minP = Math.min(0, ...pcts), maxP = Math.max(0, ...pcts);
-  const rangeP = maxP - minP || 1;
+  const pad = (maxP - minP || 1) * 0.30;
+  const paddedMin = minP - pad, paddedMax = maxP + pad;
+  const rangeP = paddedMax - paddedMin || 1;
   const n = pts.length - 1;
   const color   = pcts[pcts.length-1] >= 0 ? '#1a7f4b' : '#b91c1c';
   const colorBg = pcts[pcts.length-1] >= 0 ? '#eaf7f0' : '#fef2f2';
 
   const cx = i  => (PL + i / (n||1) * cW).toFixed(1);
-  const cy = pct => (PT + (1 - (pct - minP) / rangeP) * cH).toFixed(1);
+  const cy = pct => (PT + (1 - (pct - paddedMin) / rangeP) * cH).toFixed(1);
 
   const zeroY = cy(0);
 
@@ -336,7 +338,7 @@ function equityCurve(tradeList) {
   // Y: ~5 niveles equidistantes que incluyan 0
   const step = rangeP <= 5 ? 1 : rangeP <= 15 ? 2 : rangeP <= 40 ? 5 : rangeP <= 100 ? 10 : 20;
   const yTicks = [];
-  for (let v = Math.ceil(minP / step) * step; v <= maxP + step * 0.1; v += step)
+  for (let v = Math.ceil(paddedMin / step) * step; v <= paddedMax + step * 0.1; v += step)
     yTicks.push(+v.toFixed(1));
   if (!yTicks.includes(0)) yTicks.push(0);
   yTicks.sort((a,b)=>a-b);
