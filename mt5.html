@@ -321,8 +321,13 @@ function equityCurve(tradeList) {
 
   const linesSvg = segments.map(s => {
     const d = s.pts.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
-    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>`;
   }).join('');
+  const dotsSvg = segments.map(s =>
+    s.pts.filter(p => p.v !== undefined).map(p =>
+      `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="white" stroke="${s.color}" stroke-width="1.2"/>`
+    ).join('')
+  ).join('');
 
   // Fill areas: verde encima del cero, rojo debajo — usando los mismos segmentos
   const fillGreenPts = [], fillRedPts = [];
@@ -378,6 +383,7 @@ function equityCurve(tradeList) {
     <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+cH}" stroke="#d1d5db" stroke-width="1"/>
     ${fillSvg}
     ${linesSvg}
+    ${dotsSvg}
     ${yLabelsSvg}
   </svg>`;
 }
