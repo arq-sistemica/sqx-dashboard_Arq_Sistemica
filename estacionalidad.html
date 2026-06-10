@@ -283,9 +283,23 @@ async function loadDashboard() {
 
   if (!Array.isArray(db)) return;
 
+  const SYMBOL_MAP = {
+    'USA500IDXUSD': 'SP500',
+    'US500': 'SP500',
+    'SPX500': 'SP500',
+    'SP500': 'SP500',
+    'NAS100': 'NASDAQ',
+    'NASDAQ': 'NASDAQ',
+    'US100': 'NASDAQ',
+    'USTEC': 'NASDAQ',
+    'XAUUSD': 'XAUUSD',
+    'GOLD': 'XAUUSD',
+  };
+
   db.forEach(bot => {
     if (!bot.symbol) return;
-    const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
+    const rawSym = bot.symbol.toUpperCase().replace(/\s/g,'');
+    const sym = SYMBOL_MAP[rawSym] || rawSym.replace(/[^A-Z0-9]/g,'');
 
     // Leer dirección: campo 'direction' (legacy) → pseudocodigo (Supabase) → pseudocodigoData (fallback)
     let rawDir = bot.direction || _getDir(bot.pseudocodigo) || bot.pseudocodigoData?.parsed?.entradaTipo || '';
