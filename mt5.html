@@ -138,6 +138,7 @@ td.spark{text-align:center;padding:4px 10px}
         <th style="width:32px"></th>
         <th class="left" onclick="sortBy('name')">Bot<span id="s-name"></span></th>
         <th class="left" onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
+        <th>Dir</th>
         <th onclick="sortBy('magic')">Magic<span id="s-magic"></span></th>
         <th class="left" onclick="sortBy('account')">Cuenta<span id="s-account"></span></th>
         <th onclick="sortBy('trades')">Trades<span id="s-trades"></span></th>
@@ -506,9 +507,12 @@ function renderTable() {
     const bot = _botsByMagic[magic];
     const sym = d.tradeList.length ? d.tradeList[d.tradeList.length-1].symbol : (bot?.symbol || '—');
     const retPct = +(d.netProfit / 10000 * 100).toFixed(2);
+    const buys  = d.tradeList.filter(t => t.action === 'Buy').length;
+    const sells = d.tradeList.filter(t => t.action !== 'Buy').length;
+    const dir   = buys > sells ? 'LONG' : sells > buys ? 'SHORT' : null;
     return { magic: Number(magic), name: bot?.name || '—', symbol: sym, account: d.account||'—',
       trades: d.trades, pf: d.pf, ddPct: d.ddPct, winRate: d.winRate, netProfit: d.netProfit,
-      retPct, tradeList: d.tradeList };
+      retPct, tradeList: d.tradeList, dir };
   });
 
   const fn = KEY[sortCol] || (() => '');
@@ -517,7 +521,7 @@ function renderTable() {
 
   const tbody = document.getElementById('mt5-tbody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-state">Sin trades para mostrar. Si esperabas ver datos, revisá el Journal del EA en MT5 (puede estar detenido en el primer error) o verificá que los filtros de cuenta y símbolo estén en "Todas / Todos".</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="empty-state">Sin trades para mostrar. Si esperabas ver datos, revisá el Journal del EA en MT5 (puede estar detenido en el primer error) o verificá que los filtros de cuenta y símbolo estén en "Todas / Todos".</td></tr>';
     return;
   }
 
@@ -527,6 +531,10 @@ function renderTable() {
       <td onclick="event.stopPropagation()" style="width:32px;text-align:center;padding:4px"><input type="checkbox" data-magic="${r.magic}" ${_selectedMagics.has(r.magic) ? 'checked' : ''} onchange="onBotCheckbox(this)"></td>
       <td class="left" title="${r.name}">${name}</td>
       <td class="left">${r.symbol}</td>
+      <td style="font-weight:700;font-size:11px;letter-spacing:.4px;${
+        r.dir === 'LONG'  ? 'color:#1a7f4b' :
+        r.dir === 'SHORT' ? 'color:#b91c1c' : 'color:var(--text3)'
+      }">${r.dir || '—'}</td>
       <td style="font-variant-numeric:tabular-nums;color:var(--text3)">${r.magic}</td>
       <td class="left">${r.account}</td>
       <td>${r.trades}</td>
@@ -556,7 +564,7 @@ function insertDetailRow(row) {
   const detail = document.createElement('tr');
   detail.className = 'detail-row';
   detail.id = 'detail-' + row.magic;
-  detail.innerHTML = '<td colspan="12"><div class="detail-inner">' +
+  detail.innerHTML = '<td colspan="13"><div class="detail-inner">' +
     buildDetail(row.magic, LIVE[String(row.magic)]) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
 }
@@ -583,7 +591,7 @@ function toggleDetail(magic) {
   const detail = document.createElement('tr');
   detail.className = 'detail-row';
   detail.id = 'detail-' + magic;
-  detail.innerHTML = '<td colspan="12"><div class="detail-inner">' + buildDetail(magic, liveData) + '</div></td>';
+  detail.innerHTML = '<td colspan="13"><div class="detail-inner">' + buildDetail(magic, liveData) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
 }
 
