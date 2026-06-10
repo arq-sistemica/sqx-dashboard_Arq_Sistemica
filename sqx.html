@@ -1120,6 +1120,30 @@ async function init() {
     setSyncStatus('Error al cargar', '#b91c1c');
     alertErr('Error cargando bots: ' + e.message);
   }
+  // deep-link desde estacionalidad: sqx.html?bot=<magic>
+  const _dpBot = new URLSearchParams(window.location.search).get('bot');
+  if (_dpBot) {
+    const _dpId = _dpBot;
+    const _tryOpen = () => {
+      const tr = document.querySelector(`tr[data-id="${_dpId}"]`);
+      if (tr) {
+        tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        toggleDetail(_dpId);
+      }
+    };
+    // Esperar a que los bots carguen si aún no están renderizados
+    if (document.querySelector('tr[data-id]')) {
+      _tryOpen();
+    } else {
+      const _obs = new MutationObserver(() => {
+        if (document.querySelector('tr[data-id]')) {
+          _obs.disconnect();
+          _tryOpen();
+        }
+      });
+      _obs.observe(document.getElementById('table-container') || document.body, { childList: true, subtree: true });
+    }
+  }
 }
 document.addEventListener('DOMContentLoaded', init);
 window.addEventListener('beforeunload', persistPrefs);

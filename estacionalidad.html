@@ -246,6 +246,16 @@ async function loadSeasonality() {
   }
 }
 
+function _getDir(pseudo) {
+  if (!pseudo) return '';
+  const lf = /LongEntrySignal\s*=\s*false\s*;/i.test(pseudo);
+  const sf = /ShortEntrySignal\s*=\s*false\s*;/i.test(pseudo);
+  if (!lf && sf)  return 'Long';
+  if (lf  && !sf) return 'Short';
+  if (!lf && !sf) return 'Both';
+  return '';
+}
+
 async function loadDashboard() {
   activeBots = {};
   botMeta    = {};
@@ -277,8 +287,8 @@ async function loadDashboard() {
     if (!bot.symbol) return;
     const sym = bot.symbol.toUpperCase().replace(/[^A-Z]/g, '');
 
-    // Leer dirección desde 'direction' (bot_meta.json) o pseudocodigoData (Supabase)
-    let rawDir = bot.direction || bot.pseudocodigoData?.parsed?.entradaTipo || '';
+    // Leer dirección: campo 'direction' (legacy) → pseudocodigo (Supabase) → pseudocodigoData (fallback)
+    let rawDir = bot.direction || _getDir(bot.pseudocodigo) || bot.pseudocodigoData?.parsed?.entradaTipo || '';
     let dir = null;
     if (/long/i.test(rawDir) && !/sell|short/i.test(rawDir)) dir = 'long';
     else if (/sell|short/i.test(rawDir) && !/long/i.test(rawDir)) dir = 'short';
@@ -288,7 +298,7 @@ async function loadDashboard() {
     if (dir && !activeBots[sym].includes(dir)) activeBots[sym].push(dir);
 
     if (!botMeta[sym]) botMeta[sym] = [];
-    if (dir) botMeta[sym].push({ dir, name: bot.name || sym, magic: bot.magic || '', tf: bot.tf || '' });
+    botMeta[sym].push({ dir: dir || 'mixed', name: bot.name || sym, magic: bot.magic || '', tf: bot.tf || '' });
   });
 }
 
@@ -437,7 +447,7 @@ function renderTable() {
       metas.forEach(m => {
         const dirLabel = m.dir === 'short' ? 'Short' : m.dir === 'long' ? 'Long' : 'Mixto';
         const shortName = (m.name || m.dir).replace(/^(SQX_|sqx_)/i,'');
-        const url = m.magic ? `index.html?magic=${m.magic}&section=mt5` : 'index.html';
+        const url = m.magic ? `sqx.html?bot=${m.magic}` : (m.name ? `sqx.html?bot=${encodeURIComponent(m.name)}` : 'sqx.html');
         html += `<div class="bot-row" onclick="event.stopPropagation();window.open('${url}','_blank')">
           <span class="bot-dir ${m.dir}">${dirLabel}</span>
           <span class="bot-name">${shortName}</span>
