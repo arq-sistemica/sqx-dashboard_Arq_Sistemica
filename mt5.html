@@ -68,6 +68,30 @@ td.spark{text-align:center;padding:4px 10px}
 .toast-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .toast-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 .empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
+
+/* ─── General Panel ──────────────────────────────────────── */
+#general-panel{margin:8px 24px 0}
+#general-panel-btn{font-size:11px;color:var(--text3);border:1px dashed var(--border2);background:transparent}
+#general-panel-body{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-top:6px}
+.gp-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.gp-row:last-child{margin-bottom:0}
+.kpi-card{flex:1;min-width:130px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px}
+.kpi-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.kpi-value{font-size:20px;font-weight:700}
+.donut-block{flex:1;min-width:280px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;gap:10px;align-items:flex-start}
+.donut-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.donut-legend{width:100%;font-size:11px;color:var(--text2);border-collapse:collapse}
+.donut-legend th{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:2px 5px;text-align:left;white-space:nowrap}
+.donut-legend td{padding:2px 5px;white-space:nowrap}
+.monthly-table{width:100%;border-collapse:collapse;font-size:11px}
+.monthly-table th{background:var(--bg3);padding:5px 8px;text-align:center;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap}
+.monthly-table td{padding:5px 8px;text-align:center;color:var(--text2);border-bottom:1px solid var(--border)}
+.monthly-table td:first-child{font-weight:700;color:var(--text);text-align:left}
+
+/* ─── Selection Bar ──────────────────────────────────────── */
+#selection-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:none;background:var(--red-bg);border-top:1px solid var(--red-border);color:var(--red);padding:10px 24px;align-items:center;gap:12px;font-size:13px;font-weight:500}
+#selection-bar button{background:var(--red);color:#fff;border-color:var(--red)}
+#selection-bar button:hover{background:#991b1b;border-color:#991b1b}
 </style>
 </head>
 <body>
@@ -105,11 +129,17 @@ td.spark{text-align:center;padding:4px 10px}
   <span class="filter-count" id="f-count"></span>
 </div>
 
+<div id="general-panel">
+  <button id="general-panel-btn" onclick="toggleGeneralPanel()">▶ Vista General</button>
+  <div id="general-panel-body" style="display:none"></div>
+</div>
+
 <div class="table-card">
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
+        <th style="width:32px"></th>
         <th class="left" onclick="sortBy('name')">Bot<span id="s-name"></span></th>
         <th class="left" onclick="sortBy('symbol')">Symbol<span id="s-symbol"></span></th>
         <th onclick="sortBy('magic')">Magic<span id="s-magic"></span></th>
@@ -193,12 +223,19 @@ td.spark{text-align:center;padding:4px 10px}
 </div>
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 
+<div id="selection-bar">
+  <span id="selection-count"></span>
+  <button onclick="deleteSelectedBots()">Borrar seleccionados</button>
+</div>
+
 <script>
 var _allTrades = [];
 var _botsByMagic = {};
 var LIVE = {};
 var sortCol = 'pf', sortDir = -1;
 var expandedMagic = null;
+var _selectedMagics = new Set();
+var _panelCollapsed = true;
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function authLogout() { if (typeof sb !== 'undefined') sb.signOut(); window.location.href = 'index.html'; }
@@ -245,7 +282,7 @@ function sparkline(tradeList) {
 function equityCurve(tradeList) {
   if (!tradeList || tradeList.length < 2) return '';
   const BASE = 10000;
-  const PL = 48, PB = 18, PT = 6, PR = 10;
+  const PL = 40, PB = 14, PT = 6, PR = 10;
   const W = 620, H = 100;
   const cW = W - PL - PR, cH = H - PT - PB;
 
@@ -309,7 +346,7 @@ function equityCurve(tradeList) {
   // solo línea del cero en Y
   const yGridSvg = `<line x1="${PL}" y1="${cy(0)}" x2="${PL+cW}" y2="${cy(0)}" stroke="#9ca3af" stroke-width="1"/>`;
   const yLabelsSvg = yTicks.map(v =>
-    `<text x="${PL-5}" y="${+cy(v)+3.5}" text-anchor="end" font-size="8" fill="#4b5563">${v>=0?'+':''}${v.toFixed(1)}%</text>`
+    `<text x="${PL-5}" y="${+cy(v)+3.5}" text-anchor="end" font-size="7" fill="#4b5563">${v>=0?'+':''}${v.toFixed(1)}%</text>`
   ).join('');
 
   // X: ticks semanales con densidad adaptativa para evitar superposición
@@ -328,7 +365,7 @@ function equityCurve(tradeList) {
       const x = (PL + frac * cW).toFixed(1);
       const label = wk.toISOString().slice(5,10).replace('-','/');
       xTicksSvg.push(
-        `<text x="${x}" y="${H-4}" text-anchor="middle" font-size="8" fill="#4b5563">${label}</text>`
+        `<text x="${x}" y="${H-4}" text-anchor="middle" font-size="7" fill="#4b5563">${label}</text>`
       );
     }
     wkCount++;
@@ -438,6 +475,7 @@ function applyFilters() {
   if (dir)  filtered = filtered.filter(t => t.type === dir);
   LIVE = computeLiveMetrics(filtered);
   renderTable();
+  renderGeneralPanel();
 }
 
 // ─── Sorting ──────────────────────────────────────────────────────────
@@ -478,13 +516,14 @@ function renderTable() {
 
   const tbody = document.getElementById('mt5-tbody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Sin trades para mostrar. Si esperabas ver datos, revisá el Journal del EA en MT5 (puede estar detenido en el primer error) o verificá que los filtros de cuenta y símbolo estén en "Todas / Todos".</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Sin trades para mostrar. Si esperabas ver datos, revisá el Journal del EA en MT5 (puede estar detenido en el primer error) o verificá que los filtros de cuenta y símbolo estén en "Todas / Todos".</td></tr>';
     return;
   }
 
   tbody.innerHTML = rows.map(r => {
     const name = r.name.length > 38 ? r.name.slice(0,36)+'…' : r.name;
     return `<tr data-magic="${r.magic}" onclick="toggleDetail(${r.magic})">
+      <td onclick="event.stopPropagation()" style="width:32px;text-align:center;padding:4px"><input type="checkbox" data-magic="${r.magic}" ${_selectedMagics.has(r.magic) ? 'checked' : ''} onchange="onBotCheckbox(this)"></td>
       <td class="left" title="${r.name}">${name}</td>
       <td class="left">${r.symbol}</td>
       <td style="font-variant-numeric:tabular-nums;color:var(--text3)">${r.magic}</td>
@@ -513,7 +552,7 @@ function insertDetailRow(row) {
   const detail = document.createElement('tr');
   detail.className = 'detail-row';
   detail.id = 'detail-' + row.magic;
-  detail.innerHTML = '<td colspan="10"><div class="detail-inner">' +
+  detail.innerHTML = '<td colspan="11"><div class="detail-inner">' +
     buildDetail(row.magic, LIVE[String(row.magic)]) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
 }
@@ -540,7 +579,7 @@ function toggleDetail(magic) {
   const detail = document.createElement('tr');
   detail.className = 'detail-row';
   detail.id = 'detail-' + magic;
-  detail.innerHTML = '<td colspan="10"><div class="detail-inner">' + buildDetail(magic, liveData) + '</div></td>';
+  detail.innerHTML = '<td colspan="11"><div class="detail-inner">' + buildDetail(magic, liveData) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
 }
 
@@ -611,6 +650,295 @@ function tradePageNav(magic, dir) {
   if (tbody) tbody.innerHTML = buildTradeRows(slice);
   const lbl = document.getElementById(`page-lbl-${magic}`);
   if (lbl) lbl.textContent = `${page} / ${totalPages}`;
+}
+
+function toggleGeneralPanel() {
+  _panelCollapsed = !_panelCollapsed;
+  const body = document.getElementById('general-panel-body');
+  const btn  = document.getElementById('general-panel-btn');
+  body.style.display = _panelCollapsed ? 'none' : 'block';
+  btn.textContent    = (_panelCollapsed ? '▶' : '▼') + ' Vista General';
+  if (!_panelCollapsed) renderGeneralPanel();
+}
+
+function donutSVG(segs, size) {
+  size = size || 160;
+  const cx = size / 2, cy = size / 2;
+  const ro = size * 0.41, ri = size * 0.26;
+  const total = segs.reduce((s, g) => s + g.value, 0);
+  if (!total) {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+      `<circle cx="${cx}" cy="${cy}" r="${ro}" fill="#e5e7eb"/>` +
+      `<circle cx="${cx}" cy="${cy}" r="${ri}" fill="var(--bg)"/>` +
+      `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="10" fill="#9ca3af">Sin datos</text></svg>`;
+  }
+  let angle = -Math.PI / 2;
+  const paths = segs.map(s => {
+    if (!s.value) return '';
+    const sweep = s.value / total * 2 * Math.PI;
+    const endAngle = angle + sweep;
+    const large = sweep > Math.PI ? 1 : 0;
+    const x1 = cx + ro * Math.cos(angle),    y1 = cy + ro * Math.sin(angle);
+    const x2 = cx + ro * Math.cos(endAngle), y2 = cy + ro * Math.sin(endAngle);
+    const x3 = cx + ri * Math.cos(endAngle), y3 = cy + ri * Math.sin(endAngle);
+    const x4 = cx + ri * Math.cos(angle),    y4 = cy + ri * Math.sin(angle);
+    const d = `M${x1.toFixed(1)},${y1.toFixed(1)} A${ro},${ro} 0 ${large} 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${x3.toFixed(1)},${y3.toFixed(1)} A${ri},${ri} 0 ${large} 0 ${x4.toFixed(1)},${y4.toFixed(1)} Z`;
+    angle = endAngle;
+    return `<path d="${d}" fill="${s.color}"><title>${(s.tooltip || s.label).replace(/</g, '&lt;')}</title></path>`;
+  }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
+}
+
+function renderGeneralPanel() {
+  const body = document.getElementById('general-panel-body');
+  if (!body || _panelCollapsed) return;
+
+  const panelTrades = [];
+  for (const [magic, d] of Object.entries(LIVE)) {
+    for (const t of d.tradeList) {
+      if (!t.symbol || t.symbol === '—' || !t.closeDate || t.closeDate === '—') continue;
+      panelTrades.push({ ...t, magic: Number(magic) });
+    }
+  }
+
+  if (!panelTrades.length) {
+    body.innerHTML = '<div class="empty-state" style="padding:24px">Sin datos para mostrar.</div>';
+    return;
+  }
+
+  // FILA A — KPIs
+  const total = panelTrades.length;
+  const netPnl = +panelTrades.reduce((s, t) => s + t.netProfit, 0).toFixed(2);
+  const winsA   = panelTrades.filter(t => t.netProfit > 0);
+  const lossesA = panelTrades.filter(t => t.netProfit < 0);
+  const wr    = total ? +(winsA.length / total * 100).toFixed(1) : null;
+  const gW    = winsA.reduce((s, t) => s + t.netProfit, 0);
+  const gL    = Math.abs(lossesA.reduce((s, t) => s + t.netProfit, 0));
+  const pfVal = gL > 0 ? +(gW / gL).toFixed(2) : (gW > 0 ? '∞' : 0);
+  const pfClass = pfVal === '∞' ? 'pass' : pfColor(Number(pfVal));
+  const rowA = `<div class="gp-row">
+    <div class="kpi-card"><div class="kpi-label">Total Trades</div><div class="kpi-value">${total}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Net PnL (USD)</div><div class="kpi-value ${npColor(netPnl)}">${netPnl >= 0 ? '+' : ''}${fmt(netPnl, 2)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Win Rate %</div><div class="kpi-value ${wr === null ? 'na' : wrColor(wr)}">${wr === null ? '—' : wr + '%'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Profit Factor</div><div class="kpi-value ${pfClass}">${pfVal}</div></div>
+  </div>`;
+
+  // FILA B — Donut 1: Por Activo
+  const DCOLORS = ['#4f46e5','#0891b2','#059669','#d97706','#dc2626','#7c3aed','#0284c7','#65a30d'];
+  const activeSym = document.getElementById('f-symbol').value;
+  let donut1Html = '';
+  if (activeSym) {
+    const st = panelTrades.filter(t => t.symbol === activeSym);
+    const stW  = st.filter(t => t.netProfit > 0);
+    const stNp = +st.reduce((s, t) => s + t.netProfit, 0).toFixed(2);
+    const stWr = st.length ? +(stW.length / st.length * 100).toFixed(1) : null;
+    const stBuys = st.filter(t => t.action === 'Buy').length;
+    const stLong = st.length ? +(stBuys / st.length * 100).toFixed(1) : 0;
+    donut1Html = `<div class="donut-block" style="flex-direction:column;overflow:hidden;min-width:0">
+      <div class="donut-title">Por Activo — ${activeSym}</div>
+      <table class="donut-legend">
+        <tr><td>Trades</td><td><b>${st.length}</b></td></tr>
+        <tr><td>WR%</td><td><b class="${stWr === null ? 'na' : wrColor(stWr)}">${stWr === null ? '—' : stWr + '%'}</b></td></tr>
+        <tr><td>Net PnL</td><td><b class="${npColor(stNp)}">${stNp >= 0 ? '+' : ''}${fmt(stNp, 2)}</b></td></tr>
+        <tr><td>Long%</td><td><b>${stLong}% L / ${+(100 - stLong).toFixed(1)}% S</b></td></tr>
+      </table></div>`;
+  } else {
+    const bySym = {};
+    for (const t of panelTrades) {
+      if (!bySym[t.symbol]) bySym[t.symbol] = { trades: 0, wins: 0, netPnl: 0 };
+      bySym[t.symbol].trades++;
+      if (t.netProfit > 0) bySym[t.symbol].wins++;
+      bySym[t.symbol].netPnl = +(bySym[t.symbol].netPnl + t.netProfit).toFixed(2);
+    }
+    const sorted = Object.entries(bySym).sort((a, b) => b[1].trades - a[1].trades);
+    const top  = sorted.slice(0, 8);
+    const rest = sorted.slice(8);
+    const othData = rest.reduce((acc, [, v]) => ({
+      trades: acc.trades + v.trades, wins: acc.wins + v.wins,
+      netPnl: +(acc.netPnl + v.netPnl).toFixed(2)
+    }), { trades: 0, wins: 0, netPnl: 0 });
+    const segs1 = top.map(([sym, v], i) => ({
+      color: DCOLORS[i], value: v.trades, label: sym,
+      tooltip: `${sym}\nTrades: ${v.trades}\nWR: ${v.trades ? +(v.wins / v.trades * 100).toFixed(1) : '—'}%\nNet PnL: ${v.netPnl >= 0 ? '+' : ''}${fmt(v.netPnl, 2)}`
+    }));
+    if (rest.length) segs1.push({ color: '#9ca3af', value: othData.trades, label: 'Otros', tooltip: `Otros (${rest.length} símbolos)\nTrades: ${othData.trades}` });
+    const all1 = [...top, ...(rest.length ? [['Otros', othData]] : [])];
+    const legRows1 = all1.map(([sym, v], i) => {
+      const c   = i < top.length ? DCOLORS[i] : '#9ca3af';
+      const wr1 = v.trades ? +(v.wins / v.trades * 100).toFixed(1) : null;
+      return `<tr>
+        <td><span style="display:inline-block;width:8px;height:8px;background:${c};border-radius:2px;margin-right:3px"></span>${sym}</td>
+        <td>${v.trades}</td>
+        <td class="${wr1 === null ? 'na' : wrColor(wr1)}">${wr1 === null ? '—' : wr1 + '%'}</td>
+        <td class="${npColor(v.netPnl)}">${v.netPnl >= 0 ? '+' : ''}${fmt(v.netPnl, 2)}</td>
+      </tr>`;
+    }).join('');
+    donut1Html = `<div class="donut-block" style="overflow:hidden;min-width:0;align-items:center">
+      <div style="flex-shrink:0"><div class="donut-title">Por Activo</div>${donutSVG(segs1, 160)}</div>
+      <div style="flex:1;min-width:0;overflow:hidden"><table class="donut-legend">
+        <thead><tr><th>Symbol</th><th>Trades</th><th>WR%</th><th>Net PnL</th></tr></thead>
+        <tbody>${legRows1}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  // FILA B — Donut 2: Por Dirección
+  const byDir = { buy: { trades: 0, wins: 0, netPnl: 0 }, sell: { trades: 0, wins: 0, netPnl: 0 } };
+  for (const t of panelTrades) {
+    const k = t.action === 'Buy' ? 'buy' : 'sell';
+    byDir[k].trades++;
+    if (t.netProfit > 0) byDir[k].wins++;
+    byDir[k].netPnl = +(byDir[k].netPnl + t.netProfit).toFixed(2);
+  }
+  const totalDir = byDir.buy.trades + byDir.sell.trades;
+  const minArc = totalDir ? Math.max(1, Math.ceil(totalDir / 20)) : 0;
+  const segs2 = [
+    { color: byDir.buy.trades  > 0 ? '#1a7f4b' : '#d1d5db', value: byDir.buy.trades  || minArc, label: 'Long',  tooltip: `Long (Buy)\nTrades: ${byDir.buy.trades}`  },
+    { color: byDir.sell.trades > 0 ? '#4f46e5' : '#d1d5db', value: byDir.sell.trades || minArc, label: 'Short', tooltip: `Short (Sell)\nTrades: ${byDir.sell.trades}` },
+  ];
+  const legRows2 = [
+    ['Long (Buy)',   byDir.buy,  byDir.buy.trades  > 0 ? '#1a7f4b' : '#d1d5db'],
+    ['Short (Sell)', byDir.sell, byDir.sell.trades > 0 ? '#4f46e5' : '#d1d5db'],
+  ].map(([lbl, v, c]) => {
+    const wr2  = v.trades ? +(v.wins / v.trades * 100).toFixed(1) : null;
+    const pct2 = total ? +(v.trades / total * 100).toFixed(1) : 0;
+    return `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;background:${c};border-radius:2px;margin-right:3px"></span>${lbl}</td>
+      <td>${v.trades}</td><td>${pct2}%</td>
+      <td class="${wr2 === null ? 'na' : wrColor(wr2)}">${wr2 === null ? '—' : wr2 + '%'}</td>
+      <td class="${npColor(v.netPnl)}">${v.netPnl >= 0 ? '+' : ''}${fmt(v.netPnl, 2)}</td>
+    </tr>`;
+  }).join('');
+  const donut2Html = `<div class="donut-block" style="overflow:hidden;min-width:0;align-items:center">
+    <div style="flex-shrink:0"><div class="donut-title">Por Dirección</div>${donutSVG(segs2, 160)}</div>
+    <div style="flex:1;min-width:0;overflow:hidden"><table class="donut-legend">
+      <thead><tr><th>Dir</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
+      <tbody>${legRows2}</tbody>
+    </table></div>
+  </div>`;
+
+  // FILA B — Donut 3: Por Sesión
+  const sess = {
+    'Asiática':  { r: [0,  8],  color: '#f59e0b', trades: 0, wins: 0, netPnl: 0 },
+    'Europea':   { r: [9,  15], color: '#4f46e5', trades: 0, wins: 0, netPnl: 0 },
+    'Americana': { r: [16, 23], color: '#dc2626', trades: 0, wins: 0, netPnl: 0 },
+  };
+  for (const t of panelTrades) {
+    const hr = parseInt(t.closeDate.slice(11, 13), 10);
+    if (isNaN(hr)) continue;
+    for (const s of Object.values(sess)) {
+      if (hr >= s.r[0] && hr <= s.r[1]) {
+        s.trades++; if (t.netProfit > 0) s.wins++;
+        s.netPnl = +(s.netPnl + t.netProfit).toFixed(2);
+        break;
+      }
+    }
+  }
+  const segs3 = Object.entries(sess).map(([nm, s]) => ({ color: s.color, value: s.trades, label: nm, tooltip: `${nm}\nTrades: ${s.trades}` }));
+  const sessTotal = Object.values(sess).reduce((a, s) => a + s.trades, 0);
+  const legRows3 = Object.entries(sess).map(([nm, s]) => {
+    const wr3  = s.trades ? +(s.wins / s.trades * 100).toFixed(1) : null;
+    const pct3 = sessTotal ? +(s.trades / sessTotal * 100).toFixed(1) : 0;
+    return `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;background:${s.color};border-radius:2px;margin-right:3px"></span>${nm}</td>
+      <td>${s.trades}</td><td>${pct3}%</td>
+      <td class="${wr3 === null ? 'na' : wrColor(wr3)}">${wr3 === null ? '—' : wr3 + '%'}</td>
+      <td class="${npColor(s.netPnl)}">${s.netPnl >= 0 ? '+' : ''}${fmt(s.netPnl, 2)}</td>
+    </tr>`;
+  }).join('');
+  const donut3Html = `<div class="donut-block" style="overflow:hidden;min-width:0;align-items:center">
+    <div style="flex-shrink:0"><div class="donut-title">Por Sesión</div>${donutSVG(segs3, 160)}</div>
+    <div style="flex:1;min-width:0;overflow:hidden"><table class="donut-legend">
+      <thead><tr><th>Sesión</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
+      <tbody>${legRows3}</tbody>
+    </table></div>
+  </div>`;
+
+  const rowB = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">${donut1Html}${donut2Html}${donut3Html}</div>`;
+
+  // EQUITY CURVE GLOBAL
+  let cumEq = 0;
+  const sortedEq = [...panelTrades].sort((a, b) => a.closeDate > b.closeDate ? 1 : -1);
+  sortedEq.forEach(t => { t.cumProfit = +(cumEq += t.netProfit).toFixed(2); });
+  const rowEq = `<div class="gp-row" style="display:block">
+    <div class="detail-title">Equity Curve Global</div>
+    ${equityCurve(sortedEq)}
+  </div>`;
+
+  // FILA C — Rendimiento Mensual
+  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const byYM = {};
+  for (const t of panelTrades) {
+    const yr = t.closeDate.slice(0, 4);
+    const mo = parseInt(t.closeDate.slice(5, 7), 10) - 1;
+    if (isNaN(mo) || mo < 0 || mo > 11) continue;
+    if (!byYM[yr]) byYM[yr] = new Array(12).fill(0);
+    byYM[yr][mo] = +(byYM[yr][mo] + t.netProfit).toFixed(2);
+  }
+  const years = Object.keys(byYM).sort();
+  const mRows = years.map(yr => {
+    const md  = byYM[yr];
+    const tot = +md.reduce((a, v) => a + v, 0).toFixed(2);
+    const cells = md.map(v => {
+      if (!v) return `<td class="na">—</td>`;
+      const roi = +(v / 10000 * 100).toFixed(2);
+      return `<td class="${npColor(v)}">${roi >= 0 ? '+' : ''}${roi}%</td>`;
+    }).join('');
+    const totRoi = +(tot / 10000 * 100).toFixed(2);
+    return `<tr><td>${yr}</td>${cells}<td class="${npColor(tot)}" style="font-weight:700">${totRoi >= 0 ? '+' : ''}${totRoi}%</td></tr>`;
+  }).join('');
+  const rowC = `<div class="gp-row" style="display:block">
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Rendimiento Mensual Global</div>
+    <div style="overflow-x:auto"><table class="monthly-table">
+      <thead><tr><th></th>${MONTHS.map(m => `<th>${m}</th>`).join('')}<th>Total</th></tr></thead>
+      <tbody>${mRows}</tbody>
+    </table></div>
+  </div>`;
+
+  body.innerHTML = rowA + rowB + rowEq + rowC;
+}
+
+function onBotCheckbox(el) {
+  const magic = Number(el.dataset.magic);
+  if (el.checked) _selectedMagics.add(magic); else _selectedMagics.delete(magic);
+  updateSelectionBar();
+}
+
+function updateSelectionBar() {
+  const bar = document.getElementById('selection-bar');
+  const n = _selectedMagics.size;
+  if (!n) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  document.getElementById('selection-count').textContent =
+    `${n} bot${n !== 1 ? 's' : ''} seleccionado${n !== 1 ? 's' : ''}`;
+}
+
+async function deleteSelectedBots() {
+  if (!_selectedMagics.size) return;
+  const authToken = sb.getToken();
+  const userId = JSON.parse(atob(authToken.split('.')[1])).sub;
+  const items = [..._selectedMagics].map(magic => ({
+    magic,
+    name: (_botsByMagic[String(magic)]?.name) || `magic ${magic}`,
+  }));
+  const msg = '¿Borrar TODOS los trades de:\n' + items.map(i => `- ${i.name} (magic ${i.magic})`).join('\n');
+  if (!confirm(msg)) return;
+  const errors = [];
+  await Promise.all(items.map(async ({ magic }) => {
+    const endpoint = `${SUPABASE_URL}/rest/v1/trades?magic=eq.${magic}&user_id=eq.${userId}`;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authToken}`, 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
+      });
+      if (!res.ok) { const txt = await res.text(); errors.push(`magic ${magic}: ${res.status} ${txt}`); }
+    } catch(e) { errors.push(`magic ${magic}: ${e.message}`); }
+  }));
+  _selectedMagics.clear();
+  updateSelectionBar();
+  if (errors.length) alertErr('Errores al borrar: ' + errors.join('; '));
+  else alertOk('Trades borrados: ' + items.map(i => i.name).join(', '));
+  await loadData();
 }
 
 function setLastEaUpdate(trades) {
@@ -700,6 +1028,7 @@ function loadDemo() {
       const openDate  = new Date(closeMs - 2 * dayMs).toISOString().slice(0,16).replace('T',' ');
       c = +(c + profit).toFixed(2);
       fakeTrades.push({ magic: p.magic, account_label: 'Demo', symbol: p.symbol,
+        type: i % 2 === 0 ? 'buy' : 'sell',
         profit, commission: 0, swap: 0, lots: 0.1,
         open_price: 1.1000, close_price: 1.1010, open_time: openDate, close_time: closeDate });
     });
