@@ -836,11 +836,11 @@ function renderGeneralPanel() {
   const minArc = totalDir ? Math.max(1, Math.ceil(totalDir / 20)) : 0;
   const segs2 = [
     { color: byDir.buy.trades  > 0 ? '#1a7f4b' : '#d1d5db', value: byDir.buy.trades  || minArc, label: 'Long',  tooltip: `Long (Buy)\nTrades: ${byDir.buy.trades}`  },
-    { color: byDir.sell.trades > 0 ? '#4f46e5' : '#d1d5db', value: byDir.sell.trades || minArc, label: 'Short', tooltip: `Short (Sell)\nTrades: ${byDir.sell.trades}` },
+    { color: byDir.sell.trades > 0 ? '#b91c1c' : '#d1d5db', value: byDir.sell.trades || minArc, label: 'Short', tooltip: `Short (Sell)\nTrades: ${byDir.sell.trades}` },
   ];
   const legRows2 = [
     ['Long (Buy)',   byDir.buy,  byDir.buy.trades  > 0 ? '#1a7f4b' : '#d1d5db'],
-    ['Short (Sell)', byDir.sell, byDir.sell.trades > 0 ? '#4f46e5' : '#d1d5db'],
+    ['Short (Sell)', byDir.sell, byDir.sell.trades > 0 ? '#b91c1c' : '#d1d5db'],
   ].map(([lbl, v, c]) => {
     const wr2  = v.trades ? +(v.wins / v.trades * 100).toFixed(1) : null;
     const pct2 = total ? +(v.trades / total * 100).toFixed(1) : 0;
