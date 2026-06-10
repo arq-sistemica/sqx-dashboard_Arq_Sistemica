@@ -718,7 +718,7 @@ function renderGeneralPanel() {
   const pfClass = pfVal === '∞' ? 'pass' : pfColor(Number(pfVal));
   const rowA = `<div class="gp-row">
     <div class="kpi-card"><div class="kpi-label">Total Trades</div><div class="kpi-value">${total}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Net PnL (USD)</div><div class="kpi-value ${npColor(netPnl)}">${netPnl >= 0 ? '+' : ''}${fmt(netPnl, 2)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Net PnL (USD)</div><div class="kpi-value ${npColor(netPnl)}">${fmt(netPnl, 2)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Win Rate %</div><div class="kpi-value ${wr === null ? 'na' : wrColor(wr)}">${wr === null ? '—' : wr + '%'}</div></div>
     <div class="kpi-card"><div class="kpi-label">Profit Factor</div><div class="kpi-value ${pfClass}">${pfVal}</div></div>
   </div>`;
@@ -728,20 +728,38 @@ function renderGeneralPanel() {
   const activeSym = document.getElementById('f-symbol').value;
   let donut1Html = '';
   if (activeSym) {
-    const st = panelTrades.filter(t => t.symbol === activeSym);
-    const stW  = st.filter(t => t.netProfit > 0);
-    const stNp = +st.reduce((s, t) => s + t.netProfit, 0).toFixed(2);
-    const stWr = st.length ? +(stW.length / st.length * 100).toFixed(1) : null;
-    const stBuys = st.filter(t => t.action === 'Buy').length;
-    const stLong = st.length ? +(stBuys / st.length * 100).toFixed(1) : 0;
-    donut1Html = `<div class="donut-block" style="flex-direction:column;overflow:hidden;min-width:0">
-      <div class="donut-title">Por Activo — ${activeSym}</div>
-      <table class="donut-legend">
-        <tr><td>Trades</td><td><b>${st.length}</b></td></tr>
-        <tr><td>WR%</td><td><b class="${stWr === null ? 'na' : wrColor(stWr)}">${stWr === null ? '—' : stWr + '%'}</b></td></tr>
-        <tr><td>Net PnL</td><td><b class="${npColor(stNp)}">${stNp >= 0 ? '+' : ''}${fmt(stNp, 2)}</b></td></tr>
-        <tr><td>Long%</td><td><b>${stLong}% L / ${+(100 - stLong).toFixed(1)}% S</b></td></tr>
-      </table></div>`;
+    const st      = panelTrades.filter(t => t.symbol === activeSym);
+    const stBuys  = st.filter(t => t.action === 'Buy');
+    const stSells = st.filter(t => t.action !== 'Buy');
+    const stTotal = st.length;
+    const stLongPct  = stTotal ? +(stBuys.length  / stTotal * 100).toFixed(1) : 0;
+    const stShortPct = stTotal ? +(stSells.length / stTotal * 100).toFixed(1) : 0;
+    const minArcS = stTotal ? Math.max(1, Math.ceil(stTotal / 20)) : 0;
+    const segsS = [
+      { color: stBuys.length  > 0 ? '#1a7f4b' : '#d1d5db', value: stBuys.length  || minArcS, label: 'Long',  tooltip: `Long (Buy)\nTrades: ${stBuys.length}`  },
+      { color: stSells.length > 0 ? '#4f46e5' : '#d1d5db', value: stSells.length || minArcS, label: 'Short', tooltip: `Short (Sell)\nTrades: ${stSells.length}` },
+    ];
+    const legRowsS = [
+      ['Long (Buy)',   stBuys,  stBuys.length  > 0 ? '#1a7f4b' : '#d1d5db', stLongPct],
+      ['Short (Sell)', stSells, stSells.length > 0 ? '#4f46e5' : '#d1d5db', stShortPct],
+    ].map(([lbl, arr, c, pct]) => {
+      const wins = arr.filter(t => t.netProfit > 0).length;
+      const np   = +arr.reduce((s, t) => s + t.netProfit, 0).toFixed(2);
+      const wrS  = arr.length ? +(wins / arr.length * 100).toFixed(1) : null;
+      return `<tr>
+        <td><span style="display:inline-block;width:8px;height:8px;background:${c};border-radius:2px;margin-right:3px"></span>${lbl}</td>
+        <td>${arr.length}</td><td>${pct}%</td>
+        <td class="${wrS === null ? 'na' : wrColor(wrS)}">${wrS === null ? '—' : wrS + '%'}</td>
+        <td class="${npColor(np)}">${fmt(np, 2)}</td>
+      </tr>`;
+    }).join('');
+    donut1Html = `<div class="donut-block" style="min-width:0;align-items:center">
+      <div style="flex-shrink:0"><div class="donut-title">Por Activo — ${activeSym}</div>${donutSVG(segsS, 160)}</div>
+      <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
+        <thead><tr><th>Dir</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
+        <tbody>${legRowsS}</tbody>
+      </table></div>
+    </div>`;
   } else {
     const bySym = {};
     for (const t of panelTrades) {
@@ -759,7 +777,7 @@ function renderGeneralPanel() {
     }), { trades: 0, wins: 0, netPnl: 0 });
     const segs1 = top.map(([sym, v], i) => ({
       color: DCOLORS[i], value: v.trades, label: sym,
-      tooltip: `${sym}\nTrades: ${v.trades}\nWR: ${v.trades ? +(v.wins / v.trades * 100).toFixed(1) : '—'}%\nNet PnL: ${v.netPnl >= 0 ? '+' : ''}${fmt(v.netPnl, 2)}`
+      tooltip: `${sym}\nTrades: ${v.trades}\nWR: ${v.trades ? +(v.wins / v.trades * 100).toFixed(1) : '—'}%\nNet PnL: ${fmt(v.netPnl, 2)}`
     }));
     if (rest.length) segs1.push({ color: '#9ca3af', value: othData.trades, label: 'Otros', tooltip: `Otros (${rest.length} símbolos)\nTrades: ${othData.trades}` });
     const all1 = [...top, ...(rest.length ? [['Otros', othData]] : [])];
@@ -770,12 +788,12 @@ function renderGeneralPanel() {
         <td><span style="display:inline-block;width:8px;height:8px;background:${c};border-radius:2px;margin-right:3px"></span>${sym}</td>
         <td>${v.trades}</td>
         <td class="${wr1 === null ? 'na' : wrColor(wr1)}">${wr1 === null ? '—' : wr1 + '%'}</td>
-        <td class="${npColor(v.netPnl)}">${v.netPnl >= 0 ? '+' : ''}${fmt(v.netPnl, 2)}</td>
+        <td class="${npColor(v.netPnl)}">${fmt(v.netPnl, 2)}</td>
       </tr>`;
     }).join('');
-    donut1Html = `<div class="donut-block" style="overflow:hidden;min-width:0;align-items:center">
+    donut1Html = `<div class="donut-block" style="min-width:0;align-items:center">
       <div style="flex-shrink:0"><div class="donut-title">Por Activo</div>${donutSVG(segs1, 160)}</div>
-      <div style="flex:1;min-width:0;overflow:hidden"><table class="donut-legend">
+      <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
         <thead><tr><th>Symbol</th><th>Trades</th><th>WR%</th><th>Net PnL</th></tr></thead>
         <tbody>${legRows1}</tbody>
       </table></div>
@@ -806,12 +824,12 @@ function renderGeneralPanel() {
       <td><span style="display:inline-block;width:8px;height:8px;background:${c};border-radius:2px;margin-right:3px"></span>${lbl}</td>
       <td>${v.trades}</td><td>${pct2}%</td>
       <td class="${wr2 === null ? 'na' : wrColor(wr2)}">${wr2 === null ? '—' : wr2 + '%'}</td>
-      <td class="${npColor(v.netPnl)}">${v.netPnl >= 0 ? '+' : ''}${fmt(v.netPnl, 2)}</td>
+      <td class="${npColor(v.netPnl)}">${fmt(v.netPnl, 2)}</td>
     </tr>`;
   }).join('');
-  const donut2Html = `<div class="donut-block" style="overflow:hidden;min-width:0;align-items:center">
+  const donut2Html = `<div class="donut-block" style="min-width:0;align-items:center">
     <div style="flex-shrink:0"><div class="donut-title">Por Dirección</div>${donutSVG(segs2, 160)}</div>
-    <div style="flex:1;min-width:0;overflow:hidden"><table class="donut-legend">
+    <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
       <thead><tr><th>Dir</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
       <tbody>${legRows2}</tbody>
     </table></div>
@@ -843,12 +861,12 @@ function renderGeneralPanel() {
       <td><span style="display:inline-block;width:8px;height:8px;background:${s.color};border-radius:2px;margin-right:3px"></span>${nm}</td>
       <td>${s.trades}</td><td>${pct3}%</td>
       <td class="${wr3 === null ? 'na' : wrColor(wr3)}">${wr3 === null ? '—' : wr3 + '%'}</td>
-      <td class="${npColor(s.netPnl)}">${s.netPnl >= 0 ? '+' : ''}${fmt(s.netPnl, 2)}</td>
+      <td class="${npColor(s.netPnl)}">${fmt(s.netPnl, 2)}</td>
     </tr>`;
   }).join('');
-  const donut3Html = `<div class="donut-block" style="overflow:hidden;min-width:0;align-items:center">
+  const donut3Html = `<div class="donut-block" style="min-width:0;align-items:center">
     <div style="flex-shrink:0"><div class="donut-title">Por Sesión</div>${donutSVG(segs3, 160)}</div>
-    <div style="flex:1;min-width:0;overflow:hidden"><table class="donut-legend">
+    <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
       <thead><tr><th>Sesión</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
       <tbody>${legRows3}</tbody>
     </table></div>
@@ -882,10 +900,10 @@ function renderGeneralPanel() {
     const cells = md.map(v => {
       if (!v) return `<td class="na">—</td>`;
       const roi = +(v / 10000 * 100).toFixed(2);
-      return `<td class="${npColor(v)}">${roi >= 0 ? '+' : ''}${roi}%</td>`;
+      return `<td class="${npColor(v)}">${roi}%</td>`;
     }).join('');
     const totRoi = +(tot / 10000 * 100).toFixed(2);
-    return `<tr><td>${yr}</td>${cells}<td class="${npColor(tot)}" style="font-weight:700">${totRoi >= 0 ? '+' : ''}${totRoi}%</td></tr>`;
+    return `<tr><td>${yr}</td>${cells}<td class="${npColor(tot)}" style="font-weight:700">${totRoi}%</td></tr>`;
   }).join('');
   const rowC = `<div class="gp-row" style="display:block">
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Rendimiento Mensual Global</div>
