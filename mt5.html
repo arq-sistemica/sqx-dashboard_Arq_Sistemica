@@ -88,10 +88,6 @@ td.spark{text-align:center;padding:4px 10px}
 .monthly-table td{padding:5px 8px;text-align:center;color:var(--text2);border-bottom:1px solid var(--border)}
 .monthly-table td:first-child{font-weight:700;color:var(--text);text-align:left}
 
-/* ─── Selection Bar ──────────────────────────────────────── */
-#selection-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:none;background:var(--red-bg);border-top:1px solid var(--red-border);color:var(--red);padding:10px 24px;align-items:center;gap:12px;font-size:13px;font-weight:500}
-#selection-bar button{background:var(--red);color:#fff;border-color:var(--red)}
-#selection-bar button:hover{background:#991b1b;border-color:#991b1b}
 </style>
 </head>
 <body>
@@ -151,6 +147,7 @@ td.spark{text-align:center;padding:4px 10px}
         <th onclick="sortBy('netProfit')">Net P&amp;L<span id="s-netProfit"></span></th>
         <th class="spark">Equity</th>
         <th onclick="sortBy('retPct')">Ret%<span id="s-retPct"></span></th>
+        <th style="width:36px"></th>
       </tr>
     </thead>
     <tbody id="mt5-tbody"></tbody>
@@ -222,11 +219,6 @@ td.spark{text-align:center;padding:4px 10px}
   </div>
 </div>
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-
-<div id="selection-bar">
-  <span id="selection-count"></span>
-  <button onclick="deleteSelectedBots()">Borrar seleccionados</button>
-</div>
 
 <script>
 var _allTrades = [];
@@ -522,7 +514,7 @@ function renderTable() {
 
   const tbody = document.getElementById('mt5-tbody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Sin trades para mostrar. Si esperabas ver datos, revisá el Journal del EA en MT5 (puede estar detenido en el primer error) o verificá que los filtros de cuenta y símbolo estén en "Todas / Todos".</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-state">Sin trades para mostrar. Si esperabas ver datos, revisá el Journal del EA en MT5 (puede estar detenido en el primer error) o verificá que los filtros de cuenta y símbolo estén en "Todas / Todos".</td></tr>';
     return;
   }
 
@@ -541,6 +533,9 @@ function renderTable() {
       <td class="${npColor(r.netProfit)}">${r.netProfit >= 0 ? '+' : ''}${fmt(r.netProfit,2)}</td>
       <td class="spark">${sparkline(r.tradeList)}</td>
       <td class="${npColor(r.retPct)}">${r.retPct >= 0 ? '+' : ''}${fmt(r.retPct,2)}%</td>
+      <td onclick="event.stopPropagation()" style="text-align:center;padding:4px">
+        <button data-magic="${r.magic}" data-name="${r.name.replace(/"/g,'&quot;')}" onclick="deleteBot(Number(this.dataset.magic),this.dataset.name)" title="Borrar trades" style="background:none;border:none;padding:4px;cursor:pointer;color:var(--text3);line-height:0" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--text3)'"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M6 2h4l1 1H5L6 2zm-3 2h10v1H3V4zm1 1h8l-1 9H5L4 5zm2 1v7h1V6H6zm3 0v7h1V6H9z"/></svg></button>
+      </td>
     </tr>`;
   }).join('');
 
@@ -558,7 +553,7 @@ function insertDetailRow(row) {
   const detail = document.createElement('tr');
   detail.className = 'detail-row';
   detail.id = 'detail-' + row.magic;
-  detail.innerHTML = '<td colspan="11"><div class="detail-inner">' +
+  detail.innerHTML = '<td colspan="12"><div class="detail-inner">' +
     buildDetail(row.magic, LIVE[String(row.magic)]) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
 }
@@ -585,7 +580,7 @@ function toggleDetail(magic) {
   const detail = document.createElement('tr');
   detail.className = 'detail-row';
   detail.id = 'detail-' + magic;
-  detail.innerHTML = '<td colspan="11"><div class="detail-inner">' + buildDetail(magic, liveData) + '</div></td>';
+  detail.innerHTML = '<td colspan="12"><div class="detail-inner">' + buildDetail(magic, liveData) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
 }
 
@@ -699,11 +694,31 @@ function renderGeneralPanel() {
   const body = document.getElementById('general-panel-body');
   if (!body || _panelCollapsed) return;
 
+  const panelBtn = document.getElementById('general-panel-btn');
+  const nSel = _selectedMagics.size;
+  if (panelBtn) {
+    panelBtn.textContent = nSel > 0
+      ? `▼ Vista General — ${nSel} bot${nSel !== 1 ? 's' : ''} seleccionado${nSel !== 1 ? 's' : ''}`
+      : '▼ Vista General';
+    panelBtn.style.color = nSel > 0 ? 'var(--accent)' : '';
+  }
+
   const panelTrades = [];
-  for (const [magic, d] of Object.entries(LIVE)) {
-    for (const t of d.tradeList) {
-      if (!t.symbol || t.symbol === '—' || !t.closeDate || t.closeDate === '—') continue;
-      panelTrades.push({ ...t, magic: Number(magic) });
+  if (_selectedMagics.size > 0) {
+    for (const [magic, d] of Object.entries(LIVE)) {
+      if (_selectedMagics.has(Number(magic)) || _selectedMagics.has(String(magic))) {
+        for (const t of d.tradeList) {
+          if (!t.symbol || t.symbol === '—' || !t.closeDate || t.closeDate === '—') continue;
+          panelTrades.push({ ...t, magic: Number(magic) });
+        }
+      }
+    }
+  } else {
+    for (const [magic, d] of Object.entries(LIVE)) {
+      for (const t of d.tradeList) {
+        if (!t.symbol || t.symbol === '—' || !t.closeDate || t.closeDate === '—') continue;
+        panelTrades.push({ ...t, magic: Number(magic) });
+      }
     }
   }
 
@@ -925,44 +940,35 @@ function renderGeneralPanel() {
 function onBotCheckbox(el) {
   const magic = Number(el.dataset.magic);
   if (el.checked) _selectedMagics.add(magic); else _selectedMagics.delete(magic);
-  updateSelectionBar();
+  if (_panelCollapsed && _selectedMagics.size > 0) {
+    _panelCollapsed = false;
+    const body = document.getElementById('general-panel-body');
+    if (body) body.style.display = 'block';
+  }
+  renderGeneralPanel();
 }
 
-function updateSelectionBar() {
-  const bar = document.getElementById('selection-bar');
-  const n = _selectedMagics.size;
-  if (!n) { bar.style.display = 'none'; return; }
-  bar.style.display = 'flex';
-  document.getElementById('selection-count').textContent =
-    `${n} bot${n !== 1 ? 's' : ''} seleccionado${n !== 1 ? 's' : ''}`;
-}
-
-async function deleteSelectedBots() {
-  if (!_selectedMagics.size) return;
+async function deleteBot(magic, name) {
+  if (!confirm(`¿Borrar TODOS los trades de ${name} (magic ${magic})?`)) return;
   const authToken = sb.getToken();
   const userId = JSON.parse(atob(authToken.split('.')[1])).sub;
-  const items = [..._selectedMagics].map(magic => ({
-    magic,
-    name: (_botsByMagic[String(magic)]?.name) || `magic ${magic}`,
-  }));
-  const msg = '¿Borrar TODOS los trades de:\n' + items.map(i => `- ${i.name} (magic ${i.magic})`).join('\n');
-  if (!confirm(msg)) return;
-  const errors = [];
-  await Promise.all(items.map(async ({ magic }) => {
-    const endpoint = `${SUPABASE_URL}/rest/v1/trades?magic=eq.${magic}&user_id=eq.${userId}`;
-    try {
-      const res = await fetch(endpoint, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${authToken}`, 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
-      });
-      if (!res.ok) { const txt = await res.text(); errors.push(`magic ${magic}: ${res.status} ${txt}`); }
-    } catch(e) { errors.push(`magic ${magic}: ${e.message}`); }
-  }));
-  _selectedMagics.clear();
-  updateSelectionBar();
-  if (errors.length) alertErr('Errores al borrar: ' + errors.join('; '));
-  else alertOk('Trades borrados: ' + items.map(i => i.name).join(', '));
-  await loadData();
+  const endpoint = `${SUPABASE_URL}/rest/v1/trades?magic=eq.${magic}&user_id=eq.${userId}`;
+  try {
+    const res = await fetch(endpoint, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}`, 'apikey': SUPABASE_KEY, 'Prefer': 'return=minimal' },
+    });
+    if (res.ok) {
+      _selectedMagics.delete(magic);
+      alertOk(`Trades de "${name}" eliminados`);
+      await loadData();
+    } else {
+      const txt = await res.text();
+      alertErr(`Error ${res.status}: ${txt}`);
+    }
+  } catch(e) {
+    alertErr('Error de red: ' + e.message);
+  }
 }
 
 function setLastEaUpdate(trades) {
