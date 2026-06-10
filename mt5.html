@@ -315,8 +315,9 @@ function equityCurve(tradeList) {
     const d = s.pts.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
     return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>`;
   }).join('');
+  const dotStep = Math.max(1, Math.floor(points.length / 30));
   const dotsSvg = segments.map(s =>
-    s.pts.filter(p => p.v !== undefined).map(p =>
+    s.pts.filter(p => p.v !== undefined && points.indexOf(p) % dotStep === 0).map(p =>
       `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="white" stroke="${s.color}" stroke-width="1.2"/>`
     ).join('')
   ).join('');
@@ -343,7 +344,7 @@ function equityCurve(tradeList) {
   // solo línea del cero en Y
   const yGridSvg = `<line x1="${PL}" y1="${cy(0)}" x2="${PL+cW}" y2="${cy(0)}" stroke="#9ca3af" stroke-width="1"/>`;
   const yLabelsSvg = yTicks.map(v =>
-    `<text x="${PL-5}" y="${+cy(v)+3.5}" text-anchor="end" font-size="7" fill="#4b5563">${v>=0?'+':''}${v.toFixed(1)}%</text>`
+    `<text x="${PL-5}" y="${+cy(v)+3.5}" text-anchor="end" font-size="7" fill="#4b5563">${v === 0 ? '0' : v > 0 ? String(Math.round(v)) : '-' + String(Math.round(Math.abs(v)))}%</text>`
   ).join('');
 
   // X: ticks semanales con densidad adaptativa para evitar superposición
