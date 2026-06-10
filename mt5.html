@@ -318,7 +318,7 @@ function equityCurve(tradeList) {
   const dotStep = Math.max(1, Math.floor(points.length / 30));
   const dotsSvg = segments.map(s =>
     s.pts.filter(p => p.v !== undefined && points.indexOf(p) % dotStep === 0).map(p =>
-      `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="white" stroke="${s.color}" stroke-width="1.2"/>`
+      `<circle cx="${p.x}" cy="${p.y}" r="1.5" fill="${s.color}" stroke="${s.color}" stroke-width="1.2"/>`
     ).join('')
   ).join('');
 
