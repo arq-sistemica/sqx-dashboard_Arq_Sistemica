@@ -316,12 +316,12 @@ function equityCurve(tradeList) {
 
   const linesSvg = segments.map(s => {
     const d = s.pts.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
-    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round"/>`;
   }).join('');
   const dotStep = Math.max(1, Math.floor(points.length / 30));
   const dotsSvg = segments.map(s =>
     s.pts.filter(p => p.v !== undefined && points.indexOf(p) % dotStep === 0).map(p =>
-      `<circle cx="${p.x}" cy="${p.y}" r="1.5" fill="${s.color}" stroke="${s.color}" stroke-width="1.2"/>`
+      `<circle cx="${p.x}" cy="${p.y}" r="0.75" fill="${s.color}" stroke="${s.color}" stroke-width="0.6"/>`
     ).join('')
   ).join('');
 
@@ -911,25 +911,23 @@ function renderGeneralPanel() {
   const sortedEq = [...panelTrades].sort((a, b) => a.closeDate > b.closeDate ? 1 : -1);
   sortedEq.forEach(t => { t.cumProfit = +(cumEq += t.netProfit).toFixed(2); });
 
+  // ── Equity Curves Individuales — un solo SVG ──
   let rowIndividual = '';
   if (_selectedMagics.size >= 2) {
-    const BOT_COLORS = ['#4f46e5','#0891b2','#d97706','#7c3aed','#dc2626','#0284c7','#65a30d','#9333ea'];
-    const colorMap = {};
+    const BOT_COLORS = ['#4f46e5','#0891b2','#d97706','#7c3aed','#059669','#dc2626','#0284c7','#65a30d'];
     let ci = 0;
-    for (const m of _selectedMagics) { colorMap[m] = BOT_COLORS[ci % BOT_COLORS.length]; ci++; }
-
     const botCurves = [];
     for (const m of _selectedMagics) {
       const d = LIVE[String(m)] || LIVE[m];
       if (!d || !d.tradeList) continue;
-      const botTrades = d.tradeList
+      const trades = d.tradeList
         .filter(t => t.symbol && t.symbol !== '—' && t.closeDate && t.closeDate !== '—')
         .sort((a, b) => a.closeDate > b.closeDate ? 1 : -1);
-      if (botTrades.length < 2) continue;
+      if (trades.length < 2) continue;
       let cum = 0;
-      botTrades.forEach(t => { t.cumProfit = +(cum += t.netProfit).toFixed(2); });
+      const pts = trades.map(t => { cum = +(cum + t.netProfit).toFixed(2); return { date: t.closeDate.slice(0,10), v: cum }; });
       const botName = (() => {
-        const rows = document.querySelectorAll('#bots-table tbody tr');
+        const rows = document.querySelectorAll('#bots-table tbody tr, #mt5-tbody tr');
         for (const r of rows) {
           const cb = r.querySelector('input[type="checkbox"]');
           if (cb && Number(cb.dataset.magic) === m) {
@@ -939,25 +937,93 @@ function renderGeneralPanel() {
         }
         return String(m);
       })();
-      botCurves.push({ magic: m, name: botName, trades: botTrades, color: colorMap[m] });
+      botCurves.push({ magic: m, name: botName, pts, color: BOT_COLORS[ci % BOT_COLORS.length] });
+      ci++;
     }
 
     if (botCurves.length >= 2) {
-      const curvesHtml = botCurves.map(bc => `
-        <div style="margin-bottom:12px">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;
-               letter-spacing:.6px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
-            <span style="display:inline-block;width:10px;height:10px;background:${bc.color};
-                  border-radius:50%;flex-shrink:0"></span>
-            ${bc.name}
-          </div>
-          ${equityCurve(bc.trades)}
-        </div>
-      `).join('');
+      const BASE = 10000;
+      const PL = 40, PB = 14, PT = 6, PR = 10;
+      const W = 620, H = 110;
+      const cW = W - PL - PR, cH = H - PT - PB;
+
+      const allDates = botCurves.flatMap(bc => bc.pts.map(p => p.date)).filter(Boolean).sort();
+      const ms0 = new Date(allDates[0]).getTime();
+      const msN = new Date(allDates[allDates.length-1]).getTime();
+      const msRange = msN - ms0 || 1;
+
+      const allPcts = botCurves.flatMap(bc => bc.pts.map(p => p.v / BASE * 100));
+      const minP = Math.min(0, ...allPcts), maxP = Math.max(0, ...allPcts);
+      const pad = (maxP - minP || 1) * 0.30;
+      const paddedMin = minP - pad, paddedMax = maxP + pad;
+      const rangeP = paddedMax - paddedMin || 1;
+
+      const cx = ms  => (PL + (ms - ms0) / msRange * cW).toFixed(1);
+      const cy = pct => (PT + (1 - (pct - paddedMin) / rangeP) * cH).toFixed(1);
+      const zeroY = cy(0);
+
+      const yGridSvg = `<line x1="${PL}" y1="${zeroY}" x2="${PL+cW}" y2="${zeroY}" stroke="#9ca3af" stroke-width="1"/>`;
+
+      const step = rangeP <= 5 ? 1 : rangeP <= 15 ? 2 : rangeP <= 40 ? 5 : rangeP <= 100 ? 10 : 20;
+      const yTicks = [];
+      for (let v = Math.ceil(paddedMin / step) * step; v <= paddedMax + step * 0.1; v += step)
+        yTicks.push(+v.toFixed(1));
+      if (!yTicks.includes(0)) yTicks.push(0);
+      yTicks.sort((a,b) => a-b);
+      const yLabelsSvg = yTicks.map(v =>
+        `<text x="${PL-5}" y="${+cy(v)+3.5}" text-anchor="end" font-size="7" fill="#4b5563">${v === 0 ? '0' : v > 0 ? String(Math.round(v)) : '-' + String(Math.round(Math.abs(v)))}%</text>`
+      ).join('');
+
+      const weekMs = 7 * 86400000;
+      const maxLabels = Math.floor(cW / 38);
+      const totalWeeks = Math.ceil(msRange / weekMs);
+      const skipEvery = Math.max(1, Math.ceil(totalWeeks / maxLabels));
+      const xTicksSvg = [];
+      let wk = new Date(ms0); let wkCount = 0;
+      wk.setDate(wk.getDate() + (7 - wk.getDay()) % 7);
+      while (wk.getTime() <= msN + weekMs * 0.5) {
+        if (wkCount % skipEvery === 0) {
+          const frac = (wk.getTime() - ms0) / msRange;
+          const x = (PL + frac * cW).toFixed(1);
+          const label = wk.toISOString().slice(5,10).replace('-','/');
+          xTicksSvg.push(`<text x="${x}" y="${H-4}" text-anchor="middle" font-size="7" fill="#4b5563">${label}</text>`);
+        }
+        wkCount++;
+        wk.setTime(wk.getTime() + weekMs);
+      }
+
+      const linesSvg = botCurves.map(bc => {
+        const dotStep = Math.max(1, Math.floor(bc.pts.length / 30));
+        const pathD = bc.pts.map((p, i) => {
+          const x = cx(new Date(p.date).getTime());
+          const y = cy(p.v / BASE * 100);
+          return `${i===0?'M':'L'}${x},${y}`;
+        }).join(' ');
+        const dots = bc.pts.filter((_, i) => i % dotStep === 0).map(p => {
+          const x = cx(new Date(p.date).getTime());
+          const y = cy(p.v / BASE * 100);
+          return `<circle cx="${x}" cy="${y}" r="0.75" fill="${bc.color}" stroke="${bc.color}" stroke-width="0.6"/>`;
+        }).join('');
+        return `<path d="${pathD}" fill="none" stroke="${bc.color}" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round"/>` + dots;
+      }).join('');
+
+      const axisY = `<line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+cH}" stroke="#d1d5db" stroke-width="1"/>`;
+
+      const legendHtml = botCurves.map(bc =>
+        `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:10px;color:var(--text2)">
+          <span style="width:10px;height:2px;background:${bc.color};display:inline-block;border-radius:2px"></span>
+          ${bc.name.length > 30 ? bc.name.slice(0,28)+'…' : bc.name}
+        </span>`
+      ).join('');
+
+      const svgMulti = `<svg viewBox="0 0 ${W} ${H}" class="equity-svg" preserveAspectRatio="none" style="height:120px">
+        ${yGridSvg}${xTicksSvg.join('')}${axisY}${linesSvg}${yLabelsSvg}
+      </svg>`;
 
       rowIndividual = `<div class="gp-row" style="display:block">
         <div class="detail-title">Equity Curves Individuales</div>
-        ${curvesHtml}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${legendHtml}</div>
+        ${svgMulti}
       </div>`;
     }
   }
