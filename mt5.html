@@ -78,6 +78,7 @@ td.spark{text-align:center;padding:4px 10px}
   <div>
     <h1>📉 MT5 — Trades Live</h1>
     <div id="sync-status" style="font-size:12px;color:var(--text3);margin-top:2px">Cargando...</div>
+    <div id="last-ea-update" style="font-size:11px;color:var(--text3);margin-top:1px">Sin datos recibidos</div>
   </div>
   <div class="topbar-right">
     <button onclick="loadData()">↻ Actualizar</button>
@@ -357,7 +358,12 @@ function computeLiveMetrics(trades) {
   }
   const byMagic = {}, winnerAccount = {};
   for (const [magic, byAccount] of Object.entries(byMagicAccount)) {
-    const sorted = Object.entries(byAccount).sort((a, b) => b[1].length - a[1].length);
+    // Prefiere la cuenta con el trade más reciente (no la que tiene más trades históricamente)
+    const sorted = Object.entries(byAccount).sort((a, b) => {
+      const latestA = a[1].reduce((m, t) => (t.close_time > m ? t.close_time : m), '');
+      const latestB = b[1].reduce((m, t) => (t.close_time > m ? t.close_time : m), '');
+      return latestB > latestA ? 1 : -1;
+    });
     byMagic[magic] = sorted[0][1];
     winnerAccount[magic] = sorted[0][0];
   }
@@ -407,7 +413,10 @@ function computeLiveMetrics(trades) {
 function populateAccountFilter() {
   const accounts = [...new Set(_allTrades.map(t => t.account_label).filter(Boolean))].sort();
   const sel = document.getElementById('f-account');
-  const prev = sel.value;
+  // Si aparece una cuenta nueva que no estaba en el dropdown anterior, resetear a "Todas"
+  const prevOptions = new Set([...sel.options].slice(1).map(o => o.value));
+  const hasNewAccount = accounts.some(a => !prevOptions.has(a));
+  const prev = hasNewAccount ? '' : sel.value;
   sel.innerHTML = '<option value="">Todas</option>' +
     accounts.map(a => `<option${a===prev?' selected':''}>${a}</option>`).join('');
   document.getElementById('acct-wrap').style.display = accounts.length > 1 ? 'flex' : 'none';
@@ -469,7 +478,7 @@ function renderTable() {
 
   const tbody = document.getElementById('mt5-tbody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Sin trades. Verifica la conexión MT5 → Supabase.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Sin trades para mostrar. Si esperabas ver datos, revisá el Journal del EA en MT5 (puede estar detenido en el primer error) o verificá que los filtros de cuenta y símbolo estén en "Todas / Todos".</td></tr>';
     return;
   }
 
@@ -604,6 +613,46 @@ function tradePageNav(magic, dir) {
   if (lbl) lbl.textContent = `${page} / ${totalPages}`;
 }
 
+function setLastEaUpdate(trades) {
+  const el = document.getElementById('last-ea-update');
+  if (!el) return;
+  if (!trades || !trades.length) { el.textContent = 'Sin datos recibidos'; el.style.color = 'var(--text3)'; return; }
+  const maxMs = trades.reduce((m, t) => {
+    const ms = t.close_time ? new Date(t.close_time).getTime() : 0;
+    return ms > m ? ms : m;
+  }, 0);
+  if (!maxMs) { el.textContent = 'Sin datos recibidos'; el.style.color = 'var(--text3)'; return; }
+  const d = new Date(maxMs - 3 * 3600000); // UTC-3 Argentina
+  const p = n => String(n).padStart(2, '0');
+  const label = `Último trade recibido: ${p(d.getUTCDate())}/${p(d.getUTCMonth()+1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+  const ageDays = (Date.now() - maxMs) / 86400000;
+  if (ageDays > 7) {
+    el.textContent = label + ' ⚠ EA posiblemente detenido — revisar Journal en MT5';
+    el.style.color = 'var(--red)';
+  } else if (ageDays > 3) {
+    el.textContent = label + ' — sin actividad reciente';
+    el.style.color = 'var(--amber)';
+  } else {
+    el.textContent = label;
+    el.style.color = 'var(--text3)';
+  }
+}
+
+// Genera todos los candidatos de magic para un nombre SQX (con/sin variante, con/sin Improved).
+// "Strategy 1.3.26(1) - Improved 1.1.5" → ["13261","1326","13261115","1326115","13261115","1326115"]
+function nameToMagicCandidates(name) {
+  const all = [...name.matchAll(/\b(\d+)\.(\d+)\.(\d+)(?:\((\d+)\))?/g)];
+  if (!all.length) return [name.replace(/\D/g, '')];
+  const full  = m => m[1]+m[2]+m[3]+(m[4]||'');
+  const short = m => m[1]+m[2]+m[3];
+  const s = all[0], imp = all[1];
+  const c = [full(s), short(s)];
+  if (imp) {
+    c.push(full(s)+full(imp), short(s)+full(imp), full(s)+short(imp), short(s)+short(imp));
+  }
+  return [...new Set(c)].filter(Boolean);
+}
+
 // ─── Carga de datos ───────────────────────────────────────────────────
 async function loadData() {
   setSyncStatus('Cargando trades...', '');
@@ -611,15 +660,23 @@ async function loadData() {
     const [trades, bots] = await Promise.all([sb.getMyTrades(), sb.getBots().catch(() => [])]);
     _allTrades = trades;
     _botsByMagic = {};
-    bots.forEach(b => { if (b.magic) _botsByMagic[String(b.magic)] = b; });
-    LIVE = computeLiveMetrics(trades);
-    populateAccountFilter();
-    renderTable();
+    bots.forEach(b => {
+      if (b.magic) _botsByMagic[String(b.magic)] = b;
+      if (b.name) nameToMagicCandidates(b.name).forEach(c => { if (!_botsByMagic[c]) _botsByMagic[c] = b; });
+    });
+    populateAccountFilter(); // detecta cuentas nuevas y resetea filtro si es necesario
+    applyFilters();          // computa LIVE respetando el estado del filtro + renderiza
+    setLastEaUpdate(trades);
     const n = Object.keys(LIVE).length;
-    setSyncStatus(`${n} magic${n !== 1 ? 's' : ''} — ${trades.length} trades`, '#1a7f4b');
-    setTimeout(() => setSyncStatus('', ''), 5000);
+    if (trades.length === 0) {
+      setSyncStatus('No se encontraron trades. Verificar conexión del EA o filtros activos.', '#92400e');
+    } else {
+      setSyncStatus(`${n} magic${n !== 1 ? 's' : ''} — ${trades.length} trades`, '#1a7f4b');
+      setTimeout(() => setSyncStatus('', ''), 5000);
+    }
   } catch(e) {
     setSyncStatus('Error al cargar trades', '#b91c1c');
+    setLastEaUpdate(_allTrades);
     alertErr('Error: ' + e.message);
   }
 }

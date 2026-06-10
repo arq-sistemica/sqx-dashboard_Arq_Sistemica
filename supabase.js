@@ -245,7 +245,10 @@ const sb = {
     while (true) {
       const headers = { ..._sbHeaders(sb.getToken()), 'Range': `${from}-${from+batch-1}`, 'Range-Unit': 'items' };
       const r = await fetch(url, { headers });
-      if (!r.ok) break;
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.message || `Error ${r.status} al cargar trades (página ${from/batch + 1})`);
+      }
       const data = await r.json();
       all = all.concat(data);
       if (data.length < batch) break;
