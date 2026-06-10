@@ -1181,16 +1181,8 @@ function setLastEaUpdate(trades) {
 // Genera todos los candidatos de magic para un nombre SQX (con/sin variante, con/sin Improved).
 // "Strategy 1.3.26(1) - Improved 1.1.5" → ["13261","1326","13261115","1326115","13261115","1326115"]
 function nameToMagicCandidates(name) {
-  const all = [...name.matchAll(/\b(\d+)\.(\d+)\.(\d+)(?:\((\d+)\))?/g)];
-  if (!all.length) return [name.replace(/\D/g, '')];
-  const full  = m => m[1]+m[2]+m[3]+(m[4]||'');
-  const short = m => m[1]+m[2]+m[3];
-  const s = all[0], imp = all[1];
-  const c = [full(s), short(s)];
-  if (imp) {
-    c.push(full(s)+full(imp), short(s)+full(imp), full(s)+short(imp), short(s)+short(imp));
-  }
-  return [...new Set(c)].filter(Boolean);
+  const digits = name.replace(/\D/g, '');
+  return digits ? [digits] : [];
 }
 
 // ─── Carga de datos ───────────────────────────────────────────────────
@@ -1282,6 +1274,7 @@ function populateImporterSelects() {
   const prev   = botSel.value;
   botSel.innerHTML = '<option value="">— seleccioná un bot —</option>';
   Object.entries(_botsByMagic)
+    .filter(([magic]) => LIVE[magic])
     .sort((a,b) => (a[1].name||'').localeCompare(b[1].name||''))
     .forEach(([magic, bot]) => {
       const opt = document.createElement('option');
