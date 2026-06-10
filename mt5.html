@@ -1274,7 +1274,7 @@ function populateImporterSelects() {
   const prev   = botSel.value;
   botSel.innerHTML = '<option value="">— seleccioná un bot —</option>';
   Object.entries(_botsByMagic)
-    .filter(([magic]) => LIVE[magic])
+    .filter(([magic, bot]) => bot.name && bot.name !== '—')
     .sort((a,b) => (a[1].name||'').localeCompare(b[1].name||''))
     .forEach(([magic, bot]) => {
       const opt = document.createElement('option');
