@@ -898,12 +898,64 @@ function renderGeneralPanel() {
 
   const rowB = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">${donut1Html}${donut2Html}${donut3Html}</div>`;
 
-  // EQUITY CURVE GLOBAL
+  // EQUITY CURVES — individuales (solo si hay 2+ bots seleccionados) + global
   let cumEq = 0;
   const sortedEq = [...panelTrades].sort((a, b) => a.closeDate > b.closeDate ? 1 : -1);
   sortedEq.forEach(t => { t.cumProfit = +(cumEq += t.netProfit).toFixed(2); });
+
+  let rowIndividual = '';
+  if (_selectedMagics.size >= 2) {
+    const BOT_COLORS = ['#4f46e5','#0891b2','#d97706','#7c3aed','#dc2626','#0284c7','#65a30d','#9333ea'];
+    const colorMap = {};
+    let ci = 0;
+    for (const m of _selectedMagics) { colorMap[m] = BOT_COLORS[ci % BOT_COLORS.length]; ci++; }
+
+    const botCurves = [];
+    for (const m of _selectedMagics) {
+      const d = LIVE[String(m)] || LIVE[m];
+      if (!d || !d.tradeList) continue;
+      const botTrades = d.tradeList
+        .filter(t => t.symbol && t.symbol !== '—' && t.closeDate && t.closeDate !== '—')
+        .sort((a, b) => a.closeDate > b.closeDate ? 1 : -1);
+      if (botTrades.length < 2) continue;
+      let cum = 0;
+      botTrades.forEach(t => { t.cumProfit = +(cum += t.netProfit).toFixed(2); });
+      const botName = (() => {
+        const rows = document.querySelectorAll('#bots-table tbody tr');
+        for (const r of rows) {
+          const cb = r.querySelector('input[type="checkbox"]');
+          if (cb && Number(cb.dataset.magic) === m) {
+            const nameTd = r.querySelectorAll('td')[1];
+            return nameTd ? nameTd.textContent.trim() : String(m);
+          }
+        }
+        return String(m);
+      })();
+      botCurves.push({ magic: m, name: botName, trades: botTrades, color: colorMap[m] });
+    }
+
+    if (botCurves.length >= 2) {
+      const curvesHtml = botCurves.map(bc => `
+        <div style="margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;
+               letter-spacing:.6px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
+            <span style="display:inline-block;width:10px;height:10px;background:${bc.color};
+                  border-radius:50%;flex-shrink:0"></span>
+            ${bc.name}
+          </div>
+          ${equityCurve(bc.trades)}
+        </div>
+      `).join('');
+
+      rowIndividual = `<div class="gp-row" style="display:block">
+        <div class="detail-title">Equity Curves Individuales</div>
+        ${curvesHtml}
+      </div>`;
+    }
+  }
+
   const rowEq = `<div class="gp-row" style="display:block">
-    <div class="detail-title">Equity Curve Global</div>
+    <div class="detail-title">Equity Curve Global${_selectedMagics.size >= 2 ? ' — Combinada' : ''}</div>
     ${equityCurve(sortedEq)}
   </div>`;
 
@@ -937,7 +989,7 @@ function renderGeneralPanel() {
     </table></div>
   </div>`;
 
-  body.innerHTML = rowA + rowB + rowEq + rowC;
+  body.innerHTML = rowA + rowB + rowIndividual + rowEq + rowC;
 }
 
 function onBotCheckbox(el) {
