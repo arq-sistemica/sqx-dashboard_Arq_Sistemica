@@ -1362,12 +1362,104 @@ function _computeLiveMetrics(trades) {
   return result;
 }
 
+function parseSQXFile(text) {
+  const na = 'No especificado';
+  const r = { entradaTipo:na, ordenTipo:na, indicadores:na, filtros:na, sesion:na, stopLoss:na, takeProfit:na, moneyManagement:na, condicionesLong:[], condicionesShort:[], timeframe:na };
+
+  const tfM = text.match(/backtested\s+on\s+\S+\s*\/\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\b/i)
+           || text.match(/\btimeframe\s*(?:\([^)]*\))?\s*[:=]\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\b/i)
+           || text.match(/data\s+series[^\n]*\(\s*(M1|M5|M15|M30|H1|H2|H4|H6|H8|D1|W1|MN)\s*[,)]/i);
+  if (tfM) r.timeframe = tfM[1].toUpperCase();
+
+  const vars = {};
+  for (const m of text.matchAll(/(?:int|double|bool)\s+(\w+)\s*=\s*([^;\n]+)/gi))
+    vars[m[1].trim()] = m[2].trim();
+  const resolveVars = s => s.replace(/\b([A-Za-z_]\w*)\b/g, k => vars[k] ?? k);
+  const cleanExpr = s => s.replace(/Main\s+chart,?\s*/gi,'').replace(/\s+/g,' ').trim();
+
+  const longM  = text.match(/LongEntrySignal\s*=\s*([\s\S]*?);/i);
+  const shortM = text.match(/ShortEntrySignal\s*=\s*([\s\S]*?);/i);
+  const longExpr  = longM  ? longM[1].trim()  : 'false';
+  const shortExpr = shortM ? shortM[1].trim() : 'false';
+  const isFalseExpr = s => /^\(?\s*false(\s+and\s+false)*\s*\)?$/i.test(s.replace(/\s+/g,' ').trim());
+  const hasLongOrder  = /Open\s+Long\s+order/i.test(text);
+  const hasShortOrder = /Open\s+Short\s+order/i.test(text);
+  const hasLong  = hasLongOrder  || (!isFalseExpr(longExpr)  && !hasShortOrder);
+  const hasShort = hasShortOrder || (!isFalseExpr(shortExpr) && !hasLongOrder);
+
+  if (hasLong && hasShort) r.entradaTipo = 'Both (Buy + Sell)';
+  else if (hasLong)        r.entradaTipo = 'Buy (Long)';
+  else if (hasShort)       r.entradaTipo = 'Sell (Short)';
+
+  function splitAnd(expr) {
+    const parts = []; let depth = 0, buf = '';
+    const s = expr.replace(/^\s*\(+|\)+\s*;?\s*$/g,'');
+    for (let i = 0; i < s.length; i++) {
+      if (s[i]==='(') { depth++; buf+=s[i]; }
+      else if (s[i]===')') { depth--; buf+=s[i]; }
+      else if (depth===0 && /^and\b/i.test(s.slice(i))) {
+        const p = buf.trim().replace(/^\(+|\)+$/g,'').trim();
+        if (p.length>3) parts.push(cleanExpr(p));
+        buf=''; i+=2;
+      } else buf+=s[i];
+    }
+    const last = buf.trim().replace(/^\(+|\)+$/g,'').trim();
+    if (last.length>3) parts.push(cleanExpr(last));
+    return parts;
+  }
+
+  r.condicionesLong  = hasLong  ? splitAnd(longExpr)  : [];
+  r.condicionesShort = hasShort ? splitAnd(shortExpr) : [];
+
+  const orderM = text.match(/Open\s+(?:Long|Short)\s+order\s+at\s+(\w+)/i);
+  if (orderM) r.ordenTipo = orderM[1];
+
+  const sessM = text.match(/LimitSignalsTimeRange\s*=\s*true\s*\((\d{2,4})\s*-\s*(\d{2,4})/i);
+  if (sessM) {
+    const fmt = t => `${t.padStart(4,'0').slice(0,2)}:${t.padStart(4,'0').slice(2)}`;
+    r.sesion = `${fmt(sessM[1])} – ${fmt(sessM[2])}`;
+  }
+
+  const slM = text.match(/Stop\s+Loss\s*=\s*([^;\n]+)/i);
+  if (slM) r.stopLoss = cleanExpr(resolveVars(slM[1]));
+
+  const tsM = text.match(/Trailing\s+Stop\s*=\s*([^;\n]+)/i);
+  if (tsM) { const ts = cleanExpr(resolveVars(tsM[1])); r.stopLoss = r.stopLoss !== na ? `${r.stopLoss} + Trailing ${ts}` : `Trailing: ${ts}`; }
+
+  const tpM = text.match(/(?:Take\s+Profit|Profit\s+Target)\s*=\s*([^;\n]+)/i);
+  if (tpM) r.takeProfit = cleanExpr(resolveVars(tpM[1]));
+
+  const exitM = text.match(/Exit\s+After\s+(\w+)\s+bars/i);
+  if (exitM) { const bars = resolveVars(exitM[1]); const exitStr = `Máx. ${bars} barras`; r.takeProfit = r.takeProfit !== na ? `${r.takeProfit} / ${exitStr}` : exitStr; }
+
+  const mmM = text.match(/(?:Fixed\s+)?lot\s+size\s*[=:]\s*([^\n;]+)/i) || text.match(/risk\s*(?:per\s+trade)?\s*[=:]\s*([^\n;]+)/i);
+  if (mmM) r.moneyManagement = mmM[1].trim();
+
+  const IND_SKIP = /^(Open|Close|High|Low|Volume|True|False|And|Or|Not|Main|Exit|Enter|Signal|Order|Trade|Stop|Limit|Market|Long|Short|Buy|Sell|GetValue|SetValue|Print|Log|Alert|Return|If|Then|Else|End|Begin|Var|Int|Double|Bool|String)$/i;
+  const indPat = /\b([A-Z][A-Za-z]{2,})\s*\([^)]{1,120}\)/g;
+  const indNames = [...new Set([...text.matchAll(indPat)].map(m => m[1]).filter(name => !IND_SKIP.test(name)))];
+  if (indNames.length) {
+    r.indicadores = indNames.slice(0, 10).map(name => {
+      const call = text.match(new RegExp(`\\b${name}\\s*\\([^)]+\\)`, 'i'));
+      return call ? cleanExpr(call[0]) : name;
+    }).join(' | ');
+  }
+
+  const allConds = [...r.condicionesLong, ...r.condicionesShort];
+  if (allConds.length) r.filtros = [...new Set(allConds)].slice(0,6).join(' | ');
+
+  return r;
+}
+
 function _botsToOverlapFormat(remoteBots, liveByMagic) {
   const na = 'No especificado';
   return remoteBots
-    .filter(b => b.pseudocodigoData?.parsed)
+    .filter(b => b.pseudocodigo || b.pseudocodigoData?.parsed)
     .map(b => {
-      const p = b.pseudocodigoData.parsed;
+      // nuevo sistema: pseudocodigo raw → parsear en tiempo real
+      // sistema viejo: pseudocodigoData.parsed (fallback)
+      const p = b.pseudocodigoData?.parsed || parseSQXFile(b.pseudocodigo || '');
+      console.debug('[indicadores] bot:', b.name, '| campo:', b.pseudocodigo ? 'pseudocodigo(raw)' : 'pseudocodigoData.parsed');
       const indsRaw = p.indicadores !== na ? p.indicadores.split(' | ') : [];
       const inds = [...new Set(indsRaw.map(s => (s.match(/^([A-Za-z]+)/) || [])[1]).filter(Boolean))];
       const dir = p.entradaTipo === 'Sell (Short)' ? 'Short' :
