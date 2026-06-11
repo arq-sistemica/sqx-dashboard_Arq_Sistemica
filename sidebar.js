@@ -5,6 +5,7 @@
     { href: 'portfolio.html',      label: 'Portfolio',      icon: '💼' },
     { href: 'ranking.html',        label: 'Ranking',        icon: '🏆' },
     { href: 'overlap.html',        label: 'Overlap',        icon: '📊' },
+    { href: 'indicadores.html',   label: 'Indicadores',    icon: '🔬' },
     { href: 'tendencia.html',      label: 'Tendencia',      icon: '📈' },
     { href: 'estacionalidad.html', label: 'Estacionalidad', icon: '📅' },
     { href: 'sqx.html',            label: 'SQX',            icon: '⚙️' },
