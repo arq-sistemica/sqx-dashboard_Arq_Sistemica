@@ -185,11 +185,10 @@
   .guide-item-title { font-size:11px; font-weight:600; color:var(--text); margin-bottom:2px; }
   .guide-item-desc { font-size:11px; color:var(--text2); line-height:1.4; }
   .guide-cols { display:grid; grid-template-columns:1fr 1.6fr; gap:0; }
-  .guide-cols > div { padding:0 16px; }
-  .guide-cols > div:first-child { padding-left:0; border-right:1px solid var(--border); }
-  .guide-cols > div:last-child { padding-right:0; }
+  .guide-cols > div:first-child { padding:0 20px 0 0; border-right:1px solid var(--border); }
+  .guide-cols > div:last-child { padding:0 0 0 20px; }
   .guide-col-title { font-size:11px; font-weight:600; color:var(--text2); margin-bottom:10px; }
-  .guide-item-example { font-size:10px; color:var(--text3); font-style:italic; margin-top:3px; }
+  .guide-item-example { font-size:10px; font-style:italic; margin-top:3px; }
   @media (max-width:700px) { .guide-cols { grid-template-columns:1fr; } .guide-cols > div:first-child { border-right:none; border-bottom:1px solid var(--border); padding:0 0 16px; } .guide-cols > div:last-child { padding:16px 0 0; } }
 </style>
 </head>
@@ -309,7 +308,8 @@
               <div>
                 <div class="guide-item-title">Señal limpia y potente</div>
                 <div class="guide-item-desc">Gana seguido y cuando gana, gana bien.</div>
-                <div class="guide-item-example">ej: Nov→Dic EURUSD: 82% · Avg +1.8%</div>
+                <div class="guide-item-example" style="color:#166534">▲ Long: Nov→Dic EURUSD: 82% · Avg +1.8%</div>
+                <div class="guide-item-example" style="color:#991b1b">▼ Short: Jul→Ago GBPJPY: 27% · Avg -0.80%</div>
               </div>
             </div>
             <div class="guide-item">
@@ -320,7 +320,8 @@
               <div>
                 <div class="guide-item-title">Gana seguido pero poco</div>
                 <div class="guide-item-desc">Cuidado con outlier bajista que aplasta el promedio.</div>
-                <div class="guide-item-example">ej: Jun GBPJPY: 82% · Avg +0.11% (StDev 5.10)</div>
+                <div class="guide-item-example" style="color:#166534">▲ Long: Jun GBPJPY: 82% · Avg +0.11% (StDev 5.10)</div>
+                <div class="guide-item-example" style="color:#991b1b">▼ Short: Ago GBPJPY: 27% · Avg -0.80% (StDev alto)</div>
               </div>
             </div>
             <div class="guide-item">
@@ -331,7 +332,8 @@
               <div>
                 <div class="guide-item-title">Raramente gana pero pega fuerte</div>
                 <div class="guide-item-desc">Alta dispersión, movimiento grande cuando acierta.</div>
-                <div class="guide-item-example">ej: Oct EURUSD: 18% · Avg -1.5%</div>
+                <div class="guide-item-example" style="color:#166534">▲ Long: Oct EURUSD: 18% → Avg -1.5% cuando falla, +2.3% cuando acierta</div>
+                <div class="guide-item-example" style="color:#991b1b">▼ Short: Sep→Oct EURUSD: 18% · en 9 de 11 años octubre bajó</div>
               </div>
             </div>
             <div class="guide-item">
@@ -342,7 +344,8 @@
               <div>
                 <div class="guide-item-title">Evitar</div>
                 <div class="guide-item-desc">Baja frecuencia y retorno promedio negativo. Sin ventaja histórica.</div>
-                <div class="guide-item-example">ej: Feb EURUSD: 17% · Avg -0.56%</div>
+                <div class="guide-item-example" style="color:#166534">▲ Long: Feb EURUSD: 17% · Avg -0.56%</div>
+                <div class="guide-item-example" style="color:#991b1b">▼ Short: Ene GBPJPY: 50% · Avg -0.19% — sin ventaja direccional</div>
               </div>
             </div>
           </div>
