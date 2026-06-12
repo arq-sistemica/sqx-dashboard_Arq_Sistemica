@@ -154,6 +154,27 @@
 
   /* NO BOTS FOUND */
   .no-data { padding:48px; text-align:center; color:var(--text3); font-size:13px; }
+  /* GUIDE PANELS */
+  .guide-panel { margin-top:16px; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .guide-header { padding:12px 16px; background:var(--bg2); border-bottom:1px solid var(--border); font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+  .guide-header:hover { background:var(--bg3); }
+  .guide-chevron { margin-left:auto; font-size:11px; color:var(--text3); transition:transform 0.2s; }
+  .guide-panel.collapsed .guide-chevron { transform:rotate(-90deg); }
+  .guide-panel.collapsed .guide-body { display:none; }
+  .guide-panel.collapsed .guide-header { border-bottom:none; }
+  .guide-body { padding:14px 16px; }
+  .guide-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .guide-table th { text-align:left; padding:6px 10px; font-size:11px; font-weight:600; color:var(--text2); border-bottom:2px solid var(--border); }
+  .guide-table td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .guide-table tr:last-child td { border-bottom:none; }
+  .guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .guide-item { display:flex; align-items:flex-start; gap:8px; padding:10px; border-radius:var(--radius); border:1px solid var(--border); }
+  .guide-badges { display:flex; gap:3px; flex-direction:column; flex-shrink:0; }
+  .guide-badge { display:inline-block; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:600; white-space:nowrap; }
+  .guide-badge.long { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+  .guide-badge.short { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+  .guide-item-title { font-size:11px; font-weight:600; color:var(--text); margin-bottom:2px; }
+  .guide-item-desc { font-size:11px; color:var(--text2); line-height:1.4; }
 </style>
 </head>
 <body>
@@ -162,7 +183,7 @@
 <div class="topbar">
   <div class="topbar-title">
     <div class="topbar-page-name">Estacionalidad</div>
-    <div class="topbar-page-sub" id="subtitle-meta">Análisis estacional por par y activo</div>
+    <div class="topbar-page-sub" id="subtitle-meta">Análisis estacional por par y activo <span style="font-size:11px;color:var(--text3)">· Datos al 11 jun 2026 · Junio en curso (día 11)</span></div>
   </div>
   <div class="topbar-right">
     <span style="font-size:11px;color:var(--text3)" id="season-info"></span>
@@ -199,6 +220,105 @@
       <span class="exc-chevron" id="exc-chevron">▼</span>
     </div>
     <div class="exceptional-grid" id="exceptional-grid"></div>
+  </div>
+
+  <!-- GUIDE PANEL A — High > prev / Close > prev -->
+  <div class="guide-panel collapsed" id="guide-panel-a">
+    <div class="guide-header" onclick="toggleGuide('guide-panel-a')">
+      📖 Cómo leer High &gt; prev y Close &gt; prev
+      <span class="guide-chevron">▼</span>
+    </div>
+    <div class="guide-body">
+      <table class="guide-table">
+        <thead>
+          <tr>
+            <th>Situación</th>
+            <th>High &gt; prev</th>
+            <th>Close &gt; prev</th>
+            <th>Qué significa</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>✅ ✅</td>
+            <td>Sí</td>
+            <td>Sí</td>
+            <td>Mes alcista claro — subió y sostuvo</td>
+          </tr>
+          <tr>
+            <td>✅ ❌</td>
+            <td>Sí</td>
+            <td>No</td>
+            <td>Subió pero no lo sostuvo — mecha larga, rechazo</td>
+          </tr>
+          <tr>
+            <td>❌ ✅</td>
+            <td>No</td>
+            <td>Sí</td>
+            <td>No hizo nuevos máximos pero cerró fuerte desde abajo</td>
+          </tr>
+          <tr>
+            <td>❌ ❌</td>
+            <td>No</td>
+            <td>No</td>
+            <td>Mes bajista completo</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--text3);font-style:italic;margin:10px 0 0">El Close &gt; prev es la señal más valiosa: mide si el mercado sostuvo el movimiento hasta el último día del mes.</p>
+    </div>
+  </div>
+
+  <!-- GUIDE PANEL B — Pos% y Avg% juntos -->
+  <div class="guide-panel collapsed" id="guide-panel-b">
+    <div class="guide-header" onclick="toggleGuide('guide-panel-b')">
+      📖 Cómo leer Pos% y Avg% juntos
+      <span class="guide-chevron">▼</span>
+    </div>
+    <div class="guide-body">
+      <div class="guide-grid">
+        <div class="guide-item">
+          <div class="guide-badges">
+            <span class="guide-badge long">Pos% alto</span>
+            <span class="guide-badge long">Avg% alto</span>
+          </div>
+          <div>
+            <div class="guide-item-title">Señal limpia y potente</div>
+            <div class="guide-item-desc">Gana seguido y cuando gana, gana bien.</div>
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="guide-badges">
+            <span class="guide-badge long">Pos% alto</span>
+            <span class="guide-badge short">Avg% bajo</span>
+          </div>
+          <div>
+            <div class="guide-item-title">Gana seguido pero poco</div>
+            <div class="guide-item-desc">Cuidado con outlier bajista que aplasta el promedio.</div>
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="guide-badges">
+            <span class="guide-badge short">Pos% bajo</span>
+            <span class="guide-badge long">Avg% alto</span>
+          </div>
+          <div>
+            <div class="guide-item-title">Raramente gana pero pega fuerte</div>
+            <div class="guide-item-desc">Alta dispersión, movimiento grande cuando acierta.</div>
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="guide-badges">
+            <span class="guide-badge short">Pos% bajo</span>
+            <span class="guide-badge short">Avg% bajo</span>
+          </div>
+          <div>
+            <div class="guide-item-title">Evitar</div>
+            <div class="guide-item-desc">Baja frecuencia y retorno promedio negativo. Sin ventaja histórica.</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- FOOTER FUENTES -->
@@ -545,6 +665,10 @@ function toggleBotList(id) {
 // ── EXCEPTIONAL TOGGLE ──
 function toggleExceptional() {
   document.getElementById('exceptional-panel').classList.toggle('collapsed');
+}
+
+function toggleGuide(id) {
+  document.getElementById(id).classList.toggle('collapsed');
 }
 
 // ── FILTERS ──
