@@ -199,10 +199,10 @@
   /* PAR×PAR */
   .par-selector-row { display:flex; align-items:center; gap:10px; padding:16px 0 20px; }
   .par-label { font-size:12px; font-weight:600; color:var(--text2); }
-  #par-select { height:34px; padding:0 10px; border:1px solid var(--border2); border-radius:var(--radius); font-size:13px; font-weight:600; color:var(--text); background:var(--bg); cursor:pointer; }
+  #par-select { height:34px; padding:0 10px; border:1px solid var(--border2); border-radius:var(--radius); font-size:12px; font-weight:600; color:var(--text); background:var(--bg); cursor:pointer; }
   .par-bloque { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; margin-bottom:16px; overflow-x:auto; }
-  .par-bloque-title { font-size:12px; font-weight:700; color:var(--text2); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; }
-  .exc-card { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg2); font-size:12px; }
+  .par-bloque-title { font-size:11px; font-weight:700; color:var(--text2); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; }
+  .exc-card { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg2); font-size:11px; }
   .exc-trans { font-weight:700; color:var(--text); }
   .exc-val { color:var(--text2); }
   .exc-cat { font-size:11px; color:var(--text3); }
@@ -884,10 +884,10 @@ function renderMapa(data) {
     const fill = cat ? cat.text : '#374151';
     out += `<rect x="${x.toFixed(1)}" y="14" width="${RW}" height="${RH}" fill="${bg}" rx="3"/>`;
     out += `<text x="${(x+RW/2).toFixed(1)}" y="11" text-anchor="middle" font-size="10" fill="var(--text2)">${s.month}</text>`;
-    out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="bold" fill="${fill}">${s.pos}%</text>`;
+    out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="bold" fill="${fill}">${s.pos}%</text>`;
     if (s.avg !== null && s.avg !== undefined) {
       const avgStr = (s.avg > 0 ? '+' : '') + s.avg.toFixed(2) + '%';
-      out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+18).toFixed(1)}" text-anchor="middle" font-size="9" fill="${fill}" opacity="0.8">${avgStr}</text>`;
+      out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="${fill}" opacity="0.8">${avgStr}</text>`;
     }
     if (bots.length > 0) {
       let cx = (x + RW/2) - (bots.length - 1) * 6;
@@ -915,7 +915,7 @@ function renderBarras(data) {
   [{ pct:73, color:'#86efac' }, { pct:50, color:'#94a3b8' }, { pct:27, color:'#fca5a5' }].forEach(d => {
     const y = baseY - maxBarH * d.pct / 100;
     out += `<line x1="${ML}" y1="${y.toFixed(1)}" x2="${W-20}" y2="${y.toFixed(1)}" stroke="${d.color}" stroke-width="1" stroke-dasharray="4,3"/>`;
-    out += `<text x="${ML-4}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="9" fill="${d.color}">${d.pct}%</text>`;
+    out += `<text x="${ML-4}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="${d.color}">${d.pct}%</text>`;
   });
 
   // Baseline
@@ -932,9 +932,9 @@ function renderBarras(data) {
 
     out += `<g data-trans="${t.from}→${t.to}" data-h="${t.h_pct}" data-c="${t.c_pct}">`;
     out += `<rect x="${hX.toFixed(1)}" y="${(baseY-hH).toFixed(1)}" width="${barW}" height="${hH.toFixed(1)}" fill="#94a3b8" rx="2"/>`;
-    if (t.h_pct > 5) out += `<text x="${(hX+barW/2).toFixed(1)}" y="${(baseY-hH-3).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text3)">${t.h_pct}%</text>`;
+    if (t.h_pct > 5) out += `<text x="${(hX+barW/2).toFixed(1)}" y="${(baseY-hH-3).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--text3)">${t.h_pct}%</text>`;
     out += `<rect x="${cX.toFixed(1)}" y="${(baseY-cH).toFixed(1)}" width="${barW}" height="${cH.toFixed(1)}" fill="${cbg}" rx="2"/>`;
-    if (t.c_pct > 5) out += `<text x="${(cX+barW/2).toFixed(1)}" y="${(baseY-cH-3).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text3)">${t.c_pct}%</text>`;
+    if (t.c_pct > 5) out += `<text x="${(cX+barW/2).toFixed(1)}" y="${(baseY-cH-3).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--text3)">${t.c_pct}%</text>`;
 
     const lx = (gx + barW/2 + 2).toFixed(1);
     const ly = (baseY + 12).toFixed(1);
@@ -954,7 +954,7 @@ function renderEquity(data) {
   const hasData = avgs.some(a => a !== null && a !== undefined);
 
   if (!hasData) {
-    svg.innerHTML = `<text x="450" y="100" text-anchor="middle" font-size="13" fill="var(--text3)">Sin datos de promedio</text>`;
+    svg.innerHTML = `<text x="450" y="100" text-anchor="middle" font-size="11" fill="var(--text3)">Sin datos de promedio</text>`;
     return;
   }
 
@@ -980,7 +980,7 @@ function renderEquity(data) {
     const v = minV + range * s / 4;
     const y = toY(v);
     out += `<line x1="${ML-3}" y1="${y.toFixed(1)}" x2="${W-MR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
-    out += `<text x="${ML-5}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text3)">${v.toFixed(2)}%</text>`;
+    out += `<text x="${ML-5}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text3)">${v.toFixed(2)}%</text>`;
   }
 
   // Baseline
@@ -1006,9 +1006,9 @@ function renderEquity(data) {
   pts.forEach(([x, y], i) => {
     const isCurrent = i === MONTHS_IDX;
     out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${isCurrent ? 5 : 3}" fill="${isCurrent ? '#b91c1c' : lineColor}"/>`;
-    out += `<text x="${x.toFixed(1)}" y="${(H-MB+14).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text3)">${data.seasonality[i].month}</text>`;
+    out += `<text x="${x.toFixed(1)}" y="${(H-MB+14).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--text3)">${data.seasonality[i].month}</text>`;
     if (isCurrent) {
-      out += `<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="bold">${acum[i].toFixed(2)}%</text>`;
+      out += `<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="bold">${acum[i].toFixed(2)}%</text>`;
     }
   });
 
