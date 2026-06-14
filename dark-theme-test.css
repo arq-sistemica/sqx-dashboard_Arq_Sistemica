@@ -1,0 +1,52 @@
+:root {
+  --bg:        #1a1510;
+  --bg2:       #231c14;
+  --bg3:       #2d2418;
+  --border:    #3d3020;
+  --border2:   #544030;
+  --text:      #f0e6d3;
+  --text2:     #c4aa88;
+  --text3:     #7a6548;
+  --green:     #c9a55a;
+  --green-bg:  #2d2418;
+  --red:       #c0392b;
+  --red-bg:    #2a1510;
+  --accent:    #c9a55a;
+  --accent-light: #2d2418;
+}
+
+body { background: var(--bg) !important; }
+
+/* Topbar y nav */
+.global-nav {
+  background: #110e09 !important;
+  border-bottom-color: var(--border) !important;
+}
+.global-nav .nav-logo { color: var(--text) !important; }
+.global-nav .nav-links a { color: var(--text2) !important; }
+.global-nav .nav-links a.active {
+  background: #2d2418 !important;
+  color: var(--accent) !important;
+}
+
+/* Cards y bloques */
+.par-bloque, .season-panel, .table-wrap {
+  border-color: var(--border) !important;
+  background: var(--bg2) !important;
+}
+
+/* Sub-tabs */
+.sub-tab.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #1a1510 !important;
+}
+.inner-tab.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #1a1510 !important;
+}
+
+/* Tabla */
+thead th { background: var(--bg3) !important; }
+tr:hover td { filter: brightness(1.15) !important; }

@@ -55,11 +55,46 @@
       '<div class="nav-links">' + links + '</div>' +
       '<div class="nav-right">' +
       '<span class="nav-brand">Arq. Sistémica</span>' +
+      '<button class="nav-logout" id="dark-toggle" onclick="toggleDarkMode()">🌙 Dark</button>' +
       '<button class="nav-logout" onclick="if(typeof showConfig===\'function\')showConfig()">⚙ Config</button>' +
       '<button class="nav-logout" onclick="if(typeof authLogout===\'function\')authLogout()">⎋ Cerrar sesión</button>' +
       '</div>';
 
     document.body.insertBefore(nav, document.body.firstChild);
+
+    // Dark mode — funciones globales (onclick las requiere fuera del IIFE)
+    window.applyDarkLink = function(enable) {
+      var link = document.getElementById('dark-theme-link');
+      if (enable) {
+        if (!link) {
+          link = document.createElement('link');
+          link.id = 'dark-theme-link';
+          link.rel = 'stylesheet';
+          link.href = 'dark-theme-test.css';
+          document.head.appendChild(link);
+        }
+        link.disabled = false;
+      } else {
+        if (link) link.disabled = true;
+      }
+    };
+
+    window.toggleDarkMode = function() {
+      var isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('arq_dark_mode', isDark ? '1' : '0');
+      var btn = document.getElementById('dark-toggle');
+      if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+      window.applyDarkLink(isDark);
+    };
+
+    // Aplicar preferencia guardada al cargar cada página
+    var savedDark = localStorage.getItem('arq_dark_mode') === '1';
+    if (savedDark) {
+      document.body.classList.add('dark-mode');
+      window.applyDarkLink(true);
+      var btn = document.getElementById('dark-toggle');
+      if (btn) btn.textContent = '☀️ Light';
+    }
   }
 
   if (document.readyState === 'loading') {
