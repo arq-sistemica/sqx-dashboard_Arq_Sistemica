@@ -443,7 +443,7 @@
     <div id="par-panel-transiciones" class="par-panel">
       <div id="bloque-barras" class="par-bloque">
         <div class="par-bloque-title">📈 H% vs C% por transición</div>
-        <svg id="svg-barras" viewBox="0 0 900 220" style="width:100%;height:auto;display:block"></svg>
+        <svg id="svg-barras" viewBox="0 0 900 130" style="width:100%;height:auto;display:block"></svg>
       </div>
       <div id="bloque-equity" class="par-bloque">
         <div class="par-bloque-title">💹 Equity acumulada (avg mensual %)</div>
@@ -988,19 +988,19 @@ function renderMapa(data) {
 
 function renderBarras(data) {
   const svg = document.getElementById('svg-barras');
-  const ML = 40, W = 900, H = 220;
-  const baseY = 172;
-  const maxBarH = 150;
-  const availW = W - ML - 20;
+  const ML = 5, W = 900, H = 130;
+  const baseY = 80;
+  const maxBarH = 68;
+  const availW = W - ML - 30;
   const groupW = availW / 11;
   const barW = Math.max(10, Math.floor(groupW * 0.22));
   let out = '';
 
-  // Dashed reference lines
+  // Dashed reference lines — labels al extremo derecho para eliminar gap izquierdo
   [{ pct:73, color:'#86efac' }, { pct:50, color:'#94a3b8' }, { pct:27, color:'#fca5a5' }].forEach(d => {
     const y = baseY - maxBarH * d.pct / 100;
-    out += `<line x1="${ML}" y1="${y.toFixed(1)}" x2="${W-20}" y2="${y.toFixed(1)}" stroke="${d.color}" stroke-width="1" stroke-dasharray="4,3"/>`;
-    out += `<text x="${ML-4}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="${d.color}">${d.pct}%</text>`;
+    out += `<line x1="${ML}" y1="${y.toFixed(1)}" x2="${W-28}" y2="${y.toFixed(1)}" stroke="${d.color}" stroke-width="1" stroke-dasharray="4,3"/>`;
+    out += `<text x="${W-25}" y="${(y+4).toFixed(1)}" text-anchor="start" font-size="10" fill="${d.color}">${d.pct}%</text>`;
   });
 
   // Baseline
