@@ -1483,10 +1483,10 @@ async function authGrant() {
   }
   try {
     const trades = await sb.getMyTrades();
-    window._lastTrades = trades;
+    window._lastTrades = _cleanTrades(trades);
     window._selectedAccounts = new Set();  // reset filtro al (re)login
     window._filteredMagics   = null;
-    window.LIVE = computeLiveMetrics(trades);
+    window.LIVE = computeLiveMetrics(window._lastTrades);
   } catch(e) {
     window.LIVE = {};
   }
@@ -1514,10 +1514,10 @@ async function refreshTrades() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   try {
     const trades = await sb.getMyTrades();
-    window._lastTrades = trades;
+    window._lastTrades = _cleanTrades(trades);
     window._selectedAccounts = new Set();
     window._filteredMagics = null;
-    window.LIVE = computeLiveMetrics(trades);
+    window.LIVE = computeLiveMetrics(window._lastTrades);
     renderAccountCheckboxes();
     render();
     renderAlerts();
@@ -1529,6 +1529,30 @@ async function refreshTrades() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '🔄'; }
   }
+}
+
+function _cleanTrades(trades) {
+  if (!trades || !trades.length) return [];
+  // Filtra phantoms: open_price == close_price (deals de comisión MT5 sin movimiento real)
+  const noPhantoms = trades.filter(t =>
+    t.open_price == null || t.close_price == null ||
+    Math.abs(t.open_price - t.close_price) > 0.000049
+  );
+  // Deduplica: mismo bot+símbolo+cierre(min)+lots+open+close en misma cuenta → conserva mayor |netProfit|
+  const seen = new Map();
+  for (const t of noPhantoms) {
+    const closeMin = (t.close_time || '').slice(0, 16);
+    const op  = (t.open_price  || 0).toFixed(5);
+    const cp  = (t.close_price || 0).toFixed(5);
+    const ls  = (t.lots        || 0).toFixed(2);
+    const key = `${t.account_id}|${t.magic}|${t.symbol}|${closeMin}|${ls}|${op}|${cp}`;
+    const np  = Math.abs((t.profit||0) + (t.commission||0) + (t.swap||0));
+    const prev = seen.get(key);
+    if (!prev || np > prev.np) seen.set(key, { t, np });
+  }
+  return [...seen.values()]
+    .map(v => v.t)
+    .sort((a, b) => new Date(a.close_time) - new Date(b.close_time));
 }
 
 function computeLiveMetrics(trades) {
