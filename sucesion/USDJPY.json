@@ -1,0 +1,839 @@
+{
+  "pair": "USDJPY",
+  "period": "2015-2025",
+  "seasonality": [
+    {
+      "month": "Ene",
+      "pos": 33,
+      "avg": -0.56
+    },
+    {
+      "month": "Feb",
+      "pos": 50,
+      "avg": 0.05
+    },
+    {
+      "month": "Mar",
+      "pos": 36,
+      "avg": 0.5
+    },
+    {
+      "month": "Abr",
+      "pos": 55,
+      "avg": 0.44
+    },
+    {
+      "month": "May",
+      "pos": 55,
+      "avg": 0.6
+    },
+    {
+      "month": "Jun",
+      "pos": 64,
+      "avg": 0.69
+    },
+    {
+      "month": "Jul",
+      "pos": 36,
+      "avg": -0.78
+    },
+    {
+      "month": "Ago",
+      "pos": 45,
+      "avg": -0.19
+    },
+    {
+      "month": "Sep",
+      "pos": 64,
+      "avg": 0.86
+    },
+    {
+      "month": "Oct",
+      "pos": 73,
+      "avg": 1.86
+    },
+    {
+      "month": "Nov",
+      "pos": 45,
+      "avg": 0.13
+    },
+    {
+      "month": "Dic",
+      "pos": 45,
+      "avg": -0.71
+    }
+  ],
+  "transitions": [
+    {
+      "from": "Ene",
+      "to": "Feb",
+      "h_count": 5,
+      "h_pct": 45,
+      "c_count": 5,
+      "c_pct": 45,
+      "dest_pos": 50,
+      "dest_cat": "Feb: Neutro (50%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2016,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2017,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2018,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2020,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2025,
+          "h": false,
+          "c": false
+        }
+      ]
+    },
+    {
+      "from": "Feb",
+      "to": "Mar",
+      "h_count": 7,
+      "h_pct": 64,
+      "c_count": 4,
+      "c_pct": 36,
+      "dest_pos": 36,
+      "dest_cat": "Mar: Leve SHORT (36%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2016,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2017,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2018,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2025,
+          "h": false,
+          "c": false
+        }
+      ]
+    },
+    {
+      "from": "Mar",
+      "to": "Abr",
+      "h_count": 4,
+      "h_pct": 36,
+      "c_count": 6,
+      "c_pct": 55,
+      "dest_pos": 55,
+      "dest_cat": "Abr: Leve LONG (55%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2016,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2017,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2018,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2022,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2023,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2025,
+          "h": false,
+          "c": false
+        }
+      ]
+    },
+    {
+      "from": "Abr",
+      "to": "May",
+      "h_count": 5,
+      "h_pct": 45,
+      "c_count": 6,
+      "c_pct": 55,
+      "dest_pos": 55,
+      "dest_cat": "May: Leve LONG (55%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2016,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2017,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2018,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2019,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2021,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2024,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2025,
+          "h": false,
+          "c": true
+        }
+      ]
+    },
+    {
+      "from": "May",
+      "to": "Jun",
+      "h_count": 6,
+      "h_pct": 55,
+      "c_count": 7,
+      "c_pct": 64,
+      "dest_pos": 64,
+      "dest_cat": "Jun: Moderado LONG (64%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2016,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2017,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2018,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2019,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2020,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2021,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2025,
+          "h": false,
+          "c": false
+        }
+      ]
+    },
+    {
+      "from": "Jun",
+      "to": "Jul",
+      "h_count": 7,
+      "h_pct": 64,
+      "c_count": 4,
+      "c_pct": 36,
+      "dest_pos": 36,
+      "dest_cat": "Jul: Leve SHORT (36%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2016,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2017,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2018,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2022,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2023,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2025,
+          "h": true,
+          "c": true
+        }
+      ]
+    },
+    {
+      "from": "Jul",
+      "to": "Ago",
+      "h_count": 4,
+      "h_pct": 36,
+      "c_count": 5,
+      "c_pct": 45,
+      "dest_pos": 45,
+      "dest_cat": "Ago: Neutro (45%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2016,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2017,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2018,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2021,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2024,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2025,
+          "h": true,
+          "c": false
+        }
+      ]
+    },
+    {
+      "from": "Ago",
+      "to": "Sep",
+      "h_count": 6,
+      "h_pct": 55,
+      "c_count": 7,
+      "c_pct": 64,
+      "dest_pos": 64,
+      "dest_cat": "Sep: Moderado LONG (64%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2016,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2017,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2018,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2019,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2024,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2025,
+          "h": false,
+          "c": true
+        }
+      ]
+    },
+    {
+      "from": "Sep",
+      "to": "Oct",
+      "h_count": null,
+      "h_pct": null,
+      "c_count": null,
+      "c_pct": null,
+      "dest_pos": null,
+      "dest_cat": null,
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2016,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2017,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2018,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2025,
+          "h": true,
+          "c": true
+        }
+      ]
+    },
+    {
+      "from": "Oct",
+      "to": "Nov",
+      "h_count": 8,
+      "h_pct": 73,
+      "c_count": 5,
+      "c_pct": 45,
+      "dest_pos": 45,
+      "dest_cat": "Nov: Neutro (45%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2016,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2017,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2018,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2022,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2023,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2025,
+          "h": true,
+          "c": true
+        }
+      ]
+    },
+    {
+      "from": "Nov",
+      "to": "Dic",
+      "h_count": 3,
+      "h_pct": 27,
+      "c_count": 5,
+      "c_pct": 45,
+      "dest_pos": 45,
+      "dest_cat": "Dic: Neutro (45%)",
+      "triple": false,
+      "years": [
+        {
+          "year": 2015,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2016,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2017,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2018,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2019,
+          "h": true,
+          "c": false
+        },
+        {
+          "year": 2020,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2021,
+          "h": false,
+          "c": true
+        },
+        {
+          "year": 2022,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2023,
+          "h": false,
+          "c": false
+        },
+        {
+          "year": 2024,
+          "h": true,
+          "c": true
+        },
+        {
+          "year": 2025,
+          "h": false,
+          "c": true
+        }
+      ]
+    }
+  ],
+  "exceptional": [],
+  "records": {
+    "best_c": {
+      "from": "May",
+      "to": "Jun",
+      "value": 64
+    },
+    "worst_c": {
+      "from": "Feb",
+      "to": "Mar",
+      "value": 36
+    },
+    "best_h": {
+      "from": "Oct",
+      "to": "Nov",
+      "value": 73
+    },
+    "worst_h": {
+      "from": "Nov",
+      "to": "Dic",
+      "value": 27
+    }
+  }
+}
