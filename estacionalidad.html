@@ -207,6 +207,12 @@
   .exc-val { color:var(--text2); }
   .exc-cat { font-size:11px; color:var(--text3); }
   #svg-tooltip { position:fixed; background:#1e293b; color:#f8fafc; padding:6px 10px; border-radius:6px; font-size:11px; pointer-events:none; display:none; z-index:999; line-height:1.6; white-space:nowrap; }
+  /* SUB-TABS PAR×PAR */
+  .sub-tabs { display:flex; gap:4px; margin:16px 0 12px; flex-wrap:wrap; }
+  .sub-tab { height:30px; padding:0 14px; border-radius:var(--radius); font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border2); background:var(--bg); color:var(--text2); transition:all 0.12s; }
+  .sub-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .sub-tab:hover:not(.active) { background:var(--bg3); }
+  .par-panel { }
 </style>
 </head>
 <body>
@@ -397,21 +403,42 @@
       <div class="par-bloque-title">📅 Mapa de calor mensual</div>
       <svg id="svg-mapa" viewBox="0 0 900 90" style="width:100%;height:auto;display:block"></svg>
     </div>
-    <div id="bloque-barras" class="par-bloque">
-      <div class="par-bloque-title">📈 H% vs C% por transición</div>
-      <svg id="svg-barras" viewBox="0 0 900 220" style="width:100%;height:auto;display:block"></svg>
+    <div class="sub-tabs" id="par-sub-tabs">
+      <button class="sub-tab active" onclick="switchParTab('transiciones')">📊 Transiciones</button>
+      <button class="sub-tab" onclick="switchParTab('live-pnl')">💰 Live P&L</button>
+      <button class="sub-tab" onclick="switchParTab('equity')">📈 Equity</button>
+      <button class="sub-tab" onclick="switchParTab('alineacion')">🎯 Alineación</button>
+      <button class="sub-tab" onclick="switchParTab('trades')">📋 Trades</button>
     </div>
-    <div id="bloque-equity" class="par-bloque">
-      <div class="par-bloque-title">💹 Equity acumulada (avg mensual %)</div>
-      <svg id="svg-equity" viewBox="0 0 900 200" style="width:100%;height:auto;display:block"></svg>
+    <div id="par-panel-transiciones" class="par-panel">
+      <div id="bloque-barras" class="par-bloque">
+        <div class="par-bloque-title">📈 H% vs C% por transición</div>
+        <svg id="svg-barras" viewBox="0 0 900 220" style="width:100%;height:auto;display:block"></svg>
+      </div>
+      <div id="bloque-equity" class="par-bloque">
+        <div class="par-bloque-title">💹 Equity acumulada (avg mensual %)</div>
+        <svg id="svg-equity" viewBox="0 0 900 200" style="width:100%;height:auto;display:block"></svg>
+      </div>
+      <div id="bloque-grilla" class="par-bloque">
+        <div class="par-bloque-title">🗓 Grilla año × transición (Close &gt; prev)</div>
+        <div id="grilla-container" style="overflow-x:auto"></div>
+      </div>
+      <div id="bloque-excepcionales" class="par-bloque">
+        <div class="par-bloque-title">⭐ Señales excepcionales</div>
+        <div id="exc-cards-container" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
     </div>
-    <div id="bloque-grilla" class="par-bloque">
-      <div class="par-bloque-title">🗓 Grilla año × transición (Close &gt; prev)</div>
-      <div id="grilla-container" style="overflow-x:auto"></div>
+    <div id="par-panel-live-pnl" class="par-panel" style="display:none">
+      <div class="no-data">Seleccioná esta pestaña para cargar datos live</div>
     </div>
-    <div id="bloque-excepcionales" class="par-bloque">
-      <div class="par-bloque-title">⭐ Señales excepcionales</div>
-      <div id="exc-cards-container" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    <div id="par-panel-equity" class="par-panel" style="display:none">
+      <div class="no-data">Seleccioná esta pestaña para cargar datos live</div>
+    </div>
+    <div id="par-panel-alineacion" class="par-panel" style="display:none">
+      <div class="no-data">Seleccioná esta pestaña para cargar datos live</div>
+    </div>
+    <div id="par-panel-trades" class="par-panel" style="display:none">
+      <div class="no-data">Seleccioná esta pestaña para cargar datos live</div>
     </div>
   </div>
 </div>
@@ -822,6 +849,16 @@ function switchInnerTab(tab) {
   document.getElementById('tab-parxpar').style.display = tab === 'parxpar'  ? 'block' : 'none';
   document.querySelectorAll('.inner-tab').forEach((b,i) =>
     b.classList.toggle('active', (i===0 && tab==='general') || (i===1 && tab==='parxpar')));
+}
+
+function switchParTab(name) {
+  const panels = ['transiciones','live-pnl','equity','alineacion','trades'];
+  panels.forEach(p => {
+    const el = document.getElementById('par-panel-' + p);
+    if (el) el.style.display = p === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.sub-tab').forEach((b, i) =>
+    b.classList.toggle('active', panels[i] === name));
 }
 
 function initParXPar() {
