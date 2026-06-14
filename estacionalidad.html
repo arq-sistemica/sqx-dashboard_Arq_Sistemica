@@ -889,6 +889,22 @@ function switchParTab(name) {
   });
   document.querySelectorAll('.sub-tab').forEach((b, i) =>
     b.classList.toggle('active', panels[i] === name));
+
+  // Lazy load: si es panel live y no hay datos cargados aún → cargar
+  if (name !== 'transiciones') {
+    const sym = document.getElementById('par-select') && document.getElementById('par-select').value;
+    const loaded = window._parLive && window._parLive.loaded && window._parLive.symbol === sym;
+    if (sym && !loaded) {
+      if (typeof sb !== 'undefined' && sb.isAuthenticated()) {
+        loadParLive(sym);
+      } else {
+        ['live-pnl','equity','alineacion','trades'].forEach(p => {
+          const el = document.getElementById('par-panel-' + p);
+          if (el) el.innerHTML = '<div class="no-data">Iniciá sesión para ver datos live</div>';
+        });
+      }
+    }
+  }
 }
 
 function initParXPar() {
@@ -923,6 +939,8 @@ function initParXPar() {
 }
 
 async function loadPar(symbol) {
+  window._parLive = { loaded: false, symbol: null };
+  switchParTab('transiciones');
   try {
     const r = await fetch('sucesion/' + symbol + '.json?t=' + Date.now());
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -936,7 +954,6 @@ async function loadPar(symbol) {
     const el = document.getElementById('bloque-mapa');
     if (el) el.innerHTML = '<div class="no-data">Error cargando ' + symbol + ': ' + e.message + '</div>';
   }
-  loadParLive(symbol);
 }
 
 function renderMapa(data) {
@@ -1281,6 +1298,16 @@ async function loadParLive(symbol) {
       if (el) el.innerHTML = '<div class="no-data">Iniciá sesión para ver datos live</div>';
     });
     return;
+  }
+
+  // Esperar a que seasonData esté disponible (cargado por loadSeasonality)
+  if (!seasonData) {
+    await new Promise(function(resolve) {
+      const check = setInterval(function() {
+        if (seasonData) { clearInterval(check); resolve(); }
+      }, 100);
+      setTimeout(function() { clearInterval(check); resolve(); }, 5000);
+    });
   }
 
   const hdrs = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token };
