@@ -213,6 +213,36 @@
   .sub-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
   .sub-tab:hover:not(.active) { background:var(--bg3); }
   .par-panel { }
+  /* LIVE PANELS — paneles B-E */
+  .live-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+  .live-tbl th { padding:7px 10px; background:var(--bg2); font-size:11px; font-weight:600; color:var(--text2); border-bottom:2px solid var(--border); white-space:nowrap; position:sticky; top:0; z-index:1; }
+  .live-tbl td { padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .live-tbl tr:last-child td { border-bottom:none; }
+  .badge { display:inline-block; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:700; white-space:nowrap; }
+  .badge.long  { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+  .badge.short { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+  .badge.mixed { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+  .badge.yes { background:#dcfce7; color:#166534; }
+  .badge.no  { background:#fee2e2; color:#991b1b; }
+  .badge.mix { background:var(--bg3); color:var(--text3); }
+  .pos { color:var(--green); font-weight:600; }
+  .neg { color:var(--red); font-weight:600; }
+  .ca-win  { background:#dcfce7; }
+  .ca-lose { background:#fee2e2; }
+  .cc-win  { background:#f0fdf4; }
+  .cc-lose { background:#fff1f2; }
+  .score-grid  { display:flex; flex-direction:column; gap:0; }
+  .score-row   { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .score-row:last-child { border-bottom:none; }
+  .score-name  { min-width:180px; font-size:12px; font-weight:600; color:var(--text); }
+  .score-bar-wrap { flex:1; }
+  .score-bar   { height:18px; border-radius:3px; min-width:4px; display:flex; align-items:center; padding:0 6px; font-size:10px; font-weight:700; color:#fff; }
+  .score-bar.pos { background:var(--green); }
+  .score-bar.neg { background:var(--red); }
+  .score-detail { font-size:10px; color:var(--text3); margin-top:3px; }
+  .score-val   { min-width:80px; text-align:right; font-size:12px; font-weight:700; }
+  .legend-row  { display:flex; gap:16px; flex-wrap:wrap; padding:10px 16px; border-top:1px solid var(--border); font-size:11px; color:var(--text2); align-items:center; }
+  .lbox        { width:12px; height:12px; border-radius:2px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -906,6 +936,7 @@ async function loadPar(symbol) {
     const el = document.getElementById('bloque-mapa');
     if (el) el.innerHTML = '<div class="no-data">Error cargando ' + symbol + ': ' + e.message + '</div>';
   }
+  loadParLive(symbol);
 }
 
 function renderMapa(data) {
@@ -1092,6 +1123,542 @@ function par_renderExcepcionales(data) {
       <span class="exc-cat">${e.dest_cat || ''}</span>
     </div>`;
   }).join('');
+}
+
+// ── LIVE PANEL HELPERS ──
+const BOT_COLORS = ['#4f46e5','#0891b2','#059669','#d97706','#dc2626',
+                    '#7c3aed','#db2777','#65a30d','#ea580c','#0284c7'];
+
+function _liveSeasonColor(pos) {
+  if (pos >= 82) return { bg:'#14532d', text:'#fff' };
+  if (pos >= 73) return { bg:'#166534', text:'#fff' };
+  if (pos >= 64) return { bg:'#4ade80', text:'#14532d' };
+  if (pos >= 55) return { bg:'#bbf7d0', text:'#14532d' };
+  if (pos >= 45) return { bg:'#fef9c3', text:'#713f12' };
+  if (pos >= 36) return { bg:'#fed7aa', text:'#7c2d12' };
+  if (pos >= 27) return { bg:'#f97316', text:'#fff' };
+  return { bg:'#b91c1c', text:'#fff' };
+}
+
+function _liveSeasonCatLabel(pos) {
+  if (pos >= 82) return 'Excepcional LONG';
+  if (pos >= 73) return 'Fuerte LONG';
+  if (pos >= 64) return 'Moderado LONG';
+  if (pos >= 55) return 'Leve LONG';
+  if (pos >= 45) return 'Neutro';
+  if (pos >= 36) return 'Leve SHORT';
+  if (pos >= 27) return 'Fuerte SHORT';
+  return 'Excepcional SHORT';
+}
+
+function _liveFmtUSD(v) {
+  return (v >= 0 ? '+' : '-') + '$' + Math.abs(v).toFixed(2);
+}
+
+function _liveTrunc(s, n) {
+  if (!s) return '';
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+function _liveNormalizeDir(d) {
+  if (!d) return null;
+  const v = String(d).toLowerCase().trim();
+  if (v === 'long') return 'long';
+  if (v === 'short') return 'short';
+  if (v === 'both' || v === 'mixed') return 'mixed';
+  return null;
+}
+
+// ── LIVE PROCESSING ──
+function live_deriveMagic(name) {
+  if (!name) return 0;
+  const d = name.replace(/[^0-9]/g, '');
+  return d ? parseInt(d) : 0;
+}
+
+function live_tagTrades(trades, bots, sd) {
+  const byMagic = {};
+  bots.forEach(function(b) { if (b.magic) byMagic[Number(b.magic)] = b; });
+
+  return trades.map(function(t) {
+    const closeDate = new Date(t.close_time);
+    const monthIdx  = closeDate.getMonth();
+    const bot       = byMagic[Number(t.magic)];
+    const botName   = bot ? bot.name : ('Magic:' + t.magic);
+    const botDir    = (bot && bot.direction) ? _liveNormalizeDir(bot.direction) : 'mixed';
+
+    let season_pos = null, season_cat = null, season_aligned = null;
+    if (sd && sd.seasonality && sd.seasonality[monthIdx]) {
+      const s = sd.seasonality[monthIdx];
+      season_pos = s.pos;
+      season_cat = _liveSeasonCatLabel(s.pos);
+      if      (botDir === 'long')  season_aligned = s.pos >= 55;
+      else if (botDir === 'short') season_aligned = s.pos <= 45;
+    }
+
+    const netProfit = parseFloat(
+      ((t.profit || 0) + (t.commission || 0) + (t.swap || 0)).toFixed(2)
+    );
+    const obj = {};
+    Object.keys(t).forEach(function(k) { obj[k] = t[k]; });
+    obj.magic = Number(t.magic);
+    obj.monthIdx = monthIdx;
+    obj.monthName = MONTHS_ES[monthIdx];
+    obj.botName = botName;
+    obj.botDir = botDir;
+    obj.season_pos = season_pos;
+    obj.season_cat = season_cat;
+    obj.season_aligned = season_aligned;
+    obj.netProfit = netProfit;
+    return obj;
+  });
+}
+
+function live_computeMonthly(tagged) {
+  const map = {};
+  tagged.forEach(function(t) {
+    const key = t.magic + '_' + t.monthIdx;
+    if (!map[key]) map[key] = {
+      botMagic: t.magic, botName: t.botName, monthIdx: t.monthIdx,
+      monthName: t.monthName, tradeCount: 0, netProfit: 0, wins: 0,
+      season_pos: t.season_pos, season_cat: t.season_cat, season_aligned: t.season_aligned,
+    };
+    const m = map[key];
+    m.tradeCount++;
+    m.netProfit += t.netProfit;
+    if (t.netProfit > 0) m.wins++;
+  });
+  return Object.values(map).map(function(m) {
+    return Object.assign({}, m, {
+      netProfit: parseFloat(m.netProfit.toFixed(2)),
+      winRate: m.tradeCount > 0 ? Math.round(m.wins / m.tradeCount * 100) : 0,
+    });
+  });
+}
+
+function live_computeScore(taggedAll, botMagic) {
+  const botTagged = taggedAll.filter(function(t) { return t.magic === botMagic; });
+  const monthly   = live_computeMonthly(botTagged);
+  if (monthly.length < 2) return null;
+
+  const aligned = monthly.filter(function(m) { return m.season_aligned === true; });
+  const counter = monthly.filter(function(m) { return m.season_aligned === false; });
+
+  if (aligned.length === 0 && counter.length === 0) return null;
+
+  const avgA = aligned.length ? aligned.reduce(function(s,m) { return s+m.netProfit; }, 0) / aligned.length : 0;
+  const avgC = counter.length ? counter.reduce(function(s,m) { return s+m.netProfit; }, 0) / counter.length : 0;
+  return {
+    score:       parseFloat((avgA - avgC).toFixed(2)),
+    avgAligned:  parseFloat(avgA.toFixed(2)),
+    avgCounter:  parseFloat(avgC.toFixed(2)),
+    alignedN:    aligned.length,
+    counterN:    counter.length,
+    totalMonths: monthly.length,
+  };
+}
+
+// ── LIVE LOAD ──
+async function loadParLive(symbol) {
+  ['live-pnl','equity','alineacion','trades'].forEach(function(p) {
+    const el = document.getElementById('par-panel-' + p);
+    if (el) el.innerHTML = '<div class="no-data">⏳ Cargando datos live de ' + symbol + '...</div>';
+  });
+
+  let token = null;
+  if (typeof sb !== 'undefined' && sb.isAuthenticated()) {
+    token = sb.getToken();
+  } else {
+    try {
+      const sess = JSON.parse(localStorage.getItem(SESSION_KEY) || '{}');
+      token = sess.access_token || null;
+    } catch(e) {}
+  }
+
+  if (!token) {
+    ['live-pnl','equity','alineacion','trades'].forEach(function(p) {
+      const el = document.getElementById('par-panel-' + p);
+      if (el) el.innerHTML = '<div class="no-data">Iniciá sesión para ver datos live</div>';
+    });
+    return;
+  }
+
+  const hdrs = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token };
+
+  const [botsRes, tradesRes] = await Promise.allSettled([
+    fetch(SUPABASE_URL + '/rest/v1/bots?symbol=ilike.' + symbol + '*&select=*', { headers: hdrs }),
+    fetch(SUPABASE_URL + '/rest/v1/trades?symbol=ilike.' + symbol +
+          '*&close_time=gte.2026-01-01T00:00:00&select=*&order=close_time.asc&limit=5000',
+          { headers: hdrs })
+  ]);
+
+  let rawBots = [], trades = [];
+
+  if (botsRes.status === 'fulfilled' && botsRes.value.ok)
+    rawBots = await botsRes.value.json();
+  else
+    console.warn('loadParLive: error cargando bots', botsRes);
+
+  if (tradesRes.status === 'fulfilled' && tradesRes.value.ok)
+    trades = await tradesRes.value.json();
+  else
+    console.warn('loadParLive: error cargando trades', tradesRes);
+
+  const bots = rawBots.map(function(b) {
+    const d = (b.data != null) ? b.data : b;
+    const magic = (d.magic && d.magic !== 0) ? Number(d.magic) : live_deriveMagic(d.name || '');
+    return {
+      id: String(b.id), magic: magic, name: d.name || '',
+      symbol: d.symbol || '', tf: d.tf || '',
+      direction: _liveNormalizeDir(d.direction || _getDir(d.pseudocodigo)),
+    };
+  });
+
+  const sd = window.seasonData !== undefined ? window.seasonData : seasonData;
+  const tagged  = live_tagTrades(trades, bots, sd);
+  const monthly = live_computeMonthly(tagged);
+
+  window._parLive = { loaded: true, bots: bots, trades: trades, tagged: tagged, monthly: monthly, symbol: symbol };
+
+  try { live_renderPnl(symbol, bots, tagged, monthly); }
+  catch(e) {
+    const el = document.getElementById('par-panel-live-pnl');
+    if (el) el.innerHTML = '<div class="no-data">Error P&amp;L: ' + e.message + '</div>';
+    console.error('live_renderPnl:', e);
+  }
+  try { live_renderEquity(symbol, bots, tagged); }
+  catch(e) {
+    const el = document.getElementById('par-panel-equity');
+    if (el) el.innerHTML = '<div class="no-data">Error Equity: ' + e.message + '</div>';
+    console.error('live_renderEquity:', e);
+  }
+  try { live_renderScores(symbol, bots, tagged, monthly); }
+  catch(e) {
+    const el = document.getElementById('par-panel-alineacion');
+    if (el) el.innerHTML = '<div class="no-data">Error Alineación: ' + e.message + '</div>';
+    console.error('live_renderScores:', e);
+  }
+  try { live_renderTrades(tagged); }
+  catch(e) {
+    const el = document.getElementById('par-panel-trades');
+    if (el) el.innerHTML = '<div class="no-data">Error Trades: ' + e.message + '</div>';
+    console.error('live_renderTrades:', e);
+  }
+}
+
+// ── LIVE RENDERS ──
+function live_renderPnl(symbol, bots, tagged, monthly) {
+  const container = document.getElementById('par-panel-live-pnl');
+  if (!bots.length) {
+    container.innerHTML = '<div class="no-data">Sin bots registrados en Supabase para ' + symbol + '</div>';
+    return;
+  }
+  if (!tagged.length) {
+    container.innerHTML = '<div class="no-data">Sin trades live para ' + symbol + ' desde enero 2026</div>';
+    return;
+  }
+
+  const sd = window.seasonData !== undefined ? window.seasonData : seasonData;
+  const activeMonths = [...new Set(tagged.map(function(t) { return t.monthIdx; }))].sort(function(a,b) { return a-b; });
+  const activeMagics = [...new Set(tagged.map(function(t) { return t.magic; }))];
+
+  const statsMap = {};
+  monthly.forEach(function(m) {
+    if (!statsMap[m.botMagic]) statsMap[m.botMagic] = {};
+    statsMap[m.botMagic][m.monthIdx] = m;
+  });
+
+  const botByMagic = {};
+  bots.forEach(function(b) { if (b.magic) botByMagic[b.magic] = b; });
+
+  const mTotals = {};
+  activeMonths.forEach(function(mi) { mTotals[mi] = 0; });
+  let grandTotal = 0;
+
+  let html = '<div style="overflow-x:auto"><table class="live-tbl"><thead><tr>';
+  html += '<th style="text-align:left;min-width:200px;position:sticky;left:0;z-index:2;background:var(--bg2)">Bot</th>';
+  activeMonths.forEach(function(mi) {
+    const s = sd && sd.seasonality && sd.seasonality[mi];
+    const pos = s ? s.pos : undefined;
+    const c = pos !== undefined ? _liveSeasonColor(pos) : null;
+    html += '<th style="text-align:right;min-width:95px">' + MONTHS_ES[mi];
+    if (pos !== undefined && c) {
+      html += '<br><span style="background:' + c.bg + ';color:' + c.text + ';font-size:9px;padding:1px 5px;border-radius:3px">' +
+              pos + '% ' + _liveSeasonCatLabel(pos).split(' ')[0] + '</span>';
+    }
+    html += '</th>';
+  });
+  html += '<th style="text-align:right;min-width:90px">Total</th></tr></thead><tbody>';
+
+  activeMagics.forEach(function(magic) {
+    const bot = botByMagic[magic];
+    const dir = (bot && bot.direction) ? bot.direction : 'mixed';
+    const name = (bot && bot.name) ? bot.name : ('Magic:' + magic);
+    const botMonths = monthly.filter(function(m) { return m.botMagic === magic; });
+    const alignedCount = botMonths.filter(function(m) { return m.season_aligned === true; }).length;
+    const totalCount = botMonths.length;
+    const score = totalCount > 0 ? parseFloat((alignedCount / totalCount * 10).toFixed(1)) : 0;
+    const scorePct = (score / 10) * 100;
+    const scoreColor = score >= 7 ? '#1a7f4b' : score >= 4 ? '#d97706' : '#b91c1c';
+    const botTotal = activeMonths.reduce(function(s, mi) {
+      return s + ((statsMap[magic] && statsMap[magic][mi]) ? statsMap[magic][mi].netProfit : 0);
+    }, 0);
+    grandTotal += botTotal;
+
+    html += '<tr><td style="text-align:left;position:sticky;left:0;background:var(--bg)">';
+    html += '<span style="font-weight:600;font-size:12px">' + _liveTrunc(name, 24) + '</span> ';
+    html += '<span class="badge ' + dir + '">' + (dir === 'long' ? 'Long' : dir === 'short' ? 'Short' : 'Mixed') + '</span>';
+    if (bot && bot.tf) html += '<span style="font-size:10px;color:var(--text3);margin-left:4px">' + bot.tf + '</span>';
+    html += '<div style="margin-top:4px"><div style="display:flex;align-items:center;gap:5px">' +
+      '<div style="flex:1;height:5px;background:var(--border2);border-radius:3px;overflow:hidden">' +
+      '<div style="width:' + scorePct + '%;height:100%;background:' + scoreColor + ';border-radius:3px"></div></div>' +
+      '<span style="font-size:10px;font-weight:700;color:' + scoreColor + ';min-width:30px">' + score.toFixed(1) + '/10</span>' +
+      '</div></div></td>';
+
+    activeMonths.forEach(function(mi) {
+      const st = statsMap[magic] && statsMap[magic][mi];
+      if (!st) {
+        html += '<td style="text-align:center;background:var(--bg3);color:var(--text3)">—</td>';
+      } else {
+        mTotals[mi] += st.netProfit;
+        const p = st.netProfit, aln = st.season_aligned;
+        let cls = '', icon = '';
+        if      (p > 0 && aln === true)  { cls = 'ca-win'; }
+        else if (p > 0 && aln === false) { cls = 'cc-win'; icon = ' ⚡'; }
+        else if (p < 0 && aln === true)  { cls = 'ca-lose'; icon = ' ⚠'; }
+        else if (p < 0 && aln === false) { cls = 'cc-lose'; }
+        html += '<td class="' + cls + '" style="text-align:right">' +
+          '<span class="' + (p >= 0 ? 'pos' : 'neg') + '">' + _liveFmtUSD(p) + icon + '</span>' +
+          '<div style="font-size:10px;color:var(--text3)">' + st.tradeCount + ' op · ' + st.winRate + '% WR</div>' +
+          '</td>';
+      }
+    });
+
+    html += '<td style="text-align:right;background:var(--bg2);font-weight:700">' +
+      '<span class="' + (botTotal >= 0 ? 'pos' : 'neg') + '">' + _liveFmtUSD(botTotal) + '</span></td></tr>';
+  });
+
+  html += '<tr style="background:var(--bg2);font-weight:700;border-top:2px solid var(--border)">' +
+    '<td style="position:sticky;left:0;background:var(--bg2)">TOTAL</td>';
+  activeMonths.forEach(function(mi) {
+    const v = parseFloat(mTotals[mi].toFixed(2));
+    html += '<td style="text-align:right"><span class="' + (v >= 0 ? 'pos' : 'neg') + '">' + _liveFmtUSD(v) + '</span></td>';
+  });
+  html += '<td style="text-align:right"><span class="' + (grandTotal >= 0 ? 'pos' : 'neg') + '">' + _liveFmtUSD(grandTotal) + '</span></td></tr>';
+  html += '</tbody></table></div>';
+  html += '<div class="legend-row">' +
+    '<div style="display:flex;align-items:center;gap:4px"><div class="lbox" style="background:#dcfce7;border:1px solid #86efac"></div> Verde intenso = ganó + alineado</div>' +
+    '<div style="display:flex;align-items:center;gap:4px"><div class="lbox" style="background:#f0fdf4;border:1px solid #bbf7d0"></div> ⚡ Verde claro = ganó contra-estacional</div>' +
+    '<div style="display:flex;align-items:center;gap:4px"><div class="lbox" style="background:#fee2e2;border:1px solid #fca5a5"></div> ⚠ Rojo intenso = perdió + alineado</div>' +
+    '<div style="display:flex;align-items:center;gap:4px"><div class="lbox" style="background:#fff1f2;border:1px solid #fecdd3"></div> Rojo suave = perdió contra-estacional</div>' +
+    '</div>';
+  container.innerHTML = html;
+}
+
+function live_renderEquity(symbol, bots, tagged) {
+  const container = document.getElementById('par-panel-equity');
+  if (!bots.length) {
+    container.innerHTML = '<div class="no-data">Sin bots registrados en Supabase para ' + symbol + '</div>';
+    return;
+  }
+  if (!tagged.length) {
+    container.innerHTML = '<div class="no-data">Sin trades live para ' + symbol + ' desde enero 2026</div>';
+    return;
+  }
+
+  const sd = window.seasonData !== undefined ? window.seasonData : seasonData;
+  const ML = 65, MR = 110, MT = 20, MB = 55, W = 900, H = 280;
+  const cW = W - ML - MR, cH = H - MT - MB;
+
+  const activeMonths = [...new Set(tagged.map(function(t) { return t.monthIdx; }))].sort(function(a,b) { return a-b; });
+  const activeMagics = [...new Set(tagged.map(function(t) { return t.magic; }))];
+
+  const xPts  = [-1].concat(activeMonths);
+  const xStep = cW / Math.max(xPts.length - 1, 1);
+  const toX   = function(idx) { return ML + idx * xStep; };
+
+  const lines = activeMagics.map(function(magic, bi) {
+    const monthly = {};
+    tagged.filter(function(t) { return t.magic === magic; }).forEach(function(t) {
+      monthly[t.monthIdx] = (monthly[t.monthIdx] || 0) + t.netProfit;
+    });
+    let cum = 0;
+    const pts = [{ x: toX(0), v: 0 }];
+    activeMonths.forEach(function(mi, idx) {
+      cum += monthly[mi] || 0;
+      pts.push({ x: toX(idx + 1), v: parseFloat(cum.toFixed(2)) });
+    });
+    const bot = bots.find(function(b) { return b.magic === magic; });
+    return { magic: magic, name: (bot && bot.name) ? bot.name : ('Magic:'+magic),
+             pts: pts, color: BOT_COLORS[bi % BOT_COLORS.length] };
+  });
+
+  const allV = [0].concat(lines.reduce(function(acc, l) { return acc.concat(l.pts.map(function(p) { return p.v; })); }, []));
+  let yMin = Math.min.apply(null, allV), yMax = Math.max.apply(null, allV);
+  const pad = Math.max((yMax - yMin) * 0.1, 1);
+  yMin -= pad; yMax += pad;
+  const yRange = yMax - yMin;
+  const toY = function(v) { return MT + cH - ((v - yMin) / yRange) * cH; };
+  const y0  = toY(0);
+
+  let out = '';
+
+  if (sd && sd.seasonality) {
+    activeMonths.forEach(function(mi, idx) {
+      const s = sd.seasonality[mi];
+      if (!s) return;
+      const c = _liveSeasonColor(s.pos);
+      const x1 = toX(idx), x2 = toX(idx + 1);
+      out += '<rect x="' + x1.toFixed(1) + '" y="' + MT + '" width="' + (x2-x1).toFixed(1) + '" height="' + cH + '" fill="' + c.bg + '" opacity="0.07"/>';
+    });
+  }
+
+  for (let i = 0; i <= 5; i++) {
+    const v = yMin + yRange * i / 5;
+    const y = toY(v);
+    out += '<line x1="' + ML + '" y1="' + y.toFixed(1) + '" x2="' + (W-MR) + '" y2="' + y.toFixed(1) + '" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>';
+    out += '<text x="' + (ML-5) + '" y="' + (y+4).toFixed(1) + '" text-anchor="end" font-size="10" fill="var(--text3)">' + (v >= 0 ? '+' : '') + v.toFixed(0) + '</text>';
+  }
+  out += '<line x1="' + ML + '" y1="' + y0.toFixed(1) + '" x2="' + (W-MR) + '" y2="' + y0.toFixed(1) + '" stroke="var(--red)" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>';
+
+  xPts.forEach(function(mi, idx) {
+    const x = toX(idx);
+    out += '<text x="' + x.toFixed(1) + '" y="' + (H-MB+14).toFixed(1) + '" text-anchor="middle" font-size="10" fill="var(--text3)">' + (mi === -1 ? 'Inicio' : MONTHS_ES[mi]) + '</text>';
+    if (mi !== -1 && sd && sd.seasonality) {
+      const s = sd.seasonality[mi];
+      if (s) {
+        const c = _liveSeasonColor(s.pos);
+        out += '<rect x="' + (x-16).toFixed(1) + '" y="' + (H-MB+18).toFixed(1) + '" width="32" height="13" fill="' + c.bg + '" rx="2"/>';
+        out += '<text x="' + x.toFixed(1) + '" y="' + (H-MB+28).toFixed(1) + '" text-anchor="middle" font-size="9" fill="' + c.text + '">' + s.pos + '%</text>';
+      }
+    }
+  });
+
+  lines.forEach(function(line) {
+    const d = 'M ' + line.pts.map(function(p) { return p.x.toFixed(1) + ' ' + toY(p.v).toFixed(1); }).join(' L ');
+    out += '<path d="' + d + '" fill="none" stroke="' + line.color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    line.pts.forEach(function(p) {
+      out += '<circle cx="' + p.x.toFixed(1) + '" cy="' + toY(p.v).toFixed(1) + '" r="3" fill="' + line.color + '" stroke="#fff" stroke-width="1.5"/>';
+    });
+    const last = line.pts[line.pts.length - 1];
+    const lval = (last.v >= 0 ? '+' : '') + '$' + Math.abs(last.v).toFixed(0);
+    out += '<text x="' + (last.x+6).toFixed(1) + '" y="' + (toY(last.v)+4).toFixed(1) + '" font-size="10" fill="' + line.color + '" font-weight="600">' + _liveTrunc(line.name, 14) + ' ' + lval + '</text>';
+  });
+
+  const legendHTML = lines.map(function(l) {
+    return '<div style="display:flex;align-items:center;gap:6px">' +
+      '<div style="width:22px;height:3px;background:' + l.color + ';border-radius:2px;flex-shrink:0"></div>' +
+      '<span style="color:var(--text2)">' + _liveTrunc(l.name, 28) + '</span></div>';
+  }).join('');
+
+  container.innerHTML =
+    '<div class="par-bloque-title" style="padding:12px 0 8px">📈 Equity acumulada — trades reales MT5 (no simulada)</div>' +
+    '<div style="overflow-x:auto"><svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block">' + out + '</svg></div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:16px;padding:8px 0 0;font-size:11px">' + legendHTML + '</div>';
+}
+
+function live_renderScores(symbol, bots, tagged, monthly) {
+  const container = document.getElementById('par-panel-alineacion');
+  if (!bots.length) {
+    container.innerHTML = '<div class="no-data">Sin bots registrados en Supabase para ' + symbol + '</div>';
+    return;
+  }
+  if (!tagged.length) {
+    container.innerHTML = '<div class="no-data">Sin trades live para ' + symbol + ' desde enero 2026</div>';
+    return;
+  }
+
+  const activeMagics = [...new Set(tagged.map(function(t) { return t.magic; }))];
+  const results = activeMagics.map(function(magic) {
+    const bot = bots.find(function(b) { return b.magic === magic; }) || { name: 'Magic:'+magic };
+    return { magic: magic, name: bot.name || ('Magic:'+magic), res: live_computeScore(tagged, magic) };
+  }).sort(function(a, b) {
+    if (!a.res && !b.res) return 0;
+    if (!a.res) return 1;
+    if (!b.res) return -1;
+    return b.res.score - a.res.score;
+  });
+
+  const maxAbs = Math.max.apply(null, results.filter(function(r) { return r.res; }).map(function(r) { return Math.abs(r.res.score); }).concat([1]));
+
+  let html = '<div class="par-bloque-title" style="padding:12px 0 8px">🎯 Score de Alineación Estacional</div>' +
+    '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">Diferencia de P&amp;L promedio mensual: meses alineados vs contra-estacionales</div>' +
+    '<div class="score-grid">';
+
+  results.forEach(function(item) {
+    const name = item.name, res = item.res;
+    if (!res) {
+      html += '<div class="score-row"><div class="score-name">' + _liveTrunc(name, 26) + '</div>' +
+        '<div class="score-bar-wrap"><span style="font-size:11px;color:var(--text3)">Datos insuficientes (&lt; 2 meses o dirección mixta)</span></div></div>';
+      return;
+    }
+    const bw  = Math.max(4, Math.round(Math.abs(res.score) / maxAbs * 300));
+    const pos = res.score >= 0;
+    html += '<div class="score-row">' +
+      '<div class="score-name">' + _liveTrunc(name, 24) + '</div>' +
+      '<div class="score-bar-wrap">' +
+      '<div class="score-bar ' + (pos ? 'pos' : 'neg') + '" style="width:' + bw + 'px">' + (Math.abs(res.score) >= 2 ? _liveFmtUSD(res.score) : '') + '</div>' +
+      '<div class="score-detail">Alineado: ' + _liveFmtUSD(res.avgAligned) + ' avg/mes (' + res.alignedN + ' mes' + (res.alignedN!==1?'es':'') + ') &nbsp;·&nbsp; ' +
+      'Contra: ' + _liveFmtUSD(res.avgCounter) + ' avg/mes (' + res.counterN + ' mes' + (res.counterN!==1?'es':'') + ')</div>' +
+      '</div>' +
+      '<div class="score-val ' + (pos ? 'pos' : 'neg') + '">' + _liveFmtUSD(res.score) + '</div>' +
+      '</div>';
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function live_renderTrades(tagged) {
+  const container = document.getElementById('par-panel-trades');
+  if (!tagged.length) {
+    container.innerHTML = '<div class="no-data">Sin trades live desde enero 2026</div>';
+    return;
+  }
+
+  const sorted = tagged.slice().sort(function(a,b) { return new Date(b.close_time) - new Date(a.close_time); });
+
+  let html = '<div class="par-bloque-title" style="padding:12px 0 8px">📋 Detalle de Trades — Contexto Estacional</div>' +
+    '<div style="max-height:500px;overflow-y:auto"><table class="live-tbl"><thead><tr>' +
+    '<th style="text-align:left">Fecha cierre</th>' +
+    '<th style="text-align:left">Bot</th>' +
+    '<th>Dir</th>' +
+    '<th style="text-align:right">Profit neto</th>' +
+    '<th>Mes estacional</th>' +
+    '<th style="text-align:center">Pos%</th>' +
+    '<th style="text-align:center">Alineado</th>' +
+    '</tr></thead><tbody>';
+
+  sorted.forEach(function(t) {
+    const rowBg = t.netProfit > 0 ? 'background:#f0fdf4' : t.netProfit < 0 ? 'background:#fff5f5' : '';
+    const date  = new Date(t.close_time);
+    const dateStr = date.toLocaleDateString('es-AR', { day:'2-digit', month:'short' }) +
+      ' ' + date.getFullYear().toString().slice(2);
+    const dir = t.botDir || 'mixed';
+
+    let alnBadge = '<span class="badge mix">— Mixto</span>';
+    if      (t.season_aligned === true)  alnBadge = '<span class="badge yes">✓ Sí</span>';
+    else if (t.season_aligned === false) alnBadge = '<span class="badge no">✗ No</span>';
+
+    let posCell = '—';
+    if (t.season_pos !== null && t.season_pos !== undefined) {
+      const c = _liveSeasonColor(t.season_pos);
+      posCell = '<span style="background:' + c.bg + ';color:' + c.text + ';padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">' + t.season_pos + '%</span>';
+    }
+
+    html += '<tr style="' + rowBg + '">' +
+      '<td style="white-space:nowrap;font-size:11px;color:var(--text3)">' + dateStr + '</td>' +
+      '<td style="max-width:160px"><span title="' + t.botName + '" style="white-space:nowrap">' + _liveTrunc(t.botName, 26) + '</span></td>' +
+      '<td style="text-align:center"><span class="badge ' + dir + '">' + (dir === 'long' ? 'L' : dir === 'short' ? 'S' : 'M') + '</span></td>' +
+      '<td style="text-align:right"><span class="' + (t.netProfit >= 0 ? 'pos' : 'neg') + '">' + _liveFmtUSD(t.netProfit) + '</span></td>' +
+      '<td style="white-space:nowrap;font-size:12px">' + t.monthName + '</td>' +
+      '<td style="text-align:center">' + posCell + '</td>' +
+      '<td style="text-align:center">' + alnBadge + '</td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
 }
 
 // ── START ──
