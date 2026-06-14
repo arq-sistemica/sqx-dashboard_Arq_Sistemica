@@ -13,10 +13,21 @@ function _sbHeaders(token) {
   };
 }
 
+// Deriva dirección ('Long'|'Short'|'Both'|null) desde texto de pseudocódigo SQX
+function _pseudoToDir(pseudo) {
+  if (!pseudo) return null;
+  const lf = /LongEntrySignal\s*=\s*false\s*;/i.test(pseudo);
+  const sf = /ShortEntrySignal\s*=\s*false\s*;/i.test(pseudo);
+  if (!lf && sf)  return 'Long';
+  if (lf  && !sf) return 'Short';
+  if (!lf && !sf) return 'Both';
+  return null;
+}
+
 // DB row → objeto bot JS anidado
 // Soporta esquema viejo (data JSONB) y nuevo (columnas planas)
 function _rowToBot(row) {
-  if (row.data !== undefined) {
+  if (row.data != null) {
     // Esquema viejo: todo en row.data JSONB
     const d = row.data;
     return {
@@ -36,6 +47,7 @@ function _rowToBot(row) {
       oos:       d.oos   || {},
       overviewData: d.overviewData || null,
       pseudocodigo: d.pseudocodigo || null,
+      direction:    d.direction    || _pseudoToDir(d.pseudocodigo) || null,
     };
   }
   // Esquema nuevo: columnas planas
@@ -81,6 +93,7 @@ function _rowToBot(row) {
     standalone:   row.overview_data?._standalone || null,
     overviewData: row.overview_data ? (({ _standalone, ...rest }) => Object.keys(rest).length ? rest : null)(row.overview_data) : null,
     pseudocodigo: row.pseudocodigo  || null,
+    direction:    _pseudoToDir(row.pseudocodigo || null),
   };
 }
 
