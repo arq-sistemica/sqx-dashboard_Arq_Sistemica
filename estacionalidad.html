@@ -431,7 +431,7 @@
     </div>
     <div id="bloque-mapa" class="par-bloque">
       <div class="par-bloque-title">📅 Mapa de calor mensual</div>
-      <svg id="svg-mapa" viewBox="0 0 900 90" style="width:100%;height:auto;display:block"></svg>
+      <svg id="svg-mapa" viewBox="0 0 900 55" style="width:100%;height:auto;display:block"></svg>
     </div>
     <div class="sub-tabs" id="par-sub-tabs">
       <button class="sub-tab active" onclick="switchParTab('transiciones')">📊 Transiciones</button>
@@ -959,26 +959,27 @@ async function loadPar(symbol) {
 function renderMapa(data) {
   const svg = document.getElementById('svg-mapa');
   const bots = activeBots[data.pair] || [];
-  const RW = 70, RH = 60, GAP = 5;
+  const RW = 70, RH = 36, GAP = 5;
   const startX = (900 - (12 * RW + 11 * GAP)) / 2;
+  const rectTop = 9;
   let out = '';
   data.seasonality.forEach((s, i) => {
     const x = startX + i * (RW + GAP);
     const cat = getCategory(s.pos);
     const bg   = cat ? cat.bg   : '#e5e7eb';
     const fill = cat ? cat.text : '#374151';
-    out += `<rect x="${x.toFixed(1)}" y="14" width="${RW}" height="${RH}" fill="${bg}" rx="3"/>`;
-    out += `<text x="${(x+RW/2).toFixed(1)}" y="11" text-anchor="middle" font-size="10" fill="var(--text2)">${s.month}</text>`;
-    out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="bold" fill="${fill}">${s.pos}%</text>`;
+    out += `<rect x="${x.toFixed(1)}" y="${rectTop}" width="${RW}" height="${RH}" fill="${bg}" rx="3"/>`;
+    out += `<text x="${(x+RW/2).toFixed(1)}" y="${rectTop+13}" text-anchor="middle" font-size="9" fill="${fill}">${s.month}</text>`;
+    out += `<text x="${(x+RW/2).toFixed(1)}" y="${rectTop+24}" text-anchor="middle" font-size="11" font-weight="bold" fill="${fill}">${s.pos}%</text>`;
     if (s.avg !== null && s.avg !== undefined) {
       const avgStr = (s.avg > 0 ? '+' : '') + s.avg.toFixed(2) + '%';
-      out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="${fill}" opacity="0.8">${avgStr}</text>`;
+      out += `<text x="${(x+RW/2).toFixed(1)}" y="${rectTop+34}" text-anchor="middle" font-size="9" fill="${fill}" opacity="0.85">${avgStr}</text>`;
     }
     if (bots.length > 0) {
       let cx = (x + RW/2) - (bots.length - 1) * 6;
       bots.forEach(dir => {
         const fc = dir === 'long' ? '#1a7f4b' : dir === 'short' ? '#b91c1c' : '#92400e';
-        out += `<circle cx="${cx.toFixed(1)}" cy="82" r="4" fill="${fc}"/>`;
+        out += `<circle cx="${cx.toFixed(1)}" cy="${rectTop + RH + 5}" r="3" fill="${fc}"/>`;
         cx += 12;
       });
     }
