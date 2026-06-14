@@ -1256,7 +1256,7 @@ function live_computeMonthly(tagged) {
 function live_computeScore(taggedAll, botMagic) {
   const botTagged = taggedAll.filter(function(t) { return t.magic === botMagic; });
   const monthly   = live_computeMonthly(botTagged);
-  if (monthly.length < 2) return null;
+  if (monthly.length < 1) return null;
 
   const aligned = monthly.filter(function(m) { return m.season_aligned === true; });
   const counter = monthly.filter(function(m) { return m.season_aligned === false; });
@@ -1334,10 +1334,26 @@ async function loadParLive(symbol) {
   const bots = rawBots.map(function(b) {
     const d = (b.data != null) ? b.data : b;
     const magic = (d.magic && d.magic !== 0) ? Number(d.magic) : live_deriveMagic(d.name || '');
+
+    // Derivar direction de múltiples fuentes
+    let dir = d.direction || d.dir || '';
+    if (!dir && d.pseudocodigo) {
+      const lf = /LongEntrySignal\s*=\s*false/i.test(d.pseudocodigo);
+      const sf = /ShortEntrySignal\s*=\s*false/i.test(d.pseudocodigo);
+      if (!lf && sf)       dir = 'long';
+      else if (lf && !sf)  dir = 'short';
+      else if (!lf && !sf) dir = 'both';
+    }
+    if (!dir && d.pseudocodigoData && d.pseudocodigoData.parsed && d.pseudocodigoData.parsed.entradaTipo)
+      dir = d.pseudocodigoData.parsed.entradaTipo;
+    if (!dir && d.overview_data && d.overview_data.direction)
+      dir = d.overview_data.direction;
+
     return {
-      id: String(b.id), magic: magic, name: d.name || '',
+      id: String(b.id), magic: magic,
+      name: d.name || d.id || '',
       symbol: d.symbol || '', tf: d.tf || '',
-      direction: _liveNormalizeDir(d.direction || _getDir(d.pseudocodigo)),
+      direction: _liveNormalizeDir(dir) || 'long',
     };
   });
 
@@ -1420,7 +1436,7 @@ function live_renderPnl(symbol, bots, tagged, monthly) {
   activeMagics.forEach(function(magic) {
     const bot = botByMagic[magic];
     const dir = (bot && bot.direction) ? bot.direction : 'mixed';
-    const name = (bot && bot.name) ? bot.name : ('Magic:' + magic);
+    const name = (bot && (bot.name || bot.id)) ? (bot.name || bot.id) : ('Magic:' + magic);
     const botMonths = monthly.filter(function(m) { return m.botMagic === magic; });
     const alignedCount = botMonths.filter(function(m) { return m.season_aligned === true; }).length;
     const totalCount = botMonths.length;
@@ -1516,7 +1532,7 @@ function live_renderEquity(symbol, bots, tagged) {
       pts.push({ x: toX(idx + 1), v: parseFloat(cum.toFixed(2)) });
     });
     const bot = bots.find(function(b) { return b.magic === magic; });
-    return { magic: magic, name: (bot && bot.name) ? bot.name : ('Magic:'+magic),
+    return { magic: magic, name: (bot && (bot.name || bot.id)) ? (bot.name || bot.id) : ('Magic:'+magic),
              pts: pts, color: BOT_COLORS[bi % BOT_COLORS.length] };
   });
 
@@ -1597,8 +1613,9 @@ function live_renderScores(symbol, bots, tagged, monthly) {
 
   const activeMagics = [...new Set(tagged.map(function(t) { return t.magic; }))];
   const results = activeMagics.map(function(magic) {
-    const bot = bots.find(function(b) { return b.magic === magic; }) || { name: 'Magic:'+magic };
-    return { magic: magic, name: bot.name || ('Magic:'+magic), res: live_computeScore(tagged, magic) };
+    const bot = bots.find(function(b) { return b.magic === magic; }) || {};
+    const botDisplayName = (bot.name || bot.id) || ('Magic:' + magic);
+    return { magic: magic, name: botDisplayName, res: live_computeScore(tagged, magic) };
   }).sort(function(a, b) {
     if (!a.res && !b.res) return 0;
     if (!a.res) return 1;
@@ -1626,7 +1643,9 @@ function live_renderScores(symbol, bots, tagged, monthly) {
       '<div class="score-bar-wrap">' +
       '<div class="score-bar ' + (pos ? 'pos' : 'neg') + '" style="width:' + bw + 'px">' + (Math.abs(res.score) >= 2 ? _liveFmtUSD(res.score) : '') + '</div>' +
       '<div class="score-detail">Alineado: ' + _liveFmtUSD(res.avgAligned) + ' avg/mes (' + res.alignedN + ' mes' + (res.alignedN!==1?'es':'') + ') &nbsp;·&nbsp; ' +
-      'Contra: ' + _liveFmtUSD(res.avgCounter) + ' avg/mes (' + res.counterN + ' mes' + (res.counterN!==1?'es':'') + ')</div>' +
+      'Contra: ' + _liveFmtUSD(res.avgCounter) + ' avg/mes (' + res.counterN + ' mes' + (res.counterN!==1?'es':'') + ')' +
+      (res.totalMonths === 1 ? ' &nbsp;<span style="color:var(--amber,#d97706);font-style:italic">(1 mes — muestra limitada)</span>' : '') +
+      '</div>' +
       '</div>' +
       '<div class="score-val ' + (pos ? 'pos' : 'neg') + '">' + _liveFmtUSD(res.score) + '</div>' +
       '</div>';
