@@ -1140,23 +1140,21 @@ function renderGeneralPanel() {
     rowD = `<div class="gp-row"><span style="color:var(--text3);font-size:12px">Sin trades para analizar</span></div>`;
   } else {
     const maxAbs = Math.max(...dowStats.map(s => Math.abs(s.netPnl)), 1);
-    const W = 700, H = 200;
-    const ML = 55, MR = 15, MT = 20, MB = 60;
+    const W = 700, H = 130;
+    const ML = 46, MR = 10, MT = 10, MB = 38;
     const chartH = H - MT - MB;
     const chartW = W - ML - MR;
-    const barW = 60;
-    const slots = dowStats.length; // 5
-    const step  = chartW / slots;
-    const zeroY = MT + chartH / 2; // baseline en el centro
+    const barW = 46;
+    const step  = chartW / dowStats.length;
+    const zeroY = MT + chartH / 2;
 
-    // Eje Y: labels en -maxAbs, 0, +maxAbs
-    const yLines = [-1, -0.5, 0, 0.5, 1].map(f => {
+    const yLines = [-1, 0, 1].map(f => {
       const val = +(f * maxAbs).toFixed(2);
       const y   = zeroY - f * (chartH / 2);
       const col = f === 0 ? 'var(--border2)' : 'var(--border)';
-      const dash = f === 0 ? '' : ' stroke-dasharray="4 3"';
+      const dash = f === 0 ? '' : ' stroke-dasharray="3 3"';
       return `<line x1="${ML}" y1="${y}" x2="${W - MR}" y2="${y}" stroke="${col}" stroke-width="1"${dash}/>` +
-             `<text x="${ML - 4}" y="${y + 4}" text-anchor="end" font-size="9" fill="var(--text3)">$${val >= 0 ? '+' : ''}${val}</text>`;
+             `<text x="${ML - 3}" y="${y + 3}" text-anchor="end" font-size="8" fill="var(--text3)">$${val >= 0 ? '+' : ''}${val}</text>`;
     }).join('');
 
     const bars = dowStats.map((s, i) => {
@@ -1166,34 +1164,23 @@ function renderGeneralPanel() {
       const barH     = Math.max(ratio * (chartH / 2), s.total ? 2 : 0);
       const barX     = cx - barW / 2;
       const barY     = s.netPnl >= 0 ? zeroY - barH : zeroY;
-
-      // Etiqueta valor encima/debajo
-      const lblY = s.netPnl >= 0 ? barY - 5 : barY + barH + 12;
-      const lblTxt = s.total ? (s.netPnl >= 0 ? '+$' : '-$') + Math.abs(s.netPnl).toFixed(2) : '';
-
-      // Texto bajo el eje X
-      const baseY = MT + chartH + MB - 44;
-      const line1Y = baseY + 14;
-      const line2Y = baseY + 26;
-      const line3Y = baseY + 38;
-
+      const lblY     = s.netPnl >= 0 ? barY - 3 : barY + barH + 9;
+      const lblTxt   = s.total ? (s.netPnl >= 0 ? '+$' : '-$') + Math.abs(s.netPnl).toFixed(2) : '';
+      const axisY    = MT + chartH + 4;
       return [
-        `<rect x="${barX}" y="${barY}" width="${barW}" height="${barH}" fill="${barColor}" rx="3"/>`,
-        lblTxt ? `<text x="${cx}" y="${lblY}" text-anchor="middle" font-size="10" fill="${barColor}">${lblTxt}</text>` : '',
-        `<text x="${cx}" y="${line1Y}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">${s.dia}</text>`,
-        `<text x="${cx}" y="${line2Y}" text-anchor="middle" font-size="9" fill="var(--text2)">${s.total} ops · ${s.wr}% WR</text>`,
-        `<text x="${cx}" y="${line3Y}" text-anchor="middle" font-size="9" fill="var(--text3)">${s.wins}W / ${s.losses}L</text>`,
+        `<rect x="${barX}" y="${barY}" width="${barW}" height="${barH}" fill="${barColor}" rx="2"/>`,
+        lblTxt ? `<text x="${cx}" y="${lblY}" text-anchor="middle" font-size="8" fill="${barColor}">${lblTxt}</text>` : '',
+        `<text x="${cx}" y="${axisY + 9}"  text-anchor="middle" font-size="9" font-weight="700" fill="var(--text)">${s.dia}</text>`,
+        `<text x="${cx}" y="${axisY + 19}" text-anchor="middle" font-size="7.5" fill="var(--text2)">${s.total} ops · ${s.wr}% WR</text>`,
+        `<text x="${cx}" y="${axisY + 28}" text-anchor="middle" font-size="7.5" fill="var(--text3)">${s.wins}W / ${s.losses}L</text>`,
       ].join('');
     }).join('');
 
-    rowD = `<div class="gp-row" style="display:block;margin-top:16px">
-      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Rendimiento por Día de Semana</div>
-      <div style="overflow-x:auto">
-        <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
-          ${yLines}
-          ${bars}
-        </svg>
-      </div>
+    rowD = `<div class="gp-row" style="display:block;margin-top:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Rendimiento por Día de Semana</div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:120px;display:block">
+        ${yLines}${bars}
+      </svg>
     </div>`;
   }
 
