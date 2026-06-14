@@ -190,6 +190,23 @@
   .guide-col-title { font-size:11px; font-weight:600; color:var(--text2); margin-bottom:10px; }
   .guide-item-example { font-size:10px; font-style:italic; margin-top:3px; }
   @media (max-width:700px) { .guide-cols { grid-template-columns:1fr; } .guide-cols > div:first-child { border-right:none; border-bottom:1px solid var(--border); padding:0 0 16px; } .guide-cols > div:last-child { padding:16px 0 0; } }
+
+  /* INNER TABS */
+  .inner-tabs { display:flex; gap:4px; padding:8px 24px; border-bottom:1px solid var(--border); background:var(--bg2); }
+  .inner-tab { height:32px; padding:0 16px; border-radius:var(--radius); font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border2); background:var(--bg); color:var(--text2); transition:all 0.12s; }
+  .inner-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .inner-tab:hover:not(.active) { background:var(--bg3); }
+  /* PAR×PAR */
+  .par-selector-row { display:flex; align-items:center; gap:10px; padding:16px 0 20px; }
+  .par-label { font-size:12px; font-weight:600; color:var(--text2); }
+  #par-select { height:34px; padding:0 10px; border:1px solid var(--border2); border-radius:var(--radius); font-size:13px; font-weight:600; color:var(--text); background:var(--bg); cursor:pointer; }
+  .par-bloque { border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; margin-bottom:16px; overflow-x:auto; }
+  .par-bloque-title { font-size:12px; font-weight:700; color:var(--text2); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; }
+  .exc-card { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg2); font-size:12px; }
+  .exc-trans { font-weight:700; color:var(--text); }
+  .exc-val { color:var(--text2); }
+  .exc-cat { font-size:11px; color:var(--text3); }
+  #svg-tooltip { position:fixed; background:#1e293b; color:#f8fafc; padding:6px 10px; border-radius:6px; font-size:11px; pointer-events:none; display:none; z-index:999; line-height:1.6; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -205,8 +222,14 @@
   </div>
 </div>
 
+<div class="inner-tabs">
+  <button class="inner-tab active" onclick="switchInnerTab('general')">📊 Tabla General</button>
+  <button class="inner-tab" onclick="switchInnerTab('parxpar')">🔍 Análisis por Par</button>
+</div>
+
 <!-- PAGE -->
 <div class="page-wrap">
+<div id="tab-general">
 
   <!-- CONTROLS -->
   <div class="controls-row">
@@ -362,7 +385,40 @@
     <span>XAUUSD &amp; NASDAQ — Indicador TV "Seasonality (Prev Month Close Expected)", 2015–2025 (11 años), verificado año por año</span>
   </div>
 
+</div><!-- end tab-general -->
+
+<div id="tab-parxpar" style="display:none">
+  <div id="parxpar-content">
+    <div class="par-selector-row">
+      <label class="par-label">SYMBOL:</label>
+      <select id="par-select" onchange="loadPar(this.value)"></select>
+    </div>
+    <div id="bloque-mapa" class="par-bloque">
+      <div class="par-bloque-title">📅 Mapa de calor mensual</div>
+      <svg id="svg-mapa" viewBox="0 0 900 90" style="width:100%;height:auto;display:block"></svg>
+    </div>
+    <div id="bloque-barras" class="par-bloque">
+      <div class="par-bloque-title">📈 H% vs C% por transición</div>
+      <svg id="svg-barras" viewBox="0 0 900 220" style="width:100%;height:auto;display:block"></svg>
+    </div>
+    <div id="bloque-equity" class="par-bloque">
+      <div class="par-bloque-title">💹 Equity acumulada (avg mensual %)</div>
+      <svg id="svg-equity" viewBox="0 0 900 200" style="width:100%;height:auto;display:block"></svg>
+    </div>
+    <div id="bloque-grilla" class="par-bloque">
+      <div class="par-bloque-title">🗓 Grilla año × transición (Close &gt; prev)</div>
+      <div id="grilla-container" style="overflow-x:auto"></div>
+    </div>
+    <div id="bloque-excepcionales" class="par-bloque">
+      <div class="par-bloque-title">⭐ Señales excepcionales</div>
+      <div id="exc-cards-container" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+  </div>
 </div>
+
+</div><!-- end page-wrap -->
+
+<div id="svg-tooltip"></div>
 
 <script>
 // ── CONFIG ──
@@ -385,6 +441,7 @@ async function init() {
   renderTable();
   renderExceptional();
   startAutoRefresh();
+  initParXPar();
 }
 
 async function loadSeasonality() {
@@ -751,6 +808,253 @@ function startAutoRefresh() {
 function authLogout() {
   if (typeof sb !== 'undefined') sb.signOut();
   window.location.href = 'index.html';
+}
+
+// ── PAR×PAR ──
+const PARES = ['AUDCAD','AUDCHF','AUDJPY','AUDNZD','AUDUSD',
+  'CADCHF','CADJPY','CHFJPY','EURAUD','EURCAD','EURCHF',
+  'EURGBP','EURJPY','EURNZD','EURUSD','GBPAUD','GBPCAD',
+  'GBPCHF','GBPJPY','GBPNZD','GBPUSD','NZDCAD','NZDCHF',
+  'NZDJPY','NZDUSD','USDCAD','USDCHF','USDJPY'];
+
+function switchInnerTab(tab) {
+  document.getElementById('tab-general').style.display = tab === 'general' ? 'block' : 'none';
+  document.getElementById('tab-parxpar').style.display = tab === 'parxpar'  ? 'block' : 'none';
+  document.querySelectorAll('.inner-tab').forEach((b,i) =>
+    b.classList.toggle('active', (i===0 && tab==='general') || (i===1 && tab==='parxpar')));
+}
+
+function initParXPar() {
+  const sel = document.getElementById('par-select');
+  PARES.forEach(p => sel.innerHTML += `<option value="${p}">${p}</option>`);
+
+  const svgBarras = document.getElementById('svg-barras');
+  svgBarras.addEventListener('mouseover', function(e) {
+    const g = e.target.closest('[data-trans]');
+    if (!g) return;
+    const tip = document.getElementById('svg-tooltip');
+    const cat = getCategory(parseInt(g.dataset.c)) || {};
+    tip.innerHTML = `<strong>${g.dataset.trans}</strong><br>H% = ${g.dataset.h}&nbsp;&nbsp;&nbsp;C% = ${g.dataset.c}` +
+      (cat.label ? `<br><span style="opacity:0.75">${cat.label}</span>` : '');
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY + 14) + 'px';
+  });
+  svgBarras.addEventListener('mousemove', function(e) {
+    const tip = document.getElementById('svg-tooltip');
+    if (tip.style.display === 'block') {
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY + 14) + 'px';
+    }
+  });
+  svgBarras.addEventListener('mouseout', function(e) {
+    if (!e.relatedTarget || !e.relatedTarget.closest('[data-trans]'))
+      document.getElementById('svg-tooltip').style.display = 'none';
+  });
+
+  loadPar('EURUSD');
+}
+
+async function loadPar(symbol) {
+  try {
+    const r = await fetch('sucesion/' + symbol + '.json?t=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    renderMapa(data);
+    renderBarras(data);
+    renderEquity(data);
+    renderGrilla(data);
+    par_renderExcepcionales(data);
+  } catch(e) {
+    const el = document.getElementById('bloque-mapa');
+    if (el) el.innerHTML = '<div class="no-data">Error cargando ' + symbol + ': ' + e.message + '</div>';
+  }
+}
+
+function renderMapa(data) {
+  const svg = document.getElementById('svg-mapa');
+  const bots = activeBots[data.pair] || [];
+  const RW = 70, RH = 60, GAP = 5;
+  const startX = (900 - (12 * RW + 11 * GAP)) / 2;
+  let out = '';
+  data.seasonality.forEach((s, i) => {
+    const x = startX + i * (RW + GAP);
+    const cat = getCategory(s.pos);
+    const bg   = cat ? cat.bg   : '#e5e7eb';
+    const fill = cat ? cat.text : '#374151';
+    out += `<rect x="${x.toFixed(1)}" y="14" width="${RW}" height="${RH}" fill="${bg}" rx="3"/>`;
+    out += `<text x="${(x+RW/2).toFixed(1)}" y="11" text-anchor="middle" font-size="10" fill="var(--text2)">${s.month}</text>`;
+    out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="bold" fill="${fill}">${s.pos}%</text>`;
+    if (s.avg !== null && s.avg !== undefined) {
+      const avgStr = (s.avg > 0 ? '+' : '') + s.avg.toFixed(2) + '%';
+      out += `<text x="${(x+RW/2).toFixed(1)}" y="${(14+RH/2+18).toFixed(1)}" text-anchor="middle" font-size="9" fill="${fill}" opacity="0.8">${avgStr}</text>`;
+    }
+    if (bots.length > 0) {
+      let cx = (x + RW/2) - (bots.length - 1) * 6;
+      bots.forEach(dir => {
+        const fc = dir === 'long' ? '#1a7f4b' : dir === 'short' ? '#b91c1c' : '#92400e';
+        out += `<circle cx="${cx.toFixed(1)}" cy="82" r="4" fill="${fc}"/>`;
+        cx += 12;
+      });
+    }
+  });
+  svg.innerHTML = out;
+}
+
+function renderBarras(data) {
+  const svg = document.getElementById('svg-barras');
+  const ML = 40, W = 900, H = 220;
+  const baseY = 172;
+  const maxBarH = 150;
+  const availW = W - ML - 20;
+  const groupW = availW / 11;
+  const barW = Math.max(10, Math.floor(groupW * 0.22));
+  let out = '';
+
+  // Dashed reference lines
+  [{ pct:73, color:'#86efac' }, { pct:50, color:'#94a3b8' }, { pct:27, color:'#fca5a5' }].forEach(d => {
+    const y = baseY - maxBarH * d.pct / 100;
+    out += `<line x1="${ML}" y1="${y.toFixed(1)}" x2="${W-20}" y2="${y.toFixed(1)}" stroke="${d.color}" stroke-width="1" stroke-dasharray="4,3"/>`;
+    out += `<text x="${ML-4}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="9" fill="${d.color}">${d.pct}%</text>`;
+  });
+
+  // Baseline
+  out += `<line x1="${ML}" y1="${baseY}" x2="${W-20}" y2="${baseY}" stroke="var(--border2)" stroke-width="1"/>`;
+
+  data.transitions.forEach((t, i) => {
+    const gx = ML + i * groupW + groupW / 2;
+    const hH = maxBarH * t.h_pct / 100;
+    const cH = maxBarH * t.c_pct / 100;
+    const hX = gx - barW - 1;
+    const cX = gx + 1;
+    const cat = getCategory(t.c_pct);
+    const cbg = cat ? cat.bg : '#e5e7eb';
+
+    out += `<g data-trans="${t.from}→${t.to}" data-h="${t.h_pct}" data-c="${t.c_pct}">`;
+    out += `<rect x="${hX.toFixed(1)}" y="${(baseY-hH).toFixed(1)}" width="${barW}" height="${hH.toFixed(1)}" fill="#94a3b8" rx="2"/>`;
+    if (t.h_pct > 5) out += `<text x="${(hX+barW/2).toFixed(1)}" y="${(baseY-hH-3).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text3)">${t.h_pct}%</text>`;
+    out += `<rect x="${cX.toFixed(1)}" y="${(baseY-cH).toFixed(1)}" width="${barW}" height="${cH.toFixed(1)}" fill="${cbg}" rx="2"/>`;
+    if (t.c_pct > 5) out += `<text x="${(cX+barW/2).toFixed(1)}" y="${(baseY-cH-3).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text3)">${t.c_pct}%</text>`;
+
+    const lx = (gx + barW/2 + 2).toFixed(1);
+    const ly = (baseY + 12).toFixed(1);
+    const label = t.from + '→' + t.to;
+    out += `<text x="${lx}" y="${ly}" text-anchor="end" font-size="10" fill="var(--text2)" transform="rotate(-35,${lx},${ly})">${label}</text>`;
+    out += `</g>`;
+  });
+
+  svg.innerHTML = out;
+}
+
+function renderEquity(data) {
+  const svg = document.getElementById('svg-equity');
+  const ML = 55, MR = 20, MT = 20, MB = 35;
+  const W = 900, H = 200;
+  const avgs = data.seasonality.map(s => s.avg);
+  const hasData = avgs.some(a => a !== null && a !== undefined);
+
+  if (!hasData) {
+    svg.innerHTML = `<text x="450" y="100" text-anchor="middle" font-size="13" fill="var(--text3)">Sin datos de promedio</text>`;
+    return;
+  }
+
+  let acum = [], running = 0;
+  avgs.forEach(a => { running += (a !== null && a !== undefined) ? a : 0; acum.push(running); });
+
+  const minV = Math.min(0, ...acum);
+  const maxV = Math.max(0, ...acum);
+  const range = maxV - minV || 1;
+  const chartW = W - ML - MR;
+  const chartH = H - MT - MB;
+  const toY = v => MT + chartH - ((v - minV) / range) * chartH;
+  const toX = i => ML + i * (chartW / 11);
+  const y0 = toY(0);
+  const pts = acum.map((v, i) => [toX(i), toY(v)]);
+  const lastPos = acum[acum.length-1] >= 0;
+  const lineColor = lastPos ? '#1a7f4b' : '#b91c1c';
+
+  let out = '';
+
+  // Y grid
+  for (let s = 0; s <= 4; s++) {
+    const v = minV + range * s / 4;
+    const y = toY(v);
+    out += `<line x1="${ML-3}" y1="${y.toFixed(1)}" x2="${W-MR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
+    out += `<text x="${ML-5}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text3)">${v.toFixed(2)}%</text>`;
+  }
+
+  // Baseline
+  out += `<line x1="${ML}" y1="${y0.toFixed(1)}" x2="${W-MR}" y2="${y0.toFixed(1)}" stroke="var(--border2)" stroke-width="1"/>`;
+
+  // Positive area
+  let posPath = `M ${toX(0).toFixed(1)} ${y0.toFixed(1)}`;
+  pts.forEach(([x, y]) => posPath += ` L ${x.toFixed(1)} ${Math.min(y, y0).toFixed(1)}`);
+  posPath += ` L ${toX(11).toFixed(1)} ${y0.toFixed(1)} Z`;
+  out += `<path d="${posPath}" fill="rgba(26,127,75,0.15)" stroke="none"/>`;
+
+  // Negative area
+  let negPath = `M ${toX(0).toFixed(1)} ${y0.toFixed(1)}`;
+  pts.forEach(([x, y]) => negPath += ` L ${x.toFixed(1)} ${Math.max(y, y0).toFixed(1)}`);
+  negPath += ` L ${toX(11).toFixed(1)} ${y0.toFixed(1)} Z`;
+  out += `<path d="${negPath}" fill="rgba(185,28,28,0.15)" stroke="none"/>`;
+
+  // Curve
+  const linePath = `M ${pts.map(([x,y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L ')}`;
+  out += `<path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  // Points + labels
+  pts.forEach(([x, y], i) => {
+    const isCurrent = i === MONTHS_IDX;
+    out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${isCurrent ? 5 : 3}" fill="${isCurrent ? '#b91c1c' : lineColor}"/>`;
+    out += `<text x="${x.toFixed(1)}" y="${(H-MB+14).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text3)">${data.seasonality[i].month}</text>`;
+    if (isCurrent) {
+      out += `<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="bold">${acum[i].toFixed(2)}%</text>`;
+    }
+  });
+
+  svg.innerHTML = out;
+}
+
+function renderGrilla(data) {
+  const container = document.getElementById('grilla-container');
+  const years = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+  const th = 'padding:4px 8px;background:var(--bg2);border:1px solid var(--border);font-weight:600;font-size:10px';
+  let html = `<table style="border-collapse:collapse;font-size:11px;white-space:nowrap"><thead><tr>`;
+  html += `<th style="${th};position:sticky;left:0;z-index:1">Año</th>`;
+  data.transitions.forEach(t => html += `<th style="${th}">${t.from}→${t.to}</th>`);
+  html += `</tr></thead><tbody>`;
+  years.forEach((yr, yi) => {
+    html += `<tr><td style="${th};position:sticky;left:0">${yr}</td>`;
+    data.transitions.forEach(t => {
+      const ydata = t.years && t.years[yi];
+      const val = ydata ? ydata.c : null;
+      const bg = val === true ? '#dcfce7' : val === false ? '#fee2e2' : 'var(--bg3)';
+      html += `<td style="padding:4px 8px;text-align:center;border:1px solid var(--border);background:${bg}">${val === true ? '✅' : val === false ? '❌' : '—'}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+function par_renderExcepcionales(data) {
+  const container = document.getElementById('exc-cards-container');
+  if (!data.exceptional || data.exceptional.length === 0) {
+    container.innerHTML = '<div class="no-data" style="padding:16px 0">Sin señales excepcionales en este par</div>';
+    return;
+  }
+  const sorted = [...data.exceptional].sort((a,b) => Math.abs(b.value - 50) - Math.abs(a.value - 50));
+  container.innerHTML = sorted.map(e => {
+    const isLong = e.value >= 82;
+    const dirClass = isLong ? 'long' : 'short';
+    const dirLabel = isLong ? '⬆ LONG' : '⬇ SHORT';
+    return `<div class="exc-card">
+      <span class="exc-trans">${e.from}→${e.to}</span>
+      <span class="exc-badge ${dirClass}">${dirLabel}</span>
+      <span class="exc-val">C% = ${e.value}%</span>
+      <span class="exc-cat">${e.dest_cat || ''}</span>
+    </div>`;
+  }).join('');
 }
 
 // ── START ──
