@@ -425,14 +425,16 @@
 
 <div id="tab-parxpar" style="display:none">
   <div id="parxpar-content">
-    <div class="par-selector-row">
-      <label class="par-label">SYMBOL:</label>
-      <select id="par-select" onchange="loadPar(this.value)"></select>
-    </div>
-    <div id="bloque-mapa" class="par-bloque">
-      <div class="par-bloque-title">📅 Mapa de calor mensual</div>
-      <svg id="svg-mapa" viewBox="0 0 900 55" style="width:100%;height:auto;display:block"></svg>
-    </div>
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+      <div class="par-selector-row" style="padding:0;flex-shrink:0;flex-direction:column;align-items:flex-start;gap:4px">
+        <label class="par-label">SYMBOL:</label>
+        <select id="par-select" onchange="loadPar(this.value)"></select>
+      </div>
+      <div id="bloque-mapa" class="par-bloque" style="flex:1;margin-bottom:0">
+        <div class="par-bloque-title">📅 Mapa de calor mensual</div>
+        <svg id="svg-mapa" viewBox="0 0 900 55" style="width:100%;height:auto;display:block"></svg>
+      </div>
+    </div><!-- end flex selector+mapa -->
     <div class="sub-tabs" id="par-sub-tabs">
       <button class="sub-tab active" onclick="switchParTab('transiciones')">📊 Transiciones</button>
       <button class="sub-tab" onclick="switchParTab('live-pnl')">💰 Live P&L</button>
