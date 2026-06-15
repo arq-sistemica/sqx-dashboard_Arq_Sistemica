@@ -1429,7 +1429,7 @@ function live_renderPnl(symbol, bots, tagged, monthly) {
     const s = sd && sd.seasonality && sd.seasonality[mi];
     const pos = s ? s.pos : undefined;
     const c = pos !== undefined ? _liveSeasonColor(pos) : null;
-    html += '<th style="text-align:right;min-width:95px">' + MONTHS_ES[mi];
+    html += '<th style="text-align:right;min-width:95px' + (mi===MONTHS_IDX ? ';background:#eef2ff;color:var(--accent);border-bottom:2px solid var(--accent)' : '') + '">' + MONTHS_ES[mi];
     if (pos !== undefined && c) {
       html += '<br><span style="background:' + c.bg + ';color:' + c.text + ';font-size:9px;padding:1px 5px;border-radius:3px">' +
               pos + '% ' + _liveSeasonCatLabel(pos).split(' ')[0] + '</span>';
@@ -1465,8 +1465,9 @@ function live_renderPnl(symbol, bots, tagged, monthly) {
 
     activeMonths.forEach(function(mi) {
       const st = statsMap[magic] && statsMap[magic][mi];
+      const curStyle = mi === MONTHS_IDX ? ';box-shadow:inset 0 0 0 2px var(--accent)' : '';
       if (!st) {
-        html += '<td style="text-align:center;background:var(--bg3);color:var(--text3)">—</td>';
+        html += '<td style="text-align:center;background:var(--bg3);color:var(--text3)' + curStyle + '">—</td>';
       } else {
         mTotals[mi] += st.netProfit;
         const p = st.netProfit, aln = st.season_aligned;
@@ -1475,7 +1476,7 @@ function live_renderPnl(symbol, bots, tagged, monthly) {
         else if (p > 0 && aln === false) { cls = 'cc-win'; icon = ' ⚡'; }
         else if (p < 0 && aln === true)  { cls = 'ca-lose'; icon = ' ⚠'; }
         else if (p < 0 && aln === false) { cls = 'cc-lose'; }
-        html += '<td class="' + cls + '" style="text-align:right">' +
+        html += '<td class="' + cls + '" style="text-align:right' + curStyle + '">' +
           '<span class="' + (p >= 0 ? 'pos' : 'neg') + '">' + _liveFmtUSD(p) + icon + '</span>' +
           '<div style="font-size:10px;color:var(--text3)">' + st.tradeCount + ' op · ' + st.winRate + '% WR</div>' +
           '</td>';
