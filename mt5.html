@@ -943,7 +943,7 @@ function renderGeneralPanel() {
       ci++;
     }
 
-    if (botCurves.length >= 2) {
+    if (botCurves.length >= 1) {
       const BASE = 10000;
       const PL = 40, PB = 14, PT = 6, PR = 10;
       const W = 620, H = 110;
@@ -1087,6 +1087,20 @@ function renderGeneralPanel() {
         };
       });
 
+      const allXVals = chartDatasets.flatMap(ds => ds.data.map(p => p.x));
+      const xMin = Math.min(...allXVals);
+      const xMax = Math.max(...allXVals);
+      chartDatasets.push({
+        label: '',
+        data: [{ x: xMin, y: 0 }, { x: xMax, y: 0 }],
+        borderColor: 'rgba(0,0,0,0.3)',
+        borderWidth: 1,
+        borderDash: [4,3],
+        pointRadius: 0,
+        tension: 0,
+        tooltip: { enabled: false }
+      });
+
       const legendHtmlNew = allCurves.map(bc =>
         `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:10px;color:var(--text2)">
           <span style="${bc.isCombined
@@ -1128,6 +1142,7 @@ function renderGeneralPanel() {
                 callbacks: {
                   title: function(items) { return items[0] ? items[0].label : ''; },
                   label: function(ctx) {
+                    if (!ctx.dataset.label) return null;
                     const v = ctx.parsed.y;
                     return ' ' + ctx.dataset.label + ': ' + (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
                   }
@@ -1139,7 +1154,7 @@ function renderGeneralPanel() {
                 type: 'time',
                 time: { unit: 'month', displayFormats: { month: 'MMM yy' } },
                 ticks: { color: 'var(--text3)', font: { size: 10 }, maxTicksLimit: 8 },
-                grid: { color: 'var(--border)' },
+                grid: { color: 'rgba(0,0,0,0.06)', z: -1 },
                 border: { color: 'var(--border)' }
               },
               y: {
@@ -1151,7 +1166,7 @@ function renderGeneralPanel() {
                     return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
                   }
                 },
-                grid: { color: 'var(--border)' },
+                grid: { color: 'rgba(0,0,0,0.06)', z: -1 },
                 border: { color: 'var(--border)' },
                 afterDataLimits: function(axis) {
                   var range = axis.max - axis.min;
@@ -1168,10 +1183,7 @@ function renderGeneralPanel() {
     }
   }
 
-  const rowEq = _selectedMagics.size >= 2 ? '' : `<div class="gp-row" style="display:block">
-    <div class="detail-title">Equity Curve Global</div>
-    ${equityCurve(sortedEq)}
-  </div>`;
+  const rowEq = '';
 
   // FILA C — Rendimiento Mensual
   const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
