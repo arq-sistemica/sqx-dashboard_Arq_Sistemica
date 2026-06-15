@@ -520,7 +520,7 @@ function buildDetail(bot) {
       const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       const pts = [];
       let cum = 0;
-      bot.overviewData.monthlyData.forEach(row => {
+      bot.overviewData.monthlyData.slice().sort((a,b) => a.year - b.year).forEach(row => {
         row.months.forEach((val, i) => {
           if (val === null || isNaN(val)) return;
           cum = Math.round((cum + val) * 100) / 100;
