@@ -1147,10 +1147,20 @@ function renderGeneralPanel() {
                 ticks: {
                   color: 'var(--text3)',
                   font: { size: 10 },
-                  callback: function(v) { return (v >= 0 ? '+' : '') + v.toFixed(0) + '%'; }
+                  maxTicksLimit: 6,
+                  callback: function(v) {
+                    return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+                  }
                 },
                 grid: { color: 'var(--border)' },
-                border: { color: 'var(--border)' }
+                border: { color: 'var(--border)' },
+                afterDataLimits: function(axis) {
+                  var range = axis.max - axis.min;
+                  var pad = range < 1 ? range * 0.3 : range * 0.1;
+                  if (pad < 0.05) pad = 0.05;
+                  axis.min = axis.min - pad;
+                  axis.max = axis.max + pad;
+                }
               }
             }
           }
