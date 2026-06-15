@@ -288,6 +288,7 @@
     <div class="season-header" onclick="toggleSeasonPanel()">
       📊 Tabla de estacionalidad — todos los pares
       <span id="season-pair-count"></span>
+      <button onclick="event.stopPropagation();openGuia()" style="border:1px solid var(--accent);color:var(--accent);background:var(--accent-light);height:26px;font-size:11px;border-radius:6px;margin-left:12px;padding:0 10px;cursor:pointer;font-weight:600">📖 Guía</button>
       <span class="season-chevron" id="season-chevron">▼</span>
     </div>
     <div class="season-body" id="season-body">
@@ -310,13 +311,11 @@
     </div>
   </div>
 
-  <!-- GUIDE PANEL COMBINED -->
-  <div class="guide-panel collapsed" id="guide-panel-combined">
-    <div class="guide-header" onclick="toggleGuide('guide-panel-combined')">
-      📖 Guía de lectura — High/Close &gt; prev · Pos% y Avg%
-      <span class="guide-chevron">▼</span>
-    </div>
-    <div class="guide-body">
+  <!-- GUIA MODAL -->
+  <div id="guia-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center" onclick="if(event.target===this)closeGuia()">
+    <div style="background:var(--bg);border-radius:12px;max-width:900px;width:94%;max-height:85vh;overflow-y:auto;padding:28px;position:relative">
+      <button onclick="closeGuia()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1" title="Cerrar">×</button>
+      <div style="font-weight:700;font-size:15px;margin-bottom:18px;color:var(--text)">📖 Guía de lectura — High/Close &gt; prev · Pos% y Avg%</div>
       <div class="guide-cols">
         <!-- Columna izquierda: tabla High/Close -->
         <div>
@@ -414,6 +413,9 @@
           </div>
         </div>
       </div>
+      <div style="text-align:right;margin-top:20px">
+        <button onclick="closeGuia()" style="background:var(--accent);color:#fff;height:34px;padding:0 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">OK</button>
+      </div>
     </div>
   </div>
 
@@ -439,6 +441,7 @@
       <button class="sub-tab" onclick="switchParTab('equity')">📈 Equity</button>
       <button class="sub-tab" onclick="switchParTab('alineacion')">🎯 Alineación</button>
       <button class="sub-tab" onclick="switchParTab('trades')">📋 Trades</button>
+      <button onclick="openGuia()" style="margin-left:auto;border:1px solid var(--accent);color:var(--accent);background:var(--accent-light);height:26px;font-size:11px;border-radius:6px;padding:0 10px;cursor:pointer;font-weight:600">📖 Guía</button>
     </div>
     <div id="par-panel-transiciones" class="par-panel">
       <div id="bloque-barras" class="par-bloque">
@@ -817,9 +820,6 @@ function toggleExceptional() {
   document.getElementById('exceptional-panel').classList.toggle('collapsed');
 }
 
-function toggleGuide(id) {
-  document.getElementById(id).classList.toggle('collapsed');
-}
 
 function toggleSeasonPanel() {
   document.getElementById('season-panel').classList.toggle('collapsed');
@@ -1712,6 +1712,18 @@ function live_renderTrades(tagged) {
   html += '</tbody></table></div>';
   container.innerHTML = html;
 }
+
+function openGuia() {
+  var m = document.getElementById('guia-modal');
+  if (m) { m.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+}
+function closeGuia() {
+  var m = document.getElementById('guia-modal');
+  if (m) { m.style.display = 'none'; document.body.style.overflow = ''; }
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeGuia();
+});
 
 // ── START ──
 init();
