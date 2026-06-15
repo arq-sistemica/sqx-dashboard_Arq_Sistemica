@@ -1139,47 +1139,46 @@ function renderGeneralPanel() {
   if (panelTrades.length === 0) {
     rowD = `<div class="gp-row"><span style="color:var(--text3);font-size:12px">Sin trades para analizar</span></div>`;
   } else {
-    const maxAbs = Math.max(...dowStats.map(s => Math.abs(s.netPnl)), 1);
-    const W = 700, H = 130;
-    const ML = 46, MR = 10, MT = 10, MB = 38;
+    const svgId  = 'dow-svg-' + Date.now();
+    const W = 320, H = 160;
+    const ML = 10, MR = 10, MT = 10, MB = 42;
     const chartH = H - MT - MB;
     const chartW = W - ML - MR;
-    const barW = 46;
-    const step  = chartW / dowStats.length;
-    const zeroY = MT + chartH / 2;
-
-    const yLines = [-1, 0, 1].map(f => {
-      const val = +(f * maxAbs).toFixed(2);
-      const y   = zeroY - f * (chartH / 2);
-      const col = f === 0 ? 'var(--border2)' : 'var(--border)';
-      const dash = f === 0 ? '' : ' stroke-dasharray="3 3"';
-      return `<line x1="${ML}" y1="${y}" x2="${W - MR}" y2="${y}" stroke="${col}" stroke-width="1"${dash}/>` +
-             `<text x="${ML - 3}" y="${y + 3}" text-anchor="end" font-size="8" fill="var(--text3)">$${val >= 0 ? '+' : ''}${val}</text>`;
-    }).join('');
+    const maxTotal = Math.max(...dowStats.map(s => s.total), 1);
+    const barW = Math.floor(chartW / dowStats.length * 0.55);
+    const step = chartW / dowStats.length;
 
     const bars = dowStats.map((s, i) => {
-      const cx  = ML + i * step + step / 2;
-      const barColor = s.netPnl > 0 ? 'var(--green,#1a7f4b)' : s.netPnl < 0 ? 'var(--red,#b91c1c)' : '#9098a8';
-      const ratio    = s.total ? Math.abs(s.netPnl) / maxAbs : 0;
-      const barH     = Math.max(ratio * (chartH / 2), s.total ? 2 : 0);
-      const barX     = cx - barW / 2;
-      const barY     = s.netPnl >= 0 ? zeroY - barH : zeroY;
-      const lblY     = s.netPnl >= 0 ? barY - 3 : barY + barH + 9;
-      const lblTxt   = s.total ? (s.netPnl >= 0 ? '+$' : '-$') + Math.abs(s.netPnl).toFixed(2) : '';
-      const axisY    = MT + chartH + 4;
-      return [
-        `<rect x="${barX}" y="${barY}" width="${barW}" height="${barH}" fill="${barColor}" rx="2"/>`,
-        lblTxt ? `<text x="${cx}" y="${lblY}" text-anchor="middle" font-size="8" fill="${barColor}">${lblTxt}</text>` : '',
-        `<text x="${cx}" y="${axisY + 9}"  text-anchor="middle" font-size="9" font-weight="700" fill="var(--text)">${s.dia}</text>`,
-        `<text x="${cx}" y="${axisY + 19}" text-anchor="middle" font-size="7.5" fill="var(--text2)">${s.total} ops · ${s.wr}% WR</text>`,
-        `<text x="${cx}" y="${axisY + 28}" text-anchor="middle" font-size="7.5" fill="var(--text3)">${s.wins}W / ${s.losses}L</text>`,
-      ].join('');
+      const cx    = ML + i * step + step / 2;
+      const bx    = cx - barW / 2;
+      const hWin  = s.total ? Math.max((s.wins   / maxTotal) * chartH, s.wins   ? 2 : 0) : 0;
+      const hLos  = s.total ? Math.max((s.losses / maxTotal) * chartH, s.losses ? 2 : 0) : 0;
+      const yBase = MT + chartH;
+      const yWin  = yBase - hWin;
+      const yLos  = yWin  - hLos;
+      const axisY = yBase + 5;
+      const tipTxt = `${s.dia}: ${s.wins}W / ${s.losses}L · ${s.wr}%WR · $${s.netPnl>=0?'+':''}${s.netPnl.toFixed(2)}`;
+      return `<g class="dow-bar" onmouseenter="(function(e){var t=document.getElementById('${svgId}').querySelector('.dow-tip');t.setAttribute('display','');t.querySelector('text').textContent=${JSON.stringify(tipTxt)};})()" onmouseleave="document.getElementById('${svgId}').querySelector('.dow-tip').setAttribute('display','none')">
+        ${hWin  ? `<rect x="${bx}" y="${yWin}" width="${barW}" height="${hWin}" fill="var(--green,#1a7f4b)" rx="2"/>` : ''}
+        ${hLos  ? `<rect x="${bx}" y="${yLos}" width="${barW}" height="${hLos}" fill="var(--red,#b91c1c)"   rx="2"/>` : ''}
+        <text x="${cx}" y="${axisY + 8}"  text-anchor="middle" font-size="9"   font-weight="700" fill="var(--text)">${s.dia}</text>
+        <text x="${cx}" y="${axisY + 17}" text-anchor="middle" font-size="7.5" fill="var(--text2)">${s.total}op</text>
+        <text x="${cx}" y="${axisY + 26}" text-anchor="middle" font-size="7"   fill="var(--text3)">${s.wr}%WR</text>
+      </g>`;
     }).join('');
+
+    const legend = `<rect x="${ML}" y="${H-8}" width="8" height="6" fill="var(--green,#1a7f4b)" rx="1"/><text x="${ML+10}" y="${H-3}" font-size="7" fill="var(--text2)">Wins</text>` +
+                   `<rect x="${ML+42}" y="${H-8}" width="8" height="6" fill="var(--red,#b91c1c)" rx="1"/><text x="${ML+52}" y="${H-3}" font-size="7" fill="var(--text2)">Losses</text>`;
 
     rowD = `<div class="gp-row" style="display:block;margin-top:12px">
       <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Rendimiento por Día de Semana</div>
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:120px;display:block">
-        ${yLines}${bars}
+      <svg id="${svgId}" viewBox="0 0 ${W} ${H}" style="max-width:480px;width:100%;height:auto;display:block">
+        <line x1="${ML}" y1="${MT+chartH}" x2="${W-MR}" y2="${MT+chartH}" stroke="var(--border2)" stroke-width="1"/>
+        ${bars}${legend}
+        <g class="dow-tip" display="none">
+          <rect x="2" y="2" width="${W-4}" height="16" rx="3" fill="var(--bg3,#f1f3f5)" stroke="var(--border)" stroke-width="1"/>
+          <text x="${W/2}" y="13" text-anchor="middle" font-size="8" fill="var(--text)"></text>
+        </g>
       </svg>
     </div>`;
   }
