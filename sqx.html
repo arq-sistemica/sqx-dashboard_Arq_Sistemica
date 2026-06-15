@@ -516,6 +516,66 @@ function buildDetail(bot) {
         `<td class="${(row.ytd||0)>=0?'m-pos':'m-neg'}" style="font-weight:700">${row.ytd!==null?( row.ytd>=0?'+':'')+row.ytd.toFixed(0):'—'}</td></tr>`;
     });
     tabOverview += '</tbody></table></div>';
+    (function() {
+      const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const pts = [];
+      let cum = 0;
+      bot.overviewData.monthlyData.forEach(row => {
+        row.months.forEach((val, i) => {
+          if (val === null || isNaN(val)) return;
+          cum = Math.round((cum + val) * 100) / 100;
+          pts.push({ label: mNames[i] + ' ' + row.year, y: cum });
+        });
+      });
+      if (pts.length < 2) return;
+      const W = 560, H = 180;
+      const pad = { top: 16, right: 16, bottom: 32, left: 52 };
+      const cw = W - pad.left - pad.right;
+      const ch = H - pad.top  - pad.bottom;
+      const vals = pts.map(p => p.y);
+      const minV = Math.min(0, ...vals);
+      const maxV = Math.max(0, ...vals);
+      const range = maxV - minV || 1;
+      const xS = i => (i / (pts.length - 1 || 1)) * cw;
+      const yS = v => ch - ((v - minV) / range) * ch;
+      const lc  = vals[vals.length - 1] >= 0 ? '#1a7f4b' : '#b91c1c';
+      const gid = 'eqg-' + String(bot.magic || bot.id).replace(/\W/g,'');
+      const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => {
+        const v = minV + range * f;
+        return { v: Math.round(v), y: pad.top + yS(v) };
+      });
+      const gridLines = ticks.map(t =>
+        '<line x1="' + pad.left + '" y1="' + t.y + '" x2="' + (pad.left+cw) + '" y2="' + t.y + '" stroke="var(--border,#e0e3e8)" stroke-width=".5" stroke-dasharray="3 3"/>' +
+        '<text x="' + (pad.left-4) + '" y="' + (t.y+3) + '" text-anchor="end" font-size="8.5" fill="var(--text3,#9098a8)">' + (t.v>=0?'+':'') + t.v + '</text>'
+      ).join('');
+      const y0 = pad.top + yS(0);
+      const polyPts = pts.map((p,i) => (pad.left+xS(i)) + ',' + (pad.top+yS(p.y))).join(' ');
+      const areaD = 'M ' + (pad.left+xS(0)) + ',' + (pad.top+yS(pts[0].y)) + ' ' +
+        pts.map((p,i) => 'L ' + (pad.left+xS(i)) + ',' + (pad.top+yS(p.y))).join(' ') +
+        ' L ' + (pad.left+xS(pts.length-1)) + ',' + y0 + ' L ' + pad.left + ',' + y0 + ' Z';
+      const stepX = Math.max(1, Math.floor(pts.length / 6));
+      const xLabels = pts
+        .filter((_, i) => i % stepX === 0 || i === pts.length - 1)
+        .map(p => {
+          const i = pts.indexOf(p);
+          return '<text x="' + (pad.left+xS(i)) + '" y="' + (pad.top+ch+18) + '" text-anchor="middle" font-size="8.5" fill="var(--text3,#9098a8)">' + p.label + '</text>';
+        }).join('');
+      const finalVal = vals[vals.length - 1];
+      const finalX   = pad.left + xS(pts.length - 1);
+      const finalY   = pad.top  + yS(finalVal);
+      const badge = '<text x="' + (finalX+4) + '" y="' + (finalY+4) + '" font-size="9" font-weight="700" fill="' + lc + '">' + (finalVal>=0?'+':'') + finalVal.toFixed(0) + '</text>';
+      const svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block;overflow:visible">' +
+        '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="' + lc + '" stop-opacity="0.18"/>' +
+        '<stop offset="100%" stop-color="' + lc + '" stop-opacity="0.01"/>' +
+        '</linearGradient></defs>' +
+        gridLines +
+        '<line x1="' + pad.left + '" y1="' + y0 + '" x2="' + (pad.left+cw) + '" y2="' + y0 + '" stroke="var(--border2,#c8cdd5)" stroke-width=".8"/>' +
+        '<path d="' + areaD + '" fill="url(#' + gid + ')" stroke="none"/>' +
+        '<polyline points="' + polyPts + '" fill="none" stroke="' + lc + '" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>' +
+        xLabels + badge + '</svg>';
+      tabOverview += '<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Equity Curve — Backtest SQX</div>' + svg + '</div>';
+    })();
   }
   tabOverview += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Pegá el Overview completo copiado desde SQX:</div>
     <textarea id="ov-${id}" rows="6" placeholder="TOTAL PROFIT&#10;$ 6038.41&#10;...&#10;MONTHLY PERFORMANCE ($)&#10;Year&#9;Jan&#9;Feb&#9;..." style="width:100%;font-size:11px;font-family:Consolas,monospace;border:1px solid var(--border2);border-radius:var(--radius);padding:8px;resize:vertical;background:var(--bg2)"></textarea>
