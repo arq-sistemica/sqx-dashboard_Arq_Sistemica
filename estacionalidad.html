@@ -942,11 +942,13 @@ function initParXPar() {
 
 async function loadPar(symbol) {
   window._parLive = { loaded: false, symbol: null };
+  window._parSeasonData = null;
   switchParTab('transiciones');
   try {
     const r = await fetch('sucesion/' + symbol + '.json?t=' + Date.now());
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
+    window._parSeasonData = data;
     renderMapa(data);
     renderBarras(data);
     renderEquity(data);
@@ -1360,7 +1362,7 @@ async function loadParLive(symbol) {
     };
   });
 
-  const sd = window.seasonData !== undefined ? window.seasonData : seasonData;
+  const sd = window._parSeasonData || window.seasonData || seasonData;
   const tagged  = live_tagTrades(trades, bots, sd);
   const monthly = live_computeMonthly(tagged);
 
@@ -1404,7 +1406,7 @@ function live_renderPnl(symbol, bots, tagged, monthly) {
     return;
   }
 
-  const sd = window.seasonData !== undefined ? window.seasonData : seasonData;
+  const sd = window._parSeasonData || window.seasonData || seasonData;
   const activeMonths = [...new Set(tagged.map(function(t) { return t.monthIdx; }))].sort(function(a,b) { return a-b; });
   const activeMagics = [...new Set(tagged.map(function(t) { return t.magic; }))];
 
@@ -1512,7 +1514,7 @@ function live_renderEquity(symbol, bots, tagged) {
     return;
   }
 
-  const sd = window.seasonData !== undefined ? window.seasonData : seasonData;
+  const sd = window._parSeasonData || window.seasonData || seasonData;
   const ML = 65, MR = 110, MT = 20, MB = 55, W = 900, H = 280;
   const cW = W - ML - MR, cH = H - MT - MB;
 
