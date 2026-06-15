@@ -258,9 +258,13 @@
   </div>
 </div>
 
-<div class="inner-tabs">
+<div class="inner-tabs" style="align-items:center">
   <button class="inner-tab active" onclick="switchInnerTab('general')">📊 Tabla General</button>
   <button class="inner-tab" onclick="switchInnerTab('parxpar')">🔍 Análisis por Par</button>
+  <div id="par-select-wrapper" style="display:none;align-items:center;gap:6px;margin-left:8px">
+    <label class="par-label" style="font-size:11px;font-weight:600;color:var(--text2)">SYMBOL:</label>
+    <select id="par-select" onchange="loadPar(this.value)" style="height:30px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;font-weight:600;color:var(--text);background:var(--bg);cursor:pointer"></select>
+  </div>
 </div>
 
 <!-- PAGE -->
@@ -425,16 +429,10 @@
 
 <div id="tab-parxpar" style="display:none">
   <div id="parxpar-content">
-    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
-      <div class="par-selector-row" style="padding:0;flex-shrink:0;flex-direction:column;align-items:flex-start;gap:4px">
-        <label class="par-label">SYMBOL:</label>
-        <select id="par-select" onchange="loadPar(this.value)"></select>
-      </div>
-      <div id="bloque-mapa" class="par-bloque" style="flex:1;margin-bottom:0">
-        <div class="par-bloque-title">📅 Mapa de calor mensual</div>
-        <svg id="svg-mapa" viewBox="0 0 900 55" style="width:100%;height:auto;display:block"></svg>
-      </div>
-    </div><!-- end flex selector+mapa -->
+    <div id="bloque-mapa" class="par-bloque">
+      <div class="par-bloque-title">📅 Mapa de calor mensual</div>
+      <svg id="svg-mapa" viewBox="0 0 900 55" style="width:100%;height:auto;display:block"></svg>
+    </div>
     <div class="sub-tabs" id="par-sub-tabs">
       <button class="sub-tab active" onclick="switchParTab('transiciones')">📊 Transiciones</button>
       <button class="sub-tab" onclick="switchParTab('live-pnl')">💰 Live P&L</button>
@@ -881,6 +879,8 @@ function switchInnerTab(tab) {
   document.getElementById('tab-parxpar').style.display = tab === 'parxpar'  ? 'block' : 'none';
   document.querySelectorAll('.inner-tab').forEach((b,i) =>
     b.classList.toggle('active', (i===0 && tab==='general') || (i===1 && tab==='parxpar')));
+  const sw = document.getElementById('par-select-wrapper');
+  if (sw) sw.style.display = tab === 'parxpar' ? 'flex' : 'none';
 }
 
 function switchParTab(name) {
