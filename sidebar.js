@@ -7,7 +7,7 @@
     { href: 'estacionalidad.html', label: 'Estacionalidad', icon: '📅' },
     { href: 'tendencia.html',      label: 'Tendencia',      icon: '📈' },
     { href: 'ranking.html',        label: 'Ranking',        icon: '🏆' },
-    { href: 'overlap.html',        label: 'Overlap',        icon: '📊' },
+    // { href: 'overlap.html',        label: 'Overlap',        icon: '📊' },
   ];
 
   var style = document.createElement('style');
