@@ -89,6 +89,8 @@ td.spark{text-align:center;padding:4px 10px}
 .monthly-table td:first-child{font-weight:700;color:var(--text);text-align:left}
 
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
 <div id="toast-ok" class="toast toast-ok"></div>
@@ -1069,15 +1071,91 @@ function renderGeneralPanel() {
         </span>`;
       }).join('');
 
-      const svgMulti = `<svg viewBox="0 0 ${W} ${H}" class="equity-svg" preserveAspectRatio="none" style="height:120px">
-        ${yGridSvg2}${xTicksSvg2.join('')}${axisY}${linesSvg}${yLabelsSvg2}
-      </svg>`;
+      const chartId = 'eq-chart-' + Date.now();
+
+      const chartDatasets = allCurves.map(bc => {
+        const sorted = [...bc.pts].sort((a,b) => new Date(a.date) - new Date(b.date));
+        return {
+          label: bc.name.length > 28 ? bc.name.slice(0,26)+'…' : bc.name,
+          data: sorted.map(p => ({ x: p.date.slice(0,10), y: +(p.v / BASE * 100).toFixed(2) })),
+          borderColor: bc.color,
+          backgroundColor: 'transparent',
+          borderWidth: bc.isCombined ? 2 : 1.4,
+          borderDash: bc.isCombined ? [6,3] : [],
+          pointRadius: 0,
+          tension: 0.2,
+        };
+      });
+
+      const legendHtmlNew = allCurves.map(bc =>
+        `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:10px;color:var(--text2)">
+          <span style="${bc.isCombined
+            ? 'width:14px;height:0;border-top:2px dashed '+bc.color+';display:inline-block'
+            : 'width:10px;height:2px;background:'+bc.color+';display:inline-block;border-radius:2px'}"></span>
+          ${bc.name.length > 30 ? bc.name.slice(0,28)+'…' : bc.name}
+        </span>`
+      ).join('');
 
       rowIndividual = `<div class="gp-row" style="display:block">
         <div class="detail-title">Equity Curves</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${legendHtml}</div>
-        ${svgMulti}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${legendHtmlNew}</div>
+        <div style="background:#1a1a2e;border-radius:8px;padding:12px 12px 8px;margin-top:4px">
+          <div style="position:relative;width:100%;height:200px">
+            <canvas id="${chartId}" role="img" aria-label="Equity curves de bots MT5"></canvas>
+          </div>
+        </div>
       </div>`;
+
+      setTimeout(function() {
+        const canvas = document.getElementById(chartId);
+        if (!canvas || !window.Chart) return;
+        new Chart(canvas, {
+          type: 'line',
+          data: { datasets: chartDatasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            parsing: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15,15,30,0.92)',
+                titleColor: '#e2e8f0',
+                bodyColor: '#cbd5e1',
+                borderColor: 'rgba(255,255,255,0.12)',
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {
+                  title: function(items) { return items[0] ? items[0].label : ''; },
+                  label: function(ctx) {
+                    const v = ctx.parsed.y;
+                    return ' ' + ctx.dataset.label + ': ' + (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                type: 'time',
+                time: { unit: 'month', displayFormats: { month: 'MMM yy' } },
+                ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 }, maxTicksLimit: 8 },
+                grid: { color: 'rgba(255,255,255,0.06)' },
+                border: { color: 'rgba(255,255,255,0.1)' }
+              },
+              y: {
+                ticks: {
+                  color: 'rgba(255,255,255,0.45)',
+                  font: { size: 10 },
+                  callback: function(v) { return (v >= 0 ? '+' : '') + v.toFixed(0) + '%'; }
+                },
+                grid: { color: 'rgba(255,255,255,0.06)' },
+                border: { color: 'rgba(255,255,255,0.1)' }
+              }
+            }
+          }
+        });
+      }, 80);
     }
   }
 
