@@ -996,7 +996,7 @@ function renderGeneralPanel() {
 
       // Incluir curva combinada en el mismo SVG (punteada, negra, más gruesa)
       const combinedPts = sortedEq.map(t => ({ date: t.closeDate.slice(0,10), v: t.cumProfit }));
-      const allCurves = [...botCurves, { name: 'Combinada', pts: combinedPts, color: '#111827', isCombined: true }];
+      const allCurves = [...botCurves, { name: 'Combinada', pts: combinedPts, color: '#6366f1', isCombined: true }];
 
       // Recalcular rango Y incluyendo la combinada
       const allPcts2 = allCurves.flatMap(bc => bc.pts.map(p => p.v / BASE * 100));
@@ -1099,7 +1099,7 @@ function renderGeneralPanel() {
       rowIndividual = `<div class="gp-row" style="display:block">
         <div class="detail-title">Equity Curves</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${legendHtmlNew}</div>
-        <div style="background:#1a1a2e;border-radius:8px;padding:12px 12px 8px;margin-top:4px">
+        <div style="background:var(--bg2);border-radius:8px;padding:12px 12px 8px;margin-top:4px;border:1px solid var(--border)">
           <div style="position:relative;width:100%;height:200px">
             <canvas id="${chartId}" role="img" aria-label="Equity curves de bots MT5"></canvas>
           </div>
@@ -1139,18 +1139,18 @@ function renderGeneralPanel() {
               x: {
                 type: 'time',
                 time: { unit: 'month', displayFormats: { month: 'MMM yy' } },
-                ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 }, maxTicksLimit: 8 },
-                grid: { color: 'rgba(255,255,255,0.06)' },
-                border: { color: 'rgba(255,255,255,0.1)' }
+                ticks: { color: 'var(--text3)', font: { size: 10 }, maxTicksLimit: 8 },
+                grid: { color: 'var(--border)' },
+                border: { color: 'var(--border)' }
               },
               y: {
                 ticks: {
-                  color: 'rgba(255,255,255,0.45)',
+                  color: 'var(--text3)',
                   font: { size: 10 },
                   callback: function(v) { return (v >= 0 ? '+' : '') + v.toFixed(0) + '%'; }
                 },
-                grid: { color: 'rgba(255,255,255,0.06)' },
-                border: { color: 'rgba(255,255,255,0.1)' }
+                grid: { color: 'var(--border)' },
+                border: { color: 'var(--border)' }
               }
             }
           }
