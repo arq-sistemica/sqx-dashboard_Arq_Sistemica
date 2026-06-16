@@ -265,6 +265,7 @@
     <label class="par-label" style="font-size:11px;font-weight:600;color:var(--text2)">SYMBOL:</label>
     <select id="par-select" onchange="loadPar(this.value)" style="height:30px;padding:0 8px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;font-weight:600;color:var(--text);background:var(--bg);cursor:pointer"></select>
   </div>
+  <button onclick="openGuia()" style="margin-left:auto;border:1px solid var(--accent);color:var(--accent);background:var(--accent-light);height:30px;font-size:11px;border-radius:6px;padding:0 12px;cursor:pointer;font-weight:600;white-space:nowrap">📖 Guía</button>
 </div>
 
 <!-- PAGE -->
@@ -288,7 +289,6 @@
     <div class="season-header" onclick="toggleSeasonPanel()">
       📊 Tabla de estacionalidad — todos los pares
       <span id="season-pair-count"></span>
-      <button onclick="event.stopPropagation();openGuia()" style="border:1px solid var(--accent);color:var(--accent);background:var(--accent-light);height:26px;font-size:11px;border-radius:6px;margin-left:12px;padding:0 10px;cursor:pointer;font-weight:600">📖 Guía</button>
       <span class="season-chevron" id="season-chevron">▼</span>
     </div>
     <div class="season-body" id="season-body">
@@ -441,7 +441,6 @@
       <button class="sub-tab" onclick="switchParTab('equity')">📈 Equity</button>
       <button class="sub-tab" onclick="switchParTab('alineacion')">🎯 Alineación</button>
       <button class="sub-tab" onclick="switchParTab('trades')">📋 Trades</button>
-      <button onclick="openGuia()" style="margin-left:auto;border:1px solid var(--accent);color:var(--accent);background:var(--accent-light);height:26px;font-size:11px;border-radius:6px;padding:0 10px;cursor:pointer;font-weight:600">📖 Guía</button>
     </div>
     <div id="par-panel-transiciones" class="par-panel">
       <div id="bloque-barras" class="par-bloque">
