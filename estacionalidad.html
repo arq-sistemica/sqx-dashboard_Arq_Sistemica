@@ -268,6 +268,114 @@
   <button onclick="openGuia()" style="margin-left:auto;border:1px solid var(--accent);color:var(--accent);background:var(--accent-light);height:30px;font-size:11px;border-radius:6px;padding:0 12px;cursor:pointer;font-weight:600;white-space:nowrap">📖 Guía</button>
 </div>
 
+<!-- GUIA MODAL -->
+<div id="guia-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center" onclick="if(event.target===this)closeGuia()">
+  <div style="background:var(--bg);border-radius:12px;max-width:900px;width:94%;max-height:85vh;overflow-y:auto;padding:28px;position:relative">
+    <button onclick="closeGuia()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1" title="Cerrar">×</button>
+    <div style="font-weight:700;font-size:15px;margin-bottom:18px;color:var(--text)">📖 Guía de lectura — High/Close &gt; prev · Pos% y Avg%</div>
+    <div class="guide-cols">
+      <!-- Columna izquierda: tabla High/Close -->
+      <div>
+        <div class="guide-col-title">¿El mes superó al anterior?</div>
+        <table class="guide-table">
+          <thead>
+            <tr>
+              <th>Situación</th>
+              <th>High &gt; prev</th>
+              <th>Close &gt; prev</th>
+              <th>Qué significa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>✅ ✅</td>
+              <td>Sí</td>
+              <td>Sí</td>
+              <td>Mes alcista claro — subió y sostuvo</td>
+            </tr>
+            <tr>
+              <td>✅ ❌</td>
+              <td>Sí</td>
+              <td>No</td>
+              <td>Subió pero no lo sostuvo — mecha larga, rechazo</td>
+            </tr>
+            <tr>
+              <td>❌ ✅</td>
+              <td>No</td>
+              <td>Sí</td>
+              <td>No hizo nuevos máximos pero cerró fuerte desde abajo</td>
+            </tr>
+            <tr>
+              <td>❌ ❌</td>
+              <td>No</td>
+              <td>No</td>
+              <td>Mes bajista completo</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:11px;color:var(--text3);font-style:italic;margin:10px 0 0">El Close &gt; prev es la señal más valiosa: mide si el mercado sostuvo el movimiento hasta el último día del mes.</p>
+      </div>
+      <!-- Columna derecha: grid Pos%/Avg% -->
+      <div>
+        <div class="guide-col-title">¿Cómo leer Pos% y Avg% juntos?</div>
+        <div class="guide-grid">
+          <div class="guide-item">
+            <div class="guide-badges">
+              <span class="guide-badge long">Pos% alto</span>
+              <span class="guide-badge long">Avg% alto</span>
+            </div>
+            <div>
+              <div class="guide-item-title">Señal limpia y potente</div>
+              <div class="guide-item-desc">Gana seguido y cuando gana, gana bien.</div>
+              <div class="guide-item-example" style="color:#166534">▲ Long: Nov→Dic EURUSD: 82% · Avg +1.8%</div>
+              <div class="guide-item-example" style="color:#991b1b">▼ Short: Jul→Ago GBPJPY: 27% · Avg -0.80%</div>
+            </div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-badges">
+              <span class="guide-badge long">Pos% alto</span>
+              <span class="guide-badge short">Avg% bajo</span>
+            </div>
+            <div>
+              <div class="guide-item-title">Gana seguido pero poco</div>
+              <div class="guide-item-desc">Cuidado con outlier bajista que aplasta el promedio.</div>
+              <div class="guide-item-example" style="color:#166534">▲ Long: Jun GBPJPY: 82% · Avg +0.11% (StDev 5.10)</div>
+              <div class="guide-item-example" style="color:#991b1b">▼ Short: Ago GBPJPY: 27% · Avg -0.80% (StDev alto)</div>
+            </div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-badges">
+              <span class="guide-badge short">Pos% bajo</span>
+              <span class="guide-badge long">Avg% alto</span>
+            </div>
+            <div>
+              <div class="guide-item-title">Raramente gana pero pega fuerte</div>
+              <div class="guide-item-desc">Alta dispersión, movimiento grande cuando acierta.</div>
+              <div class="guide-item-example" style="color:#166534">▲ Long: Oct EURUSD: 18% → Avg -1.5% cuando falla, +2.3% cuando acierta</div>
+              <div class="guide-item-example" style="color:#991b1b">▼ Short: Sep→Oct EURUSD: 18% · en 9 de 11 años octubre bajó</div>
+            </div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-badges">
+              <span class="guide-badge short">Pos% bajo</span>
+              <span class="guide-badge short">Avg% bajo</span>
+            </div>
+            <div>
+              <div class="guide-item-title">Evitar</div>
+              <div class="guide-item-desc">Baja frecuencia y retorno promedio negativo. Sin ventaja histórica.</div>
+              <div class="guide-item-example" style="color:#166534">▲ Long: Feb EURUSD: 17% · Avg -0.56%</div>
+              <div class="guide-item-example" style="color:#991b1b">▼ Short: Ene GBPJPY: 50% · Avg -0.19% — sin ventaja direccional</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:20px">
+      <button onclick="closeGuia()" style="background:var(--accent);color:#fff;height:34px;padding:0 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- PAGE -->
 <div class="page-wrap">
 <div id="tab-general">
@@ -307,114 +415,6 @@
           <span class="exc-chevron" id="exc-chevron">▼</span>
         </div>
         <div class="exceptional-grid" id="exceptional-grid"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- GUIA MODAL -->
-  <div id="guia-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center" onclick="if(event.target===this)closeGuia()">
-    <div style="background:var(--bg);border-radius:12px;max-width:900px;width:94%;max-height:85vh;overflow-y:auto;padding:28px;position:relative">
-      <button onclick="closeGuia()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1" title="Cerrar">×</button>
-      <div style="font-weight:700;font-size:15px;margin-bottom:18px;color:var(--text)">📖 Guía de lectura — High/Close &gt; prev · Pos% y Avg%</div>
-      <div class="guide-cols">
-        <!-- Columna izquierda: tabla High/Close -->
-        <div>
-          <div class="guide-col-title">¿El mes superó al anterior?</div>
-          <table class="guide-table">
-            <thead>
-              <tr>
-                <th>Situación</th>
-                <th>High &gt; prev</th>
-                <th>Close &gt; prev</th>
-                <th>Qué significa</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>✅ ✅</td>
-                <td>Sí</td>
-                <td>Sí</td>
-                <td>Mes alcista claro — subió y sostuvo</td>
-              </tr>
-              <tr>
-                <td>✅ ❌</td>
-                <td>Sí</td>
-                <td>No</td>
-                <td>Subió pero no lo sostuvo — mecha larga, rechazo</td>
-              </tr>
-              <tr>
-                <td>❌ ✅</td>
-                <td>No</td>
-                <td>Sí</td>
-                <td>No hizo nuevos máximos pero cerró fuerte desde abajo</td>
-              </tr>
-              <tr>
-                <td>❌ ❌</td>
-                <td>No</td>
-                <td>No</td>
-                <td>Mes bajista completo</td>
-              </tr>
-            </tbody>
-          </table>
-          <p style="font-size:11px;color:var(--text3);font-style:italic;margin:10px 0 0">El Close &gt; prev es la señal más valiosa: mide si el mercado sostuvo el movimiento hasta el último día del mes.</p>
-        </div>
-        <!-- Columna derecha: grid Pos%/Avg% -->
-        <div>
-          <div class="guide-col-title">¿Cómo leer Pos% y Avg% juntos?</div>
-          <div class="guide-grid">
-            <div class="guide-item">
-              <div class="guide-badges">
-                <span class="guide-badge long">Pos% alto</span>
-                <span class="guide-badge long">Avg% alto</span>
-              </div>
-              <div>
-                <div class="guide-item-title">Señal limpia y potente</div>
-                <div class="guide-item-desc">Gana seguido y cuando gana, gana bien.</div>
-                <div class="guide-item-example" style="color:#166534">▲ Long: Nov→Dic EURUSD: 82% · Avg +1.8%</div>
-                <div class="guide-item-example" style="color:#991b1b">▼ Short: Jul→Ago GBPJPY: 27% · Avg -0.80%</div>
-              </div>
-            </div>
-            <div class="guide-item">
-              <div class="guide-badges">
-                <span class="guide-badge long">Pos% alto</span>
-                <span class="guide-badge short">Avg% bajo</span>
-              </div>
-              <div>
-                <div class="guide-item-title">Gana seguido pero poco</div>
-                <div class="guide-item-desc">Cuidado con outlier bajista que aplasta el promedio.</div>
-                <div class="guide-item-example" style="color:#166534">▲ Long: Jun GBPJPY: 82% · Avg +0.11% (StDev 5.10)</div>
-                <div class="guide-item-example" style="color:#991b1b">▼ Short: Ago GBPJPY: 27% · Avg -0.80% (StDev alto)</div>
-              </div>
-            </div>
-            <div class="guide-item">
-              <div class="guide-badges">
-                <span class="guide-badge short">Pos% bajo</span>
-                <span class="guide-badge long">Avg% alto</span>
-              </div>
-              <div>
-                <div class="guide-item-title">Raramente gana pero pega fuerte</div>
-                <div class="guide-item-desc">Alta dispersión, movimiento grande cuando acierta.</div>
-                <div class="guide-item-example" style="color:#166534">▲ Long: Oct EURUSD: 18% → Avg -1.5% cuando falla, +2.3% cuando acierta</div>
-                <div class="guide-item-example" style="color:#991b1b">▼ Short: Sep→Oct EURUSD: 18% · en 9 de 11 años octubre bajó</div>
-              </div>
-            </div>
-            <div class="guide-item">
-              <div class="guide-badges">
-                <span class="guide-badge short">Pos% bajo</span>
-                <span class="guide-badge short">Avg% bajo</span>
-              </div>
-              <div>
-                <div class="guide-item-title">Evitar</div>
-                <div class="guide-item-desc">Baja frecuencia y retorno promedio negativo. Sin ventaja histórica.</div>
-                <div class="guide-item-example" style="color:#166534">▲ Long: Feb EURUSD: 17% · Avg -0.56%</div>
-                <div class="guide-item-example" style="color:#991b1b">▼ Short: Ene GBPJPY: 50% · Avg -0.19% — sin ventaja direccional</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="text-align:right;margin-top:20px">
-        <button onclick="closeGuia()" style="background:var(--accent);color:#fff;height:34px;padding:0 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">OK</button>
       </div>
     </div>
   </div>
