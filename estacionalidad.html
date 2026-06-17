@@ -422,9 +422,9 @@
   <!-- FOOTER FUENTES -->
   <div style="margin-top:24px;padding:10px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:16px;font-size:11px;color:var(--text3);">
     <span><strong style="color:var(--text2)">Fuentes:</strong></span>
-    <span>Forex 28 pares &amp; SP500 — Seasonax (capturas manuales, 10 años)</span>
+    <span>Forex (28 pares) — Seasonax, capturas manuales 2015–2025</span>
     <span>·</span>
-    <span>XAUUSD &amp; NASDAQ — Indicador TV "Seasonality (Prev Month Close Expected)", 2015–2025 (11 años), verificado año por año</span>
+    <span>US100, US500, XAUUSD — TradingView MCP, datos OHLCV mensuales 2015–2025, verificados año por año</span>
   </div>
 
 </div><!-- end tab-general -->
@@ -553,14 +553,14 @@ async function loadDashboard() {
   if (!Array.isArray(db)) return;
 
   const SYMBOL_MAP = {
-    'USA500IDXUSD': 'SP500',
-    'US500': 'SP500',
-    'SPX500': 'SP500',
-    'SP500': 'SP500',
-    'NAS100': 'NASDAQ',
-    'NASDAQ': 'NASDAQ',
-    'US100': 'NASDAQ',
-    'USTEC': 'NASDAQ',
+    'USA500IDXUSD': 'US500',
+    'US500': 'US500',
+    'SPX500': 'US500',
+    'SP500': 'US500',
+    'NAS100': 'US100',
+    'NASDAQ': 'US100',
+    'US100': 'US100',
+    'USTEC': 'US100',
     'XAUUSD': 'XAUUSD',
     'GOLD': 'XAUUSD',
   };
@@ -871,7 +871,8 @@ const PARES = ['AUDCAD','AUDCHF','AUDJPY','AUDNZD','AUDUSD',
   'CADCHF','CADJPY','CHFJPY','EURAUD','EURCAD','EURCHF',
   'EURGBP','EURJPY','EURNZD','EURUSD','GBPAUD','GBPCAD',
   'GBPCHF','GBPJPY','GBPNZD','GBPUSD','NZDCAD','NZDCHF',
-  'NZDJPY','NZDUSD','USDCAD','USDCHF','USDJPY'];
+  'NZDJPY','NZDUSD','USDCAD','USDCHF','USDJPY',
+  'US100','US500','XAUUSD'];
 
 function switchInnerTab(tab) {
   document.getElementById('tab-general').style.display = tab === 'general' ? 'block' : 'none';
