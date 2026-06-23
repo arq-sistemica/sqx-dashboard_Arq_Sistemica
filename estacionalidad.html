@@ -557,6 +557,7 @@ async function loadDashboard() {
     'US500': 'US500',
     'SPX500': 'US500',
     'SP500': 'US500',
+    'USATECHIDXUSD': 'US100',
     'NAS100': 'US100',
     'NASDAQ': 'US100',
     'NASDAQ100': 'US100',
@@ -1285,7 +1286,7 @@ function live_computeScore(taggedAll, botMagic) {
 
 // Aliases broker → canónico inverso: para cada clave del dropdown, qué buscar en Supabase
 const _LIVE_ALIASES = {
-  'US100':  ['US100','NAS100','USTEC','NASDAQ','NDX','USA100IDXUSD','NASDAQ100','NAS100m','US100m'],
+  'US100':  ['US100','NAS100','USTEC','NASDAQ','NDX','USATECHIDXUSD','USA100IDXUSD','NASDAQ100','NAS100m','US100m'],
   'US500':  ['US500','SP500','USA500IDXUSD','SPX500','US500m'],
   'XAUUSD': ['XAUUSD','GOLD','XAU'],
 };
