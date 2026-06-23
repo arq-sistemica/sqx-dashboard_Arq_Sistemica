@@ -559,10 +559,13 @@ async function loadDashboard() {
     'SP500': 'US500',
     'NAS100': 'US100',
     'NASDAQ': 'US100',
+    'NASDAQ100': 'US100',
     'US100': 'US100',
     'USTEC': 'US100',
+    'NDX': 'US100',
     'XAUUSD': 'XAUUSD',
     'GOLD': 'XAUUSD',
+    'XAU': 'XAUUSD',
   };
 
   db.forEach(bot => {
@@ -1345,7 +1348,7 @@ async function loadParLive(symbol) {
     rawBots = await botsRes.value.json();
   else
     console.warn('loadParLive: error cargando bots', botsRes);
-  console.log('[loadParLive] ' + symbol + ': filtro=' + _liveSymFilter(symbol) + ' → ' + rawBots.length + ' bots | symbols:', rawBots.map(function(b){return (b.data||b).symbol;}));
+  console.log('[loadParLive] ' + symbol + ' → ' + rawBots.length + ' bots | URL:', '/rest/v1/bots?' + _liveSymFilter(symbol) + '&select=* | symbols:', rawBots.map(function(b){return (b.data||b).symbol;}));
 
   if (tradesRes.status === 'fulfilled' && tradesRes.value.ok)
     trades = await tradesRes.value.json();
