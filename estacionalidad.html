@@ -1280,6 +1280,21 @@ function live_computeScore(taggedAll, botMagic) {
   };
 }
 
+// Aliases broker → canónico inverso: para cada clave del dropdown, qué buscar en Supabase
+const _LIVE_ALIASES = {
+  'US100':  ['US100','NAS100','USTEC','NASDAQ','NDX'],
+  'US500':  ['US500','SP500','USA500IDXUSD','SPX500','US500m'],
+  'XAUUSD': ['XAUUSD','GOLD','XAU'],
+};
+// Construye parámetro PostgREST: si hay aliases usa or=(...), si no usa ilike simple
+function _liveSymFilter(sym) {
+  const aliases = _LIVE_ALIASES[sym];
+  if (aliases && aliases.length > 1) {
+    return 'or=(' + aliases.map(function(a) { return 'symbol.ilike.' + a + '*'; }).join(',') + ')';
+  }
+  return 'symbol=ilike.' + sym + '*';
+}
+
 // ── LIVE LOAD ──
 async function loadParLive(symbol) {
   ['live-pnl','equity','alineacion','trades'].forEach(function(p) {
@@ -1318,9 +1333,9 @@ async function loadParLive(symbol) {
   const hdrs = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token };
 
   const [botsRes, tradesRes] = await Promise.allSettled([
-    fetch(SUPABASE_URL + '/rest/v1/bots?symbol=ilike.' + symbol + '*&select=*', { headers: hdrs }),
-    fetch(SUPABASE_URL + '/rest/v1/trades?symbol=ilike.' + symbol +
-          '*&close_time=gte.2026-01-01T00:00:00&select=*&order=close_time.asc&limit=5000',
+    fetch(SUPABASE_URL + '/rest/v1/bots?' + _liveSymFilter(symbol) + '&select=*', { headers: hdrs }),
+    fetch(SUPABASE_URL + '/rest/v1/trades?' + _liveSymFilter(symbol) +
+          '&close_time=gte.2026-01-01T00:00:00&select=*&order=close_time.asc&limit=5000',
           { headers: hdrs })
   ]);
 
