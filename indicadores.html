@@ -384,6 +384,13 @@
 
       <!-- BOT CARDS -->
       <div class="dna-section-title">Bots con pseudocódigo cargado — indicadores y tipo de entrada</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <label style="font-size:11px;color:var(--text3);white-space:nowrap">Filtrar por activo:</label>
+        <select id="dna-asset-filter" style="font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer">
+          <option value="">Todos</option>
+        </select>
+        <span id="dna-filter-count" style="font-size:11px;color:var(--text3)"></span>
+      </div>
       <div class="dna-bot-grid" id="dna-bot-grid"></div>
 
       <!-- CONFIANZA TRIPLE -->
@@ -794,12 +801,29 @@ function dnaInit(allBots) {
     el('dna-stat-semaforo-sub').textContent = `${sems.length} de ${liveBots.length} bots live`;
 
   // BOT CARDS
-  const grid = document.getElementById('dna-bot-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  const stageC = { live:'var(--green)', incubacion:'#d97706', descartado:'var(--red)' };
-  const stageL = { live:'LIVE', incubacion:'INCUB', descartado:'DESCAR' };
-  allBots.forEach(bot => {
+  const assetSel = document.getElementById('dna-asset-filter');
+  if (assetSel) {
+    const uniqueAssets = [...new Set(allBots.map(b => b.asset).filter(a => a && a !== '—'))].sort();
+    while (assetSel.options.length > 1) assetSel.remove(1);
+    uniqueAssets.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a;
+      opt.textContent = a;
+      assetSel.appendChild(opt);
+    });
+    assetSel.onchange = () => renderBotCards(assetSel.value);
+  }
+
+  function renderBotCards(filterAsset) {
+    const grid = document.getElementById('dna-bot-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const filtered = filterAsset ? allBots.filter(b => b.asset === filterAsset) : allBots;
+    const countEl = document.getElementById('dna-filter-count');
+    if (countEl) countEl.textContent = filterAsset ? `${filtered.length} de ${allBots.length} bots` : '';
+    const stageC = { live:'var(--green)', incubacion:'#d97706', descartado:'var(--red)' };
+    const stageL = { live:'LIVE', incubacion:'INCUB', descartado:'DESCAR' };
+    filtered.forEach(bot => {
     const primary = bot.inds.filter(i => i !== 'ATR').slice(0,2);
     const rest    = bot.inds.filter(i => !primary.includes(i));
     const div = document.createElement('div');
@@ -865,7 +889,9 @@ function dnaInit(allBots) {
         ${buildFichaDiagnostico(bot)}
       </div>`;
     grid.appendChild(div);
-  });
+    });
+  }
+  renderBotCards(document.getElementById('dna-asset-filter')?.value || '');
 
   // HEATMAP
   const tbl = document.getElementById('dna-hm-table');
