@@ -1282,7 +1282,7 @@ function live_computeScore(taggedAll, botMagic) {
 
 // Aliases broker → canónico inverso: para cada clave del dropdown, qué buscar en Supabase
 const _LIVE_ALIASES = {
-  'US100':  ['US100','NAS100','USTEC','NASDAQ','NDX'],
+  'US100':  ['US100','NAS100','USTEC','NASDAQ','NDX','USA100IDXUSD','NASDAQ100','NAS100m','US100m'],
   'US500':  ['US500','SP500','USA500IDXUSD','SPX500','US500m'],
   'XAUUSD': ['XAUUSD','GOLD','XAU'],
 };
@@ -1345,6 +1345,7 @@ async function loadParLive(symbol) {
     rawBots = await botsRes.value.json();
   else
     console.warn('loadParLive: error cargando bots', botsRes);
+  console.log('[loadParLive] ' + symbol + ': filtro=' + _liveSymFilter(symbol) + ' → ' + rawBots.length + ' bots | symbols:', rawBots.map(function(b){return (b.data||b).symbol;}));
 
   if (tradesRes.status === 'fulfilled' && tradesRes.value.ok)
     trades = await tradesRes.value.json();
