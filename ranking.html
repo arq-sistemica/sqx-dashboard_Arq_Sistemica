@@ -802,11 +802,14 @@ function showApp(bots) {
   updateSyncLabel();
 }
 
+const MAGIC_ALIAS = { '1452': '1452315', '5962': '5962114' };
+
 function computeLiveMetrics(trades) {
   // Paso 1: agrupar por magic → por cuenta (evitar double-counting multi-VPS)
   const byMagicAccount = {};
   for (const t of trades) {
-    const m = String(t.magic || '');
+    const raw = String(t.magic || '');
+    const m = MAGIC_ALIAS[raw] || raw;
     if (!m || m === '0') continue;
     const acct = t.account_label || String(t.account_id) || 'unknown';
     if (!byMagicAccount[m]) byMagicAccount[m] = {};
