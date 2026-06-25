@@ -5,6 +5,7 @@
     { href: 'mt5.html',            label: 'MT5',            icon: '📉' },
     { href: 'indicadores.html',    label: 'Indicadores',    icon: '🔬' },
     { href: 'estacionalidad.html', label: 'Estacionalidad', icon: '📅' },
+    { href: 'sesiones.html',       label: 'Sesiones',       icon: '🕐' },
     { href: 'tendencia.html',      label: 'Tendencia',      icon: '📈' },
     { href: 'ranking.html',        label: 'Ranking',        icon: '🏆' },
     // { href: 'overlap.html',        label: 'Overlap',        icon: '📊' },

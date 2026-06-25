@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sesiones Intradiarias</title>
+<script src="supabase.js"></script>
+<script src="sidebar.js"></script>
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
+  --text:#111318;--text2:#4a5060;--text3:#9098a8;
+  --green:#1a7f4b;--green-bg:#eaf7f0;--green-border:#b2dfc8;
+  --red:#b91c1c;--red-bg:#fef2f2;--red-border:#fcc;
+  --amber:#92400e;--amber-bg:#fffbeb;--amber-border:#fde68a;
+  --accent:#4f46e5;--accent-light:#eef2ff;
+  --radius:6px;--radius-lg:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5}
+
+.page-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg);gap:12px;flex-wrap:wrap}
+.page-topbar h1{font-size:15px;font-weight:700;letter-spacing:-0.2px}
+.page-topbar .sub{font-size:12px;color:var(--text3);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+button{height:32px;padding:0 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:all 0.12s;font-family:inherit}
+button:hover{background:var(--bg3);color:var(--text);border-color:#adb5bd}
+
+.filters-bar{display:flex;align-items:center;gap:6px;padding:8px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg)}
+.filter-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
+.fbtn{height:26px;padding:0 11px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;font-family:inherit}
+.fbtn:hover{background:var(--bg3);color:var(--text)}
+.fbtn.active{background:var(--accent-light);border-color:#c7d2fe;color:var(--accent);font-weight:600}
+
+.table-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:clip;margin:16px 24px}
+.table-card-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--bg2);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+thead th:hover{color:var(--text2);background:var(--bg3)}
+thead th.nosort{cursor:default}
+thead th.nosort:hover{color:var(--text3);background:var(--bg2)}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg2)}
+tbody tr.best-day{background:var(--green-bg);box-shadow:inset 3px 0 0 var(--green)}
+tbody tr.worst-day{background:var(--red-bg);box-shadow:inset 3px 0 0 var(--red)}
+td{padding:8px 10px;text-align:left;color:var(--text2);white-space:nowrap}
+td.right{text-align:right}
+
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.badge-gray{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge-accent{background:var(--accent-light);color:var(--accent);border:1px solid #c7d2fe}
+.badge-purple{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
+.badge-orange{background:#fff8f0;color:#c26a00;border:1px solid #fbd7a8}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;display:none;max-width:520px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.toast-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.toast-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
+
+/* Sesiones-specific */
+.asset-header{padding:16px 24px 0;display:flex;align-items:flex-start;gap:16px;border-top:1px solid var(--border);flex-wrap:wrap}
+.asset-name-big{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1.2}
+.asset-ticker{font-size:12px;color:var(--text3);margin-top:2px}
+.asset-badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+
+.summary-cards{display:flex;gap:10px;padding:14px 24px 16px;flex-wrap:wrap}
+.sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;min-width:130px;flex:1}
+.sum-card-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.sum-card-value{font-size:16px;font-weight:700;color:var(--text);line-height:1.3}
+.sum-card-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+.progress-bar{display:inline-block;width:72px;height:5px;background:var(--border);border-radius:3px;vertical-align:middle;overflow:hidden;flex-shrink:0}
+.progress-fill{height:100%;border-radius:3px}
+
+.avoid-list{list-style:none;padding:0;display:flex;flex-direction:column;gap:6px}
+.avoid-item{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius);font-size:12px;color:var(--red);font-weight:500;line-height:1.4}
+
+.notes-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;font-size:12px;color:var(--text2);line-height:1.7}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;padding:0 24px 16px;margin-top:4px}
+@media(max-width:720px){.two-col{grid-template-columns:1fr}}
+
+.section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+
+.sort-arrow{margin-left:3px;font-size:9px;opacity:0.6}
+
+.day-label{font-weight:600;color:var(--text)}
+.day-marker{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle}
+.day-marker-best{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.day-marker-worst{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+
+.reversal-chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;margin-right:3px;font-weight:600}
+.rev-bullish{background:var(--green-bg);color:var(--green)}
+.rev-bearish{background:var(--red-bg);color:var(--red)}
+.rev-neutral{background:var(--bg3);color:var(--text3)}
+
+.global-section{border-top:2px solid var(--border);margin-top:8px}
+</style>
+</head>
+<body>
+<div id="toast-ok" class="toast toast-ok"></div>
+<div id="toast-err" class="toast toast-err"></div>
+
+<!-- Page header -->
+<div class="page-topbar">
+  <div>
+    <h1>🕐 Sesiones Intradiarias</h1>
+    <div class="sub">Estacionalidad por día de semana y sesión de trading · Fuente: intradayseasonals.com 2006–present</div>
+  </div>
+  <div class="topbar-right">
+    <select id="asset-selector" onchange="loadAsset(this.value)"
+      style="height:32px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;background:var(--bg);color:var(--text);font-family:inherit;min-width:200px;cursor:pointer">
+      <option value="">— Seleccionar activo —</option>
+    </select>
+  </div>
+</div>
+
+<!-- Empty / loading state -->
+<div id="empty-state" class="empty-state">Cargando activos...</div>
+
+<!-- Asset detail panel (hidden until selection) -->
+<div id="asset-panel" style="display:none">
+
+  <!-- B: Asset header + summary cards -->
+  <div class="asset-header" id="asset-header"></div>
+  <div class="summary-cards" id="summary-cards"></div>
+
+  <!-- C: Daily bias table -->
+  <div class="table-card">
+    <div class="table-card-title">Bias por Día de Semana</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="nosort" style="min-width:100px">Día</th>
+            <th class="nosort" style="min-width:110px">Bias</th>
+            <th class="nosort" style="min-width:130px">Fuerza</th>
+            <th class="nosort" style="min-width:160px">Mejor Entrada UTC</th>
+            <th class="nosort" style="min-width:140px">Pico UTC</th>
+            <th class="nosort" style="min-width:160px">Riesgo UTC</th>
+            <th class="nosort" style="min-width:120px">Volatilidad</th>
+            <th class="nosort right" style="min-width:80px">Drift %</th>
+          </tr>
+        </thead>
+        <tbody id="daily-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- D: Sessions table -->
+  <div class="table-card">
+    <div class="table-card-title">Bias por Sesión</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="nosort" style="min-width:110px">Sesión</th>
+            <th class="nosort" style="min-width:160px">Horario UTC</th>
+            <th class="nosort" style="min-width:130px">Bias</th>
+            <th class="nosort">Reversales clave en esta sesión</th>
+          </tr>
+        </thead>
+        <tbody id="session-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- E + F: Avoid zones + Notes -->
+  <div class="two-col">
+    <div>
+      <div class="section-title">Zonas a Evitar (UTC)</div>
+      <div id="avoid-zones"></div>
+    </div>
+    <div>
+      <div class="section-title">Notas del Activo</div>
+      <div id="asset-notes"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- G: Global comparative table -->
+<div class="global-section" id="global-section" style="display:none">
+  <div class="filters-bar">
+    <span class="filter-label">Tipo:</span>
+    <button class="fbtn active" id="ft-all"       onclick="setTypeFilter('all')">Todos</button>
+    <button class="fbtn"        id="ft-forex"     onclick="setTypeFilter('forex')">Forex</button>
+    <button class="fbtn"        id="ft-index"     onclick="setTypeFilter('index')">Index</button>
+    <button class="fbtn"        id="ft-commodity" onclick="setTypeFilter('commodity')">Commodity</button>
+    <button class="fbtn"        id="ft-currency"  onclick="setTypeFilter('currency')">Currency</button>
+  </div>
+  <div class="table-card" style="margin-top:0;border-radius:0;border-left:none;border-right:none;border-bottom:none">
+    <div class="table-card-title">Comparativa Global</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortGlobal('name')" style="min-width:100px">Activo<span class="sort-arrow" id="gs-name"> ▲</span></th>
+            <th onclick="sortGlobal('type')" style="min-width:100px">Tipo<span class="sort-arrow" id="gs-type"></span></th>
+            <th onclick="sortGlobal('weekly_bias')" style="min-width:120px">Sesgo Semanal<span class="sort-arrow" id="gs-weekly_bias"></span></th>
+            <th onclick="sortGlobal('best_day')" style="min-width:110px">Mejor Día<span class="sort-arrow" id="gs-best_day"></span></th>
+            <th onclick="sortGlobal('worst_day')" style="min-width:110px">Peor Día<span class="sort-arrow" id="gs-worst_day"></span></th>
+            <th class="nosort" style="min-width:220px">Zonas a Evitar</th>
+          </tr>
+        </thead>
+        <tbody id="global-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var DATA_BASE = '../Sesiones%20Intradia/data/';
+var indexData = null;
+var globalFilter = 'all';
+var globalSort = { col: 'name', dir: 1 };
+
+var DAYS_ES = {
+  monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles',
+  thursday: 'Jueves', friday: 'Viernes'
+};
+
+var SESSION_INFO = [
+  { key: 'asia',     label: 'Asiática', hours: '00:00–08:00 UTC' },
+  { key: 'london',   label: 'Europea',  hours: '07:00–16:00 UTC' },
+  { key: 'new_york', label: 'US Open',  hours: '14:30–17:00 UTC' },
+  { key: 'us_late',  label: 'US Late',  hours: '17:00–21:00 UTC' }
+];
+
+function biasBadge(b) {
+  var map = {
+    bullish:  '<span class="badge badge-green">▲ Bullish</span>',
+    bearish:  '<span class="badge badge-red">▼ Bearish</span>',
+    neutral:  '<span class="badge badge-gray">— Neutral</span>',
+    volatile: '<span class="badge badge-amber">⚡ Volátil</span>',
+    mixed:    '<span class="badge badge-gray">~ Mixed</span>'
+  };
+  return map[b] || '<span class="badge badge-gray">' + (b||'—') + '</span>';
+}
+
+function typeBadge(t) {
+  var map = {
+    forex:     '<span class="badge badge-accent">Forex</span>',
+    index:     '<span class="badge badge-gray">Index</span>',
+    commodity: '<span class="badge badge-orange">Commodity</span>',
+    currency:  '<span class="badge badge-purple">Currency</span>'
+  };
+  return map[t] || '<span class="badge badge-gray">' + t + '</span>';
+}
+
+function strengthPct(s, bias) {
+  if (s === 'strong')   return 90;
+  if (s === 'moderate') return 60;
+  if (s === 'weak')     return 30;
+  if (bias === 'bullish' || bias === 'bearish') return 45;
+  if (bias === 'volatile') return 70;
+  return 15;
+}
+
+function strengthColor(s, bias) {
+  if (bias === 'bullish')  return '#1a7f4b';
+  if (bias === 'bearish')  return '#b91c1c';
+  if (bias === 'volatile') return '#d97706';
+  return '#c8cdd5';
+}
+
+function getStrengthForDay(data, day) {
+  if (!data.key_reversals) return null;
+  var order = { strong: 3, moderate: 2, weak: 1 };
+  var matches = data.key_reversals.filter(function(r) { return r.day === day; });
+  if (!matches.length) return null;
+  matches.sort(function(a,b){ return (order[b.strength]||0) - (order[a.strength]||0); });
+  return matches[0].strength;
+}
+
+function getBestEntryForDay(data, day) {
+  if (!data.best_entry_windows_utc) return null;
+  var re = new RegExp('^' + day + '\\s*', 'i');
+  for (var i = 0; i < data.best_entry_windows_utc.length; i++) {
+    var w = data.best_entry_windows_utc[i];
+    if (re.test(w)) return w.replace(re, '');
+  }
+  return null;
+}
+
+function getAvoidForDay(data, day) {
+  if (!data.avoid_utc) return null;
+  var matches = data.avoid_utc.filter(function(z) {
+    return z.toLowerCase().indexOf(day) !== -1;
+  });
+  return matches.length ? matches.join('; ') : null;
+}
+
+function getPeakForDay(data, day) {
+  var parts = [];
+  if (data.weekly_high && data.weekly_high.day === day && data.weekly_high.time_utc_approx) {
+    parts.push('↑ ' + data.weekly_high.time_utc_approx);
+  }
+  if (data.weekly_low && data.weekly_low.day === day && data.weekly_low.time_utc_approx) {
+    parts.push('↓ ' + data.weekly_low.time_utc_approx);
+  }
+  return parts.length ? parts.join(' · ') : null;
+}
+
+function getReversalsForDay(data, day) {
+  if (!data.key_reversals) return [];
+  return data.key_reversals.filter(function(r) { return r.day === day; });
+}
+
+function getReversalsForSession(data, sessionKey) {
+  if (!data.key_reversals) return [];
+  var utcRanges = {
+    asia:     [0, 8],
+    london:   [7, 16],
+    new_york: [14.5, 21],
+    us_late:  [17, 21]
+  };
+  var range = utcRanges[sessionKey];
+  if (!range) return [];
+  return data.key_reversals.filter(function(r) {
+    if (!r.time_utc) return false;
+    var parts = r.time_utc.split(':');
+    var h = parseFloat(parts[0]) + (parseFloat(parts[1]||0)/60);
+    return h >= range[0] && h <= range[1];
+  });
+}
+
+function renderSummary(data, indexEntry) {
+  var bestDay  = indexEntry ? indexEntry.best_day  : null;
+  var worstDay = indexEntry ? indexEntry.worst_day : null;
+  var drift = data.weekly_drift_pct != null ? data.weekly_drift_pct : null;
+  var driftStr = drift != null ? (drift > 0 ? '+' : '') + drift + '%' : '—';
+  var avoidCount = (data.avoid_utc || []).length;
+
+  document.getElementById('asset-header').innerHTML =
+    '<div>' +
+    '<div class="asset-name-big">' + (data.ticker || data.asset.toUpperCase()) + '</div>' +
+    '<div class="asset-ticker">' + (data.futures_code ? 'Futuro: ' + data.futures_code + ' · ' : '') + (data.data_range || '') + '</div>' +
+    '<div class="asset-badges">' +
+      typeBadge(data.type) + ' ' + biasBadge(data.weekly_bias) +
+    '</div>' +
+    '</div>';
+
+  document.getElementById('summary-cards').innerHTML =
+    mkSumCard('Sesgo Semanal', biasBadge(data.weekly_bias), 'Drift: ' + driftStr) +
+    mkSumCard('Mejor Día', '<span style="color:var(--green);font-size:18px;font-weight:800">' + (DAYS_ES[bestDay]||'—') + '</span>', 'Mayor oportunidad') +
+    mkSumCard('Peor Día',  '<span style="color:var(--red);font-size:18px;font-weight:800">'  + (DAYS_ES[worstDay]||'—') + '</span>', 'Mayor riesgo') +
+    mkSumCard('Zonas a Evitar', '<span style="color:var(--red);font-size:18px;font-weight:800">' + avoidCount + '</span>', 'Franjas críticas UTC');
+}
+
+function mkSumCard(label, value, sub) {
+  return '<div class="sum-card">' +
+    '<div class="sum-card-label">' + label + '</div>' +
+    '<div class="sum-card-value">' + value + '</div>' +
+    '<div class="sum-card-sub">' + sub + '</div>' +
+    '</div>';
+}
+
+function renderDailyBias(data, indexEntry) {
+  var days = ['monday','tuesday','wednesday','thursday','friday'];
+  var bestDay  = indexEntry ? indexEntry.best_day  : null;
+  var worstDay = indexEntry ? indexEntry.worst_day : null;
+  var drift = data.weekly_drift_pct != null ? data.weekly_drift_pct / 5 : null;
+
+  var rows = days.map(function(day) {
+    var bias = (data.daily_bias || {})[day] || 'neutral';
+    var strength = getStrengthForDay(data, day);
+    var pct   = strengthPct(strength, bias);
+    var color = strengthColor(strength, bias);
+    var strengthLabel = strength || (bias === 'neutral' || bias === 'mixed' ? 'débil' : 'moderada');
+
+    var bestEntry = getBestEntryForDay(data, day) || '—';
+    var peak      = getPeakForDay(data, day)      || '—';
+    var avoid     = getAvoidForDay(data, day)      || '—';
+
+    var reversals = getReversalsForDay(data, day);
+    var volBadge;
+    if (reversals.length >= 2)       volBadge = '<span class="badge badge-red" style="font-size:10px">Alta</span>';
+    else if (reversals.length === 1) volBadge = '<span class="badge badge-amber" style="font-size:10px">Media</span>';
+    else                              volBadge = '<span class="badge badge-gray" style="font-size:10px">Normal</span>';
+
+    var driftStr = drift != null
+      ? '<span style="color:' + (drift >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:600">' + (drift > 0 ? '+' : '') + drift.toFixed(2) + '%</span>'
+      : '—';
+
+    var rowClass = day === bestDay ? ' class="best-day"' : day === worstDay ? ' class="worst-day"' : '';
+    var dayMarker = day === bestDay
+      ? ' <span class="day-marker day-marker-best">mejor</span>'
+      : day === worstDay
+      ? ' <span class="day-marker day-marker-worst">peor</span>'
+      : '';
+
+    var avoidStyle = avoid !== '—' ? 'color:var(--red);font-size:11px;white-space:normal;max-width:160px' : 'color:var(--text3);font-size:11px';
+
+    return '<tr' + rowClass + '>' +
+      '<td><span class="day-label">' + DAYS_ES[day] + '</span>' + dayMarker + '</td>' +
+      '<td>' + biasBadge(bias) + '</td>' +
+      '<td style="white-space:nowrap">' +
+        '<span class="progress-bar"><span class="progress-fill" style="width:' + pct + '%;background:' + color + '"></span></span>' +
+        ' <span style="font-size:10px;color:var(--text3)">' + strengthLabel + '</span>' +
+      '</td>' +
+      '<td style="font-size:11px;white-space:normal;max-width:160px">' + bestEntry + '</td>' +
+      '<td style="font-size:11px">' + peak + '</td>' +
+      '<td style="' + avoidStyle + '">' + (avoid !== '—' ? '⛔ ' + avoid : '—') + '</td>' +
+      '<td>' + volBadge + '</td>' +
+      '<td class="right">' + driftStr + '</td>' +
+      '</tr>';
+  });
+
+  document.getElementById('daily-table-body').innerHTML = rows.join('');
+}
+
+function renderSessions(data) {
+  var sb = data.session_bias || {};
+  var rows = [
+    { key: 'asia',     label: 'Asiática', hours: '00:00–08:00 UTC', bias: sb.asia     || 'neutral' },
+    { key: 'london',   label: 'Europea',  hours: '07:00–16:00 UTC', bias: sb.london   || 'neutral' },
+    { key: 'new_york', label: 'US Open',  hours: '14:30–17:00 UTC', bias: sb.new_york || 'neutral' },
+    { key: 'us_late',  label: 'US Late',  hours: '17:00–21:00 UTC', bias: sb.new_york || 'neutral' }
+  ];
+
+  document.getElementById('session-table-body').innerHTML = rows.map(function(r) {
+    var reversals = getReversalsForSession(data, r.key);
+    var revStr = reversals.map(function(rev) {
+      var cls = rev.direction === 'bullish' ? 'rev-bullish' : rev.direction === 'bearish' ? 'rev-bearish' : 'rev-neutral';
+      var arrow = rev.direction === 'bullish' ? '▲' : '▼';
+      return '<span class="reversal-chip ' + cls + '">' + arrow + ' ' + DAYS_ES[rev.day] + ' ' + (rev.time_utc||'') + '</span>';
+    }).join('');
+    return '<tr>' +
+      '<td style="font-weight:600">' + r.label + '</td>' +
+      '<td style="color:var(--text3);font-size:11px">' + r.hours + '</td>' +
+      '<td>' + biasBadge(r.bias) + '</td>' +
+      '<td style="white-space:normal">' + (revStr || '<span style="color:var(--text3);font-size:11px">—</span>') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderAvoidZones(data) {
+  var zones = data.avoid_utc || [];
+  var el = document.getElementById('avoid-zones');
+  if (!zones.length) {
+    el.innerHTML = '<span class="badge badge-gray">Sin zonas críticas</span>';
+    return;
+  }
+  el.innerHTML = '<ul class="avoid-list">' + zones.map(function(z) {
+    return '<li class="avoid-item">⛔ ' + z + '</li>';
+  }).join('') + '</ul>';
+}
+
+function renderNotes(data) {
+  var notes = (data.notes || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+  document.getElementById('asset-notes').innerHTML = '<div class="notes-box">' + notes + '</div>';
+}
+
+function loadAsset(file) {
+  if (!file) return;
+  var indexEntry = null;
+  if (indexData) {
+    indexData.assets.forEach(function(a) { if (a.file === file) indexEntry = a; });
+  }
+  fetch(DATA_BASE + file)
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      document.getElementById('asset-panel').style.display = '';
+      document.getElementById('empty-state').style.display = 'none';
+      renderSummary(data, indexEntry);
+      renderDailyBias(data, indexEntry);
+      renderSessions(data);
+      renderAvoidZones(data);
+      renderNotes(data);
+      document.getElementById('asset-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(function() {
+      showToast('err', 'Error cargando ' + file);
+    });
+}
+
+function setTypeFilter(type) {
+  globalFilter = type;
+  ['all','forex','index','commodity','currency'].forEach(function(t) {
+    var btn = document.getElementById('ft-' + t);
+    if (btn) btn.classList.toggle('active', t === type);
+  });
+  renderGlobalTable();
+}
+
+function sortGlobal(col) {
+  if (globalSort.col === col) globalSort.dir *= -1;
+  else { globalSort.col = col; globalSort.dir = 1; }
+  renderGlobalTable();
+}
+
+function renderGlobalTable() {
+  if (!indexData) return;
+  var filtered = indexData.assets.filter(function(a) {
+    return globalFilter === 'all' || a.type === globalFilter;
+  });
+  filtered.sort(function(a, b) {
+    var va = (a[globalSort.col] || '').toString().toLowerCase();
+    var vb = (b[globalSort.col] || '').toString().toLowerCase();
+    return va < vb ? -globalSort.dir : va > vb ? globalSort.dir : 0;
+  });
+
+  ['name','type','weekly_bias','best_day','worst_day'].forEach(function(col) {
+    var el = document.getElementById('gs-' + col);
+    if (!el) return;
+    el.textContent = globalSort.col === col ? (globalSort.dir === 1 ? ' ▲' : ' ▼') : '';
+  });
+
+  document.getElementById('global-table-body').innerHTML = filtered.map(function(a) {
+    var avoidStr = (a.avoid_utc || []).join(' · ');
+    if (avoidStr.length > 70) avoidStr = avoidStr.substring(0, 67) + '...';
+    return '<tr style="cursor:pointer" onclick="selectAsset(\'' + a.file + '\')">' +
+      '<td style="font-weight:700">' + a.name + '</td>' +
+      '<td>' + typeBadge(a.type) + '</td>' +
+      '<td>' + biasBadge(a.weekly_bias) + '</td>' +
+      '<td style="color:var(--green);font-weight:600">' + (DAYS_ES[a.best_day]  || '—') + '</td>' +
+      '<td style="color:var(--red);font-weight:600">'   + (DAYS_ES[a.worst_day] || '—') + '</td>' +
+      '<td style="font-size:11px;color:var(--text3);white-space:normal;max-width:220px">' + (avoidStr || '—') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function selectAsset(file) {
+  var sel = document.getElementById('asset-selector');
+  if (sel) sel.value = file;
+  loadAsset(file);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showToast(type, msg) {
+  var el = document.getElementById('toast-' + type);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 3000);
+}
+
+function populateSelector(data) {
+  var types    = ['forex','index','commodity','currency'];
+  var labels   = { forex: 'Forex', index: 'Index', commodity: 'Commodity', currency: 'Currency' };
+  var grouped  = { forex: [], index: [], commodity: [], currency: [] };
+  data.assets.forEach(function(a) {
+    if (grouped[a.type]) grouped[a.type].push(a);
+    else grouped.forex.push(a);
+  });
+  var html = '<option value="">— Seleccionar activo —</option>';
+  types.forEach(function(t) {
+    if (!grouped[t].length) return;
+    html += '<optgroup label="' + labels[t] + '">';
+    grouped[t].forEach(function(a) {
+      html += '<option value="' + a.file + '">' + a.name + '</option>';
+    });
+    html += '</optgroup>';
+  });
+  document.getElementById('asset-selector').innerHTML = html;
+}
+
+function init() {
+  fetch(DATA_BASE + 'index.json')
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      indexData = data;
+      populateSelector(data);
+      document.getElementById('empty-state').textContent = 'Seleccioná un activo del dropdown para ver su análisis intradiario.';
+      document.getElementById('global-section').style.display = '';
+      renderGlobalTable();
+    })
+    .catch(function(e) {
+      document.getElementById('empty-state').innerHTML =
+        '<div style="color:var(--red)">Error cargando index.json.<br><small style="color:var(--text3)">Verificá que el servidor esté corriendo y la ruta <code>../Sesiones Intradia/data/</code> sea accesible.</small></div>';
+    });
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
