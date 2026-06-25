@@ -693,8 +693,9 @@ function toggleGeneralPanel() {
   if (!_panelCollapsed) renderGeneralPanel();
 }
 
-function donutSVG(segs, size) {
+function donutSVG(segs, size, donutId) {
   size = size || 160;
+  donutId = donutId || ('d' + Math.random().toString(36).slice(2, 7));
   const cx = size / 2, cy = size / 2;
   const ro = size * 0.41, ri = size * 0.26;
   const total = segs.reduce((s, g) => s + g.value, 0);
@@ -716,9 +717,12 @@ function donutSVG(segs, size) {
     const x4 = cx + ri * Math.cos(angle),    y4 = cy + ri * Math.sin(angle);
     const d = `M${x1.toFixed(1)},${y1.toFixed(1)} A${ro},${ro} 0 ${large} 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${x3.toFixed(1)},${y3.toFixed(1)} A${ri},${ri} 0 ${large} 0 ${x4.toFixed(1)},${y4.toFixed(1)} Z`;
     angle = endAngle;
-    return `<path d="${d}" fill="${s.color}"><title>${(s.tooltip || s.label).replace(/</g, '&lt;')}</title></path>`;
+    const pct = (s.value / total * 100).toFixed(1);
+    return `<path d="${d}" fill="${s.color}" data-label="${(s.label||'').replace(/"/g,'&quot;')}" data-pct="${pct}" style="cursor:pointer" onclick="(function(el){var svg=el.closest('svg');var lbl=svg.querySelector('#${donutId}-lbl');var pctEl=svg.querySelector('#${donutId}-pct');var paths=svg.querySelectorAll('path');if(el.dataset.active==='1'){el.dataset.active='';paths.forEach(function(p){p.style.opacity='1';});lbl.textContent='';pctEl.textContent='';}else{paths.forEach(function(p){p.dataset.active='';p.style.opacity='0.35';});el.dataset.active='1';el.style.opacity='1';lbl.textContent=el.dataset.label;pctEl.textContent=el.dataset.pct+'%';}})(this)"><title>${(s.tooltip || s.label).replace(/</g, '&lt;')}</title></path>`;
   }).join('');
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
+  const labelEl = `<text id="${donutId}-lbl" x="${cx}" y="${(cy - size*0.04).toFixed(1)}" text-anchor="middle" font-size="${(size*0.09).toFixed(1)}" fill="var(--text2)" style="pointer-events:none"></text>`;
+  const pctEl   = `<text id="${donutId}-pct" x="${cx}" y="${(cy + size*0.1).toFixed(1)}"  text-anchor="middle" font-size="${(size*0.13).toFixed(1)}" font-weight="700" fill="var(--text)" style="pointer-events:none"></text>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}${labelEl}${pctEl}</svg>`;
 }
 
 function renderGeneralPanel() {
@@ -806,7 +810,7 @@ function renderGeneralPanel() {
       </tr>`;
     }).join('');
     donut1Html = `<div class="donut-block" style="min-width:0;align-items:center">
-      <div style="flex-shrink:0"><div class="donut-title">Por Activo — ${activeSym}</div>${donutSVG(segsS, 160)}</div>
+      <div style="flex-shrink:0"><div class="donut-title">Por Activo — ${activeSym}</div>${donutSVG(segsS, 160, 'donut-activo-s')}</div>
       <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
         <thead><tr><th>Dir</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
         <tbody>${legRowsS}</tbody>
@@ -844,7 +848,7 @@ function renderGeneralPanel() {
       </tr>`;
     }).join('');
     donut1Html = `<div class="donut-block" style="min-width:0;align-items:center">
-      <div style="flex-shrink:0"><div class="donut-title">Por Activo</div>${donutSVG(segs1, 160)}</div>
+      <div style="flex-shrink:0"><div class="donut-title">Por Activo</div>${donutSVG(segs1, 160, 'donut-activo')}</div>
       <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
         <thead><tr><th>Symbol</th><th>Trades</th><th>WR%</th><th>Net PnL</th></tr></thead>
         <tbody>${legRows1}</tbody>
@@ -880,7 +884,7 @@ function renderGeneralPanel() {
     </tr>`;
   }).join('');
   const donut2Html = `<div class="donut-block" style="min-width:0;align-items:center">
-    <div style="flex-shrink:0"><div class="donut-title">Por Dirección</div>${donutSVG(segs2, 160)}</div>
+    <div style="flex-shrink:0"><div class="donut-title">Por Dirección</div>${donutSVG(segs2, 160, 'donut-dir')}</div>
     <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
       <thead><tr><th>Dir</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
       <tbody>${legRows2}</tbody>
@@ -915,7 +919,7 @@ function renderGeneralPanel() {
     </tr>`;
   }).join('');
   const donut3Html = `<div class="donut-block" style="min-width:0;align-items:center">
-    <div style="flex-shrink:0"><div class="donut-title">Por Sesión</div>${donutSVG(segs3, 160)}</div>
+    <div style="flex-shrink:0"><div class="donut-title">Por Sesión</div>${donutSVG(segs3, 160, 'donut-sesion')}</div>
     <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
       <thead><tr><th>Sesión</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
       <tbody>${legRows3}</tbody>
