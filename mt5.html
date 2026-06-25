@@ -888,6 +888,17 @@ function renderGeneralPanel() {
       <td class="${npColor(v.netPnl)}">${fmt(v.netPnl, 2)}</td>
     </tr>`;
   }).join('');
+  if (isSingleBot) {
+    const syms = [...new Set(panelTrades.map(t => t.symbol).filter(Boolean))];
+    const symLabel = syms.length === 1 ? ' — ' + syms[0] : syms.length > 1 ? ' — ' + syms.join('/') : '';
+    donut1Html = `<div class="donut-block" style="min-width:0;align-items:center">
+      <div style="flex-shrink:0"><div class="donut-title">Por Activo y Dirección${symLabel}</div>${donutSVG(segs2, 160, 'donut-dir-single')}</div>
+      <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
+        <thead><tr><th>Dir</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
+        <tbody>${legRows2}</tbody>
+      </table></div>
+    </div>`;
+  }
   const donut2Html = `<div class="donut-block" style="min-width:0;align-items:center">
     <div style="flex-shrink:0"><div class="donut-title">Por Dirección</div>${donutSVG(segs2, 160, 'donut-dir')}</div>
     <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
