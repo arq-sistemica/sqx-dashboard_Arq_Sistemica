@@ -724,8 +724,8 @@ function donutSVG(segs, size, donutId) {
     const ty = (Math.sin(midAngle) * pushDist).toFixed(2);
     return `<path d="${d}" fill="${s.color}" data-tx="${tx}" data-ty="${ty}" data-label="${(s.label||'').replace(/"/g,'&quot;')}" data-pct="${pct}" style="cursor:pointer;transition:transform 0.15s ease" onclick="(function(el){var svg=el.closest('svg');var lbl=svg.querySelector('#${donutId}-lbl');var pctEl=svg.querySelector('#${donutId}-pct');var paths=svg.querySelectorAll('path');var isActive=el.dataset.active==='1';paths.forEach(function(p){p.dataset.active='';p.style.transform='';});lbl.textContent='';pctEl.textContent='';if(!isActive){el.dataset.active='1';el.style.transform='translate('+el.dataset.tx+'px,'+el.dataset.ty+'px)';lbl.textContent=el.dataset.label;pctEl.textContent=el.dataset.pct+'%';}})(this)"><title>${(s.tooltip||s.label).replace(/</g,'&lt;')}</title></path>`;
   }).join('');
-  const labelEl = `<text id="${donutId}-lbl" x="${cx}" y="${(cy - size*0.08).toFixed(1)}" text-anchor="middle" font-size="${(size*0.10).toFixed(1)}" fill="var(--text2)" style="pointer-events:none"></text>`;
-  const pctEl   = `<text id="${donutId}-pct" x="${cx}" y="${(cy + size*0.12).toFixed(1)}" text-anchor="middle" font-size="${(size*0.18).toFixed(1)}" font-weight="700" fill="var(--text)" style="pointer-events:none"></text>`;
+  const labelEl = `<text id="${donutId}-lbl" x="${cx}" y="${(cy - size*0.08).toFixed(1)}" text-anchor="middle" font-size="${(size*0.085).toFixed(1)}" fill="var(--text2)" style="pointer-events:none"></text>`;
+  const pctEl   = `<text id="${donutId}-pct" x="${cx}" y="${(cy + size*0.12).toFixed(1)}" text-anchor="middle" font-size="${(size*0.145).toFixed(1)}" font-weight="700" fill="var(--text)" style="pointer-events:none"></text>`;
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}${labelEl}${pctEl}</svg>`;
 }
 
@@ -733,6 +733,7 @@ function renderGeneralPanel() {
   const body = document.getElementById('general-panel-body');
   if (!body || _panelCollapsed) return;
 
+  const isSingleBot = _selectedMagics.size === 1;
   const panelBtn = document.getElementById('general-panel-btn');
   const nSel = _selectedMagics.size;
   if (panelBtn) {
@@ -814,7 +815,7 @@ function renderGeneralPanel() {
       </tr>`;
     }).join('');
     donut1Html = `<div class="donut-block" style="min-width:0;align-items:center">
-      <div style="flex-shrink:0"><div class="donut-title">Por Activo — ${activeSym}</div>${donutSVG(segsS, 160, 'donut-activo-s')}</div>
+      <div style="flex-shrink:0"><div class="donut-title">${isSingleBot ? 'Por Activo y Dirección — ' + activeSym : 'Por Activo — ' + activeSym}</div>${donutSVG(segsS, 160, 'donut-activo-s')}</div>
       <div style="flex:1;min-width:0;overflow-x:auto"><table class="donut-legend">
         <thead><tr><th>Dir</th><th>Trades</th><th>%</th><th>WR%</th><th>Net PnL</th></tr></thead>
         <tbody>${legRowsS}</tbody>
@@ -930,7 +931,9 @@ function renderGeneralPanel() {
     </table></div>
   </div>`;
 
-  const rowB = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">${donut1Html}${donut2Html}${donut3Html}</div>`;
+  const rowB = isSingleBot
+    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">${donut1Html}${donut3Html}</div>`
+    : `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">${donut1Html}${donut2Html}${donut3Html}</div>`;
 
   // EQUITY CURVES — individuales (solo si hay 2+ bots seleccionados) + global
   let cumEq = 0;
