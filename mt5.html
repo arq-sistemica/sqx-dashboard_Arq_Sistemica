@@ -601,13 +601,31 @@ function toggleDetail(magic) {
 var TRADE_LIST_MODE = 'scroll'; // 'paged' | 'scroll'
 var PAGE_SIZE = 20;
 
+function getSession(t) {
+  const dateStr = t.openDate;
+  if (!dateStr || dateStr === '—') return null;
+  const hr = parseInt(dateStr.slice(11, 13), 10);
+  if (isNaN(hr)) return null;
+  if (hr >= 2  && hr < 10) return 'Asiática';
+  if (hr >= 10 && hr < 16) return 'Europea';
+  return 'Americana'; // cubre 16-23 y 0-1
+}
+
+const SES_BORDER = {
+  'Asiática':  '#f59e0b',
+  'Europea':   '#4f46e5',
+  'Americana': '#dc2626',
+};
+
 function buildTradeRows(list) {
   let html = '', lastMonth = null, monthParity = 0;
   list.forEach(t => {
     const month = t.closeDate.slice(0, 7);
     if (month !== lastMonth) { lastMonth = month; monthParity = 1 - monthParity; }
     const rowBg = monthParity === 0 ? '' : 'background:#f1f3f5;';
-    html += `<tr style="${rowBg}">
+    const sesBorder = SES_BORDER[getSession(t)];
+    const sesBorderStyle = sesBorder ? `border-left:3px solid ${sesBorder};` : 'border-left:3px solid transparent;';
+    html += `<tr style="${rowBg}${sesBorderStyle}">
       <td>${t.closeDate}</td><td>${t.symbol}</td><td>${t.action}</td>
       <td>${t.lots??'—'}</td><td>${t.openPrice??'—'}</td><td>${t.closePrice??'—'}</td>
       <td class="${t.netProfit>=0?'trade-p':'trade-n'}">${t.netProfit>=0?'+':''}${fmt(t.netProfit,2)}</td>
@@ -871,20 +889,18 @@ function renderGeneralPanel() {
 
   // FILA B — Donut 3: Por Sesión
   const sess = {
-    'Asiática':  { r: [0,  8],  color: '#f59e0b', trades: 0, wins: 0, netPnl: 0 },
-    'Europea':   { r: [9,  15], color: '#4f46e5', trades: 0, wins: 0, netPnl: 0 },
-    'Americana': { r: [16, 23], color: '#dc2626', trades: 0, wins: 0, netPnl: 0 },
+    'Asiática':  { color: '#f59e0b', trades: 0, wins: 0, netPnl: 0 },
+    'Europea':   { color: '#4f46e5', trades: 0, wins: 0, netPnl: 0 },
+    'Americana': { color: '#dc2626', trades: 0, wins: 0, netPnl: 0 },
   };
   for (const t of panelTrades) {
-    const hr = parseInt(t.closeDate.slice(11, 13), 10);
-    if (isNaN(hr)) continue;
-    for (const s of Object.values(sess)) {
-      if (hr >= s.r[0] && hr <= s.r[1]) {
-        s.trades++; if (t.netProfit > 0) s.wins++;
-        s.netPnl = +(s.netPnl + t.netProfit).toFixed(2);
-        break;
-      }
-    }
+    const sesName = getSession(t);
+    if (!sesName) continue;
+    const s = sess[sesName];
+    if (!s) continue;
+    s.trades++;
+    if (t.netProfit > 0) s.wins++;
+    s.netPnl = +(s.netPnl + t.netProfit).toFixed(2);
   }
   const segs3 = Object.entries(sess).map(([nm, s]) => ({ color: s.color, value: s.trades, label: nm, tooltip: `${nm}\nTrades: ${s.trades}` }));
   const sessTotal = Object.values(sess).reduce((a, s) => a + s.trades, 0);
