@@ -1,0 +1,56 @@
+{
+  "asset": "eur",
+  "type": "currency",
+  "ticker": "Euro FX (G6E)",
+  "futures_code": "G6E",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 0.20,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "bullish",
+    "wednesday": "bullish",
+    "thursday": "bullish",
+    "friday": "bearish"
+  },
+  "session_bias": {
+    "asia": "neutral",
+    "london": "bullish",
+    "new_york": "bullish"
+  },
+  "weekly_high": {
+    "day": "thursday",
+    "time_et_approx": "16:00-17:00",
+    "time_utc_approx": "21:00-22:00"
+  },
+  "weekly_low": {
+    "day": "monday",
+    "time_et_approx": "08:00-10:00",
+    "time_utc_approx": "13:00-15:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "22:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Cierre del lunes. Inicio del rally más limpio del mercado forex"
+    },
+    {
+      "day": "friday",
+      "time_utc": "13:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Inicio del selloff del viernes al inicio de la sesión London/NY. Drop pronunciado"
+    }
+  ],
+  "avoid_utc": [
+    "monday 00:00-22:00",
+    "friday 13:00-18:00"
+  ],
+  "best_entry_windows_utc": [
+    "tuesday 07:00-thursday 22:00"
+  ],
+  "notes": "Futuros Euro FX (G6E CME). El EUR es la moneda con el rally semanal más consistente y limpio: sube de forma casi lineal de martes a jueves. El lunes es bajista con mínimo en sesión NY. El viernes tiene un selloff agresivo en la primera mitad de la sesión seguido de recuperación parcial. El sesgo es muy favorable para longs de martes a jueves."
+}

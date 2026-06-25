@@ -1,0 +1,236 @@
+{
+  "generated": "2026-06-24",
+  "total": 23,
+  "assets": [
+    {
+      "name": "AUD",
+      "file": "aud.json",
+      "type": "currency",
+      "weekly_bias": "bullish",
+      "best_day": "tuesday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 00:00-22:00"],
+      "notes_summary": "Futuros de Australian Dollar (G6A CME)."
+    },
+    {
+      "name": "AUD/JPY",
+      "file": "audjpy.json",
+      "type": "forex",
+      "weekly_bias": "bearish",
+      "best_day": "wednesday",
+      "worst_day": "friday",
+      "avoid_utc": ["monday 22:00-tuesday 08:00", "thursday 00:00-22:00", "friday 00:00-22:00"],
+      "notes_summary": "AUD/JPY es consistentemente bajista durante toda la semana."
+    },
+    {
+      "name": "AUD/USD",
+      "file": "audusd.json",
+      "type": "forex",
+      "weekly_bias": "bullish",
+      "best_day": "tuesday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 00:00-22:00"],
+      "notes_summary": "AUD/USD tiene sesgo alcista consistente de martes a jueves."
+    },
+    {
+      "name": "CHF",
+      "file": "chf.json",
+      "type": "currency",
+      "weekly_bias": "bullish",
+      "best_day": "thursday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 00:00-22:00", "wednesday 09:00-17:00"],
+      "notes_summary": "Futuros Franco Suizo (G6S CME)."
+    },
+    {
+      "name": "COPPER",
+      "file": "copper.json",
+      "type": "commodity",
+      "weekly_bias": "bearish",
+      "best_day": "wednesday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 05:00-wednesday 10:00"],
+      "notes_summary": "Cobre cae el lunes y martes (alineado con sesgo risk-off inicial de semana) y se estabiliza de miércoles en adelante."
+    },
+    {
+      "name": "CRUDE OIL",
+      "file": "crude_oil.json",
+      "type": "commodity",
+      "weekly_bias": "bearish",
+      "best_day": "friday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 05:00-22:00", "thursday 15:00-friday 09:00"],
+      "notes_summary": "Petróleo crudo tiene el bearish drift semanal más pronunciado de los commodities estudiados."
+    },
+    {
+      "name": "DXY",
+      "file": "dxy.json",
+      "type": "index",
+      "weekly_bias": "bearish",
+      "best_day": "thursday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 05:00-thursday 12:00"],
+      "notes_summary": "El Dollar Index (DX) cae consistentemente de lunes a jueves mañana, invirtiendo la tendencia alcista de los pares como EURUSD."
+    },
+    {
+      "name": "EUR",
+      "file": "eur.json",
+      "type": "currency",
+      "weekly_bias": "bullish",
+      "best_day": "thursday",
+      "worst_day": "friday",
+      "avoid_utc": ["monday 00:00-22:00", "friday 13:00-18:00"],
+      "notes_summary": "Futuros Euro FX (G6E CME)."
+    },
+    {
+      "name": "EUR/USD",
+      "file": "eurusd.json",
+      "type": "forex",
+      "weekly_bias": "bullish",
+      "best_day": "thursday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 00:00-22:00"],
+      "notes_summary": "EUR/USD es el par con el rally semanal más limpio y consistente."
+    },
+    {
+      "name": "GBP",
+      "file": "gbp.json",
+      "type": "currency",
+      "weekly_bias": "bullish",
+      "best_day": "thursday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 00:00-22:00", "friday 13:00-18:00"],
+      "notes_summary": "Futuros British Pound (G6B CME)."
+    },
+    {
+      "name": "GBP/USD",
+      "file": "gbpusd.json",
+      "type": "forex",
+      "weekly_bias": "bullish",
+      "best_day": "thursday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 00:00-22:00", "friday 13:00-18:00"],
+      "notes_summary": "GBP/USD tiene el lunes más bajista de todos los pares principales (caída de ~10 pips desde apertura)."
+    },
+    {
+      "name": "GOLD",
+      "file": "gold.json",
+      "type": "commodity",
+      "weekly_bias": "bearish",
+      "best_day": "friday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 07:00-friday 13:00"],
+      "notes_summary": "Oro tiene un patrón muy claro: vende de lunes a jueves (bearish durante las sesiones de mercados de equities) y surge fuertemente el viernes (safe haven / posicionamiento fin de semana)."
+    },
+    {
+      "name": "JPY",
+      "file": "jpy.json",
+      "type": "currency",
+      "weekly_bias": "volatile",
+      "best_day": "monday",
+      "worst_day": "friday",
+      "avoid_utc": ["wednesday 09:00-friday 22:00"],
+      "notes_summary": "Futuros Yen (G6J CME) - precio en JPY/USD (inverso a USD/JPY)."
+    },
+    {
+      "name": "NATURAL GAS",
+      "file": "natural_gas.json",
+      "type": "commodity",
+      "weekly_bias": "bearish",
+      "best_day": "wednesday",
+      "worst_day": "thursday",
+      "avoid_utc": ["thursday 15:00-friday 21:00"],
+      "notes_summary": "Gas Natural tiene comportamiento único: plano con ligeras oscilaciones lunes a miércoles (rango 14.988-15.000), luego COLAPSO el jueves al publicarse el EIA Natural Gas Storage Report (jueves 10:30 ET / 15:30 UTC)."
+    },
+    {
+      "name": "NDX",
+      "file": "ndx.json",
+      "type": "index",
+      "weekly_bias": "bullish",
+      "best_day": "thursday",
+      "worst_day": "friday",
+      "avoid_utc": ["monday 21:00-tuesday 13:00", "friday 14:30-16:00"],
+      "notes_summary": "NASDAQ 100 es fuertemente alcista de martes a jueves durante las sesiones regulares de NY (14:30-21:00 UTC)."
+    },
+    {
+      "name": "NIKKEI",
+      "file": "nikkei.json",
+      "type": "index",
+      "weekly_bias": "volatile",
+      "best_day": "thursday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 15:00-wednesday 22:00"],
+      "notes_summary": "Nikkei tiene un patrón único: sube en la apertura del lunes (sesión Tokyo) y declina hasta el mínimo del miércoles noche."
+    },
+    {
+      "name": "NZD",
+      "file": "nzd.json",
+      "type": "currency",
+      "weekly_bias": "volatile",
+      "best_day": "thursday",
+      "worst_day": "tuesday",
+      "avoid_utc": ["monday 00:00-22:00", "tuesday 22:00-wednesday 10:00"],
+      "notes_summary": "Futuros New Zealand Dollar (G6N CME)."
+    },
+    {
+      "name": "NZD/USD",
+      "file": "nzdusd.json",
+      "type": "forex",
+      "weekly_bias": "volatile",
+      "best_day": "thursday",
+      "worst_day": "tuesday",
+      "avoid_utc": ["monday 00:00-22:00", "tuesday 22:00-wednesday 12:00"],
+      "notes_summary": "NZD/USD es el par forex más volátil con oscilaciones cíclicas."
+    },
+    {
+      "name": "SILVER",
+      "file": "silver.json",
+      "type": "commodity",
+      "weekly_bias": "bearish",
+      "best_day": "friday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 05:00-friday 09:00"],
+      "notes_summary": "Plata es más volátil que el oro con el mismo patrón semanal amplificado."
+    },
+    {
+      "name": "SP500",
+      "file": "sp500.json",
+      "type": "index",
+      "weekly_bias": "bullish",
+      "best_day": "thursday",
+      "worst_day": "monday",
+      "avoid_utc": ["monday 21:00-tuesday 13:00", "friday 14:30-16:00"],
+      "notes_summary": "S&P 500 replica el patrón del NDX con menor volatilidad."
+    },
+    {
+      "name": "USD/CAD",
+      "file": "usdcad.json",
+      "type": "forex",
+      "weekly_bias": "volatile",
+      "best_day": "friday",
+      "worst_day": "wednesday",
+      "avoid_utc": ["wednesday 16:00-thursday 15:00"],
+      "notes_summary": "USD/CAD tiene un patrón bimodal muy característico: sube el lunes, cae el miércoles-jueves y luego sube fuerte el viernes."
+    },
+    {
+      "name": "USD/CHF",
+      "file": "usdchf.json",
+      "type": "forex",
+      "weekly_bias": "bullish",
+      "best_day": "friday",
+      "worst_day": "wednesday",
+      "avoid_utc": ["monday 14:00-22:00", "wednesday 13:00-17:00", "thursday 00:00-06:00"],
+      "notes_summary": "USD/CHF tiene alta volatilidad intradiaria con un sesgo alcista neto."
+    },
+    {
+      "name": "USD/JPY",
+      "file": "usdjpy.json",
+      "type": "forex",
+      "weekly_bias": "bullish",
+      "best_day": "friday",
+      "worst_day": "tuesday",
+      "avoid_utc": ["tuesday 00:00-13:00"],
+      "notes_summary": "USD/JPY tiene un patrón alcista muy claro en la segunda mitad de la semana."
+    }
+  ]
+}

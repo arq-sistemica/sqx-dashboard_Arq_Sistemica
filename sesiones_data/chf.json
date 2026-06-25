@@ -1,0 +1,63 @@
+{
+  "asset": "chf",
+  "type": "currency",
+  "ticker": "Swiss Franc (G6S)",
+  "futures_code": "G6S",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 0.03,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "neutral",
+    "wednesday": "bearish",
+    "thursday": "bullish",
+    "friday": "neutral"
+  },
+  "session_bias": {
+    "asia": "bearish",
+    "london": "mixed",
+    "new_york": "bullish"
+  },
+  "weekly_high": {
+    "day": "thursday",
+    "time_et_approx": "17:00",
+    "time_utc_approx": "22:00"
+  },
+  "weekly_low": {
+    "day": "monday",
+    "time_et_approx": "09:00-10:00",
+    "time_utc_approx": "14:00-15:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "14:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Mínimo del lunes en sesión NY. Inicio de recuperación"
+    },
+    {
+      "day": "wednesday",
+      "time_utc": "09:00",
+      "direction": "bearish",
+      "strength": "moderate",
+      "notes": "Dip del miércoles mañana antes del rally del jueves"
+    },
+    {
+      "day": "thursday",
+      "time_utc": "07:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Inicio del rally más consistente. Jueves es el mejor día para el CHF"
+    }
+  ],
+  "avoid_utc": [
+    "monday 00:00-22:00",
+    "wednesday 09:00-17:00"
+  ],
+  "best_entry_windows_utc": [
+    "thursday 07:00-22:00"
+  ],
+  "notes": "Futuros Franco Suizo (G6S CME). El CHF como safe-haven tiene un patrón complejo: cae el lunes, recuperación irregular martes, caída miércoles y luego fuerte apreciación el jueves. El jueves es el día más alcista para el CHF. El viernes tiene corrección parcial. Similar al JPY en comportamiento safe-haven pero con timing diferente."
+}

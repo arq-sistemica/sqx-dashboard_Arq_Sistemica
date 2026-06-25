@@ -1,0 +1,50 @@
+{
+  "asset": "audusd",
+  "type": "forex",
+  "ticker": "AUD/USD",
+  "futures_code": "G6A",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 0.06,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "bullish",
+    "wednesday": "bullish",
+    "thursday": "bullish",
+    "friday": "neutral"
+  },
+  "session_bias": {
+    "asia": "bearish",
+    "london": "bullish",
+    "new_york": "bullish"
+  },
+  "weekly_high": {
+    "day": "thursday",
+    "time_et_approx": "22:00-23:00",
+    "time_utc_approx": "03:00-04:00 Friday"
+  },
+  "weekly_low": {
+    "day": "monday",
+    "time_et_approx": "15:00-17:00",
+    "time_utc_approx": "20:00-22:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "22:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Mínimo semanal al cierre del lunes. Inicio del rally alcista que dura hasta el jueves"
+    }
+  ],
+  "avoid_utc": [
+    "monday 00:00-22:00"
+  ],
+  "best_entry_windows_utc": [
+    "tuesday 00:00-22:00",
+    "wednesday 00:00-22:00",
+    "thursday 00:00-08:00"
+  ],
+  "notes": "AUD/USD tiene sesgo alcista consistente de martes a jueves. El lunes completo es el peor día de la semana con presión vendedora desde la apertura asiática. El rally más fuerte ocurre desde el cierre del lunes (22:00 UTC) hasta el máximo del jueves. El viernes es neutral con leve corrección y recuperación parcial al cierre."
+}

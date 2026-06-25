@@ -1,0 +1,63 @@
+{
+  "asset": "crude_oil",
+  "type": "commodity",
+  "ticker": "Crude Oil (CL)",
+  "futures_code": "CL3",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bearish",
+  "weekly_drift_pct": -3.5,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "bearish",
+    "wednesday": "neutral",
+    "thursday": "bearish",
+    "friday": "bullish"
+  },
+  "session_bias": {
+    "asia": "bearish",
+    "london": "mixed",
+    "new_york": "bearish"
+  },
+  "weekly_high": {
+    "day": "sunday",
+    "time_et_approx": "18:00-19:00",
+    "time_utc_approx": "23:00-00:00"
+  },
+  "weekly_low": {
+    "day": "friday",
+    "time_et_approx": "04:00-05:00",
+    "time_utc_approx": "09:00-10:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "05:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Inicio de la caída desde máximo semanal. Crudo cae fuertemente el lunes"
+    },
+    {
+      "day": "thursday",
+      "time_utc": "15:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Caída brusca del jueves tarde. Probablemente correlacionada con inventarios EIA miércoles"
+    },
+    {
+      "day": "friday",
+      "time_utc": "09:00",
+      "direction": "bullish",
+      "strength": "moderate",
+      "notes": "Mínimo del viernes mañana. Rally de recuperación al cierre semanal"
+    }
+  ],
+  "avoid_utc": [
+    "monday 05:00-22:00",
+    "thursday 15:00-friday 09:00"
+  ],
+  "best_entry_windows_utc": [
+    "friday 09:00-21:00"
+  ],
+  "notes": "Petróleo crudo tiene el bearish drift semanal más pronunciado de los commodities estudiados. Cae fuertemente el lunes (apertura semanal), tiene un rebote parcial el martes, estabilización el miércoles (reporte EIA inventarios miércoles 15:30 UTC crea volatilidad), caída el jueves tarde y recuperación el viernes. El máximo absoluto es siempre la apertura del domingo noche. Clave: EIA Crude Oil Inventories (miércoles 15:30 UTC) genera alta volatilidad."
+}

@@ -1,0 +1,63 @@
+{
+  "asset": "gbp",
+  "type": "currency",
+  "ticker": "British Pound (G6B)",
+  "futures_code": "G6B",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 0.04,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "neutral",
+    "wednesday": "bullish",
+    "thursday": "bullish",
+    "friday": "bearish"
+  },
+  "session_bias": {
+    "asia": "bearish",
+    "london": "bullish",
+    "new_york": "mixed"
+  },
+  "weekly_high": {
+    "day": "thursday",
+    "time_et_approx": "17:00",
+    "time_utc_approx": "22:00"
+  },
+  "weekly_low": {
+    "day": "monday",
+    "time_et_approx": "11:00-12:00",
+    "time_utc_approx": "16:00-17:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "16:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Mínimo semanal en sesión NY del lunes. Caída de ~8 pips desde apertura"
+    },
+    {
+      "day": "tuesday",
+      "time_utc": "12:00",
+      "direction": "bullish",
+      "strength": "moderate",
+      "notes": "Reversión alcista tras el dip inicial del martes. Inicio del rally"
+    },
+    {
+      "day": "friday",
+      "time_utc": "13:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Selloff pronunciado al inicio de la sesión conjunta London/NY del viernes"
+    }
+  ],
+  "avoid_utc": [
+    "monday 00:00-22:00",
+    "friday 13:00-18:00"
+  ],
+  "best_entry_windows_utc": [
+    "tuesday 12:00-thursday 22:00"
+  ],
+  "notes": "Futuros British Pound (G6B CME). El GBP tiene el lunes más violentamente bajista de todas las divisas principales. El martes también inicia con volatilidad antes de revertir. El rally del martes al jueves es sólido. El viernes es el día de mayor riesgo con el selloff de NY más pronunciado de todos los pares. La ventana óptima es muy específica: martes mediodía UTC a jueves cierre."
+}

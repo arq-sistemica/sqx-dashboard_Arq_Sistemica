@@ -1,0 +1,62 @@
+{
+  "asset": "nikkei",
+  "type": "index",
+  "ticker": "Nikkei Index (JNI)",
+  "futures_code": "JNI",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "volatile",
+  "weekly_drift_pct": -0.03,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "bearish",
+    "wednesday": "bearish",
+    "thursday": "bullish",
+    "friday": "volatile"
+  },
+  "session_bias": {
+    "asia": "bullish",
+    "london": "bearish",
+    "new_york": "bearish"
+  },
+  "weekly_high": {
+    "day": "thursday",
+    "time_et_approx": "22:00-23:00",
+    "time_utc_approx": "03:00-04:00 jueves Tokyo"
+  },
+  "weekly_low": {
+    "day": "wednesday",
+    "time_et_approx": "16:30-17:30",
+    "time_utc_approx": "21:30-22:30"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "15:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Inicio de la caída sostenida. Máximo semanal en apertura del lunes (Tokyo)"
+    },
+    {
+      "day": "wednesday",
+      "time_utc": "22:30",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Mínimo semanal. Inicio del rally del jueves impulsado por sesión Tokyo del jueves"
+    },
+    {
+      "day": "friday",
+      "time_utc": "01:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Caída brusca desde el pico del jueves. Tokyo viernes abre a la baja"
+    }
+  ],
+  "avoid_utc": [
+    "monday 15:00-wednesday 22:00"
+  ],
+  "best_entry_windows_utc": [
+    "wednesday 22:00-thursday 08:00"
+  ],
+  "notes": "Nikkei tiene un patrón único: sube en la apertura del lunes (sesión Tokyo) y declina hasta el mínimo del miércoles noche. La sesión Tokyo del jueves (miércoles noche ET = 22:00-08:00 UTC jueves) es la de mayor fortaleza alcista de la semana. El viernes abre fuerte y luego cae bruscamente, cerrando cerca del inicio semanal. Los tiempos UTC hacen referencia a la sesión Tokyo dado que es el exchange primario."
+}

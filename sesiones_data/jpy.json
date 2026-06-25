@@ -1,0 +1,55 @@
+{
+  "asset": "jpy",
+  "type": "currency",
+  "ticker": "Japanese Yen (G6J)",
+  "futures_code": "G6J",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "volatile",
+  "weekly_drift_pct": -0.02,
+  "daily_bias": {
+    "monday": "bullish",
+    "tuesday": "bullish",
+    "wednesday": "bearish",
+    "thursday": "bearish",
+    "friday": "bearish"
+  },
+  "session_bias": {
+    "asia": "bullish",
+    "london": "mixed",
+    "new_york": "bearish"
+  },
+  "weekly_high": {
+    "day": "wednesday",
+    "time_et_approx": "04:00-05:00",
+    "time_utc_approx": "09:00-10:00"
+  },
+  "weekly_low": {
+    "day": "friday",
+    "time_et_approx": "16:00-17:00",
+    "time_utc_approx": "21:00-22:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "05:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "JPY se fortalece en sesión asiática del lunes (safe haven / Tokyo demand)"
+    },
+    {
+      "day": "wednesday",
+      "time_utc": "09:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Pico semanal del JPY. Inicio de debilitamiento que dura hasta el viernes"
+    }
+  ],
+  "avoid_utc": [
+    "wednesday 09:00-friday 22:00"
+  ],
+  "best_entry_windows_utc": [
+    "monday 05:00-wednesday 09:00"
+  ],
+  "notes": "Futuros Yen (G6J CME) - precio en JPY/USD (inverso a USD/JPY). El JPY se fortalece (G6J sube) durante la primera mitad de la semana, especialmente en sesiones asiáticas. Luego se debilita de miércoles a viernes. IMPORTANTE: este patrón es el INVERSO de USD/JPY. Cuando G6J sube = USD/JPY baja. El YEN es un safe-haven que se fortalece lunes-martes y se vende jueves-viernes cuando el risk-on domina."
+}

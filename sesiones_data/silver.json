@@ -1,0 +1,62 @@
+{
+  "asset": "silver",
+  "type": "commodity",
+  "ticker": "Silver (SI)",
+  "futures_code": "SI3",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bearish",
+  "weekly_drift_pct": -1.5,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "bearish",
+    "wednesday": "neutral",
+    "thursday": "bearish",
+    "friday": "bullish"
+  },
+  "session_bias": {
+    "asia": "bearish",
+    "london": "volatile",
+    "new_york": "bearish"
+  },
+  "weekly_high": {
+    "day": "monday",
+    "time_et_approx": "00:00-01:00",
+    "time_utc_approx": "05:00-06:00"
+  },
+  "weekly_low": {
+    "day": "friday",
+    "time_et_approx": "04:00-05:00",
+    "time_utc_approx": "09:00-10:00"
+  },
+  "key_reversals": [
+    {
+      "day": "wednesday",
+      "time_utc": "13:00",
+      "direction": "bullish",
+      "strength": "moderate",
+      "notes": "Rebote técnico del miércoles desde 117.5 hacia 119.5. Pero es temporal"
+    },
+    {
+      "day": "thursday",
+      "time_utc": "15:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Caída agresiva del jueves tarde hacia mínimos del viernes mañana"
+    },
+    {
+      "day": "friday",
+      "time_utc": "09:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Mínimo semanal en zona 114.5. Rally muy fuerte hasta el cierre del viernes"
+    }
+  ],
+  "avoid_utc": [
+    "monday 05:00-friday 09:00"
+  ],
+  "best_entry_windows_utc": [
+    "friday 09:00-21:00"
+  ],
+  "notes": "Plata es más volátil que el oro con el mismo patrón semanal amplificado. Cae de lunes a viernes temprano con mayor amplitud. El rally del viernes es explosivo (puede ser 3-5% desde mínimos). El rebote del miércoles es una trampa alcista. Correlacionada con el oro pero más sensible a risk-on/risk-off. Máximo lunes apertura, mínimo viernes mañana, rally viernes tarde."
+}

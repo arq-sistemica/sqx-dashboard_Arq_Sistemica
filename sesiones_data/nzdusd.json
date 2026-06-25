@@ -1,0 +1,56 @@
+{
+  "asset": "nzdusd",
+  "type": "forex",
+  "ticker": "NZD/USD",
+  "futures_code": "G6N",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "volatile",
+  "weekly_drift_pct": -0.01,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "bearish",
+    "wednesday": "bearish",
+    "thursday": "bullish",
+    "friday": "neutral"
+  },
+  "session_bias": {
+    "asia": "mixed",
+    "london": "bearish",
+    "new_york": "bearish"
+  },
+  "weekly_high": {
+    "day": "monday",
+    "time_et_approx": "18:00-19:00",
+    "time_utc_approx": "23:00-00:00"
+  },
+  "weekly_low": {
+    "day": "wednesday",
+    "time_et_approx": "05:00-07:00",
+    "time_utc_approx": "10:00-12:00"
+  },
+  "key_reversals": [
+    {
+      "day": "tuesday",
+      "time_utc": "22:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Inicio de la caída más agresiva hacia el mínimo del miércoles"
+    },
+    {
+      "day": "wednesday",
+      "time_utc": "10:00-12:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Mínimo semanal. Inicio del rally alcista del jueves"
+    }
+  ],
+  "avoid_utc": [
+    "tuesday 22:00-wednesday 12:00",
+    "monday 00:00-22:00"
+  ],
+  "best_entry_windows_utc": [
+    "wednesday 22:00-thursday 20:00"
+  ],
+  "notes": "NZD/USD es el par forex más volátil con oscilaciones cíclicas. El patrón dominante es: caída del lunes al miércoles (con el piso semanal el miércoles mañana), seguida de un fuerte rally el jueves. El viernes es de consolidación. La caída de martes-noche a miércoles-mañana es el setup de short más confiable, y el rebote del miércoles al jueves el setup de long más claro."
+}

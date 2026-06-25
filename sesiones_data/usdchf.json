@@ -1,0 +1,71 @@
+{
+  "asset": "usdchf",
+  "type": "forex",
+  "ticker": "USD/CHF",
+  "futures_code": null,
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 0.08,
+  "daily_bias": {
+    "monday": "neutral",
+    "tuesday": "neutral",
+    "wednesday": "volatile",
+    "thursday": "bullish",
+    "friday": "bullish"
+  },
+  "session_bias": {
+    "asia": "bullish",
+    "london": "volatile",
+    "new_york": "bullish"
+  },
+  "weekly_high": {
+    "day": "friday",
+    "time_et_approx": "08:00-09:00",
+    "time_utc_approx": "13:00-14:00"
+  },
+  "weekly_low": {
+    "day": "monday",
+    "time_et_approx": "18:00-19:00",
+    "time_utc_approx": "23:00-00:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "05:00",
+      "direction": "bullish",
+      "strength": "moderate",
+      "notes": "Rise inicial de la sesión asiática del lunes"
+    },
+    {
+      "day": "monday",
+      "time_utc": "14:00",
+      "direction": "bearish",
+      "strength": "moderate",
+      "notes": "Caída tarde del lunes, probablemente correlacionada con sesión NY"
+    },
+    {
+      "day": "wednesday",
+      "time_utc": "13:00",
+      "direction": "bearish",
+      "strength": "moderate",
+      "notes": "Caída mid-session miércoles antes de recuperación"
+    },
+    {
+      "day": "thursday",
+      "time_utc": "00:00",
+      "direction": "bearish",
+      "strength": "moderate",
+      "notes": "Dip puntual del jueves temprano antes del rally alcista"
+    }
+  ],
+  "avoid_utc": [
+    "monday 14:00-22:00",
+    "wednesday 13:00-17:00",
+    "thursday 00:00-06:00"
+  ],
+  "best_entry_windows_utc": [
+    "friday 08:00-13:00"
+  ],
+  "notes": "USD/CHF tiene alta volatilidad intradiaria con un sesgo alcista neto. El patrón más limpio es la fuerte subida del viernes durante la sesión de Londres. El miércoles es el día más impredecible con picos y valles bruscos. La sesión asiática del lunes tiende a ser positiva pero seguida de corrección en NY."
+}

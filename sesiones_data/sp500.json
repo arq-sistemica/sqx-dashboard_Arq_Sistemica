@@ -1,0 +1,65 @@
+{
+  "asset": "sp500",
+  "type": "index",
+  "ticker": "S&P 500 E-Mini (ES)",
+  "futures_code": "ES",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 1.5,
+  "daily_bias": {
+    "monday": "neutral",
+    "tuesday": "bullish",
+    "wednesday": "bullish",
+    "thursday": "bullish",
+    "friday": "neutral"
+  },
+  "session_bias": {
+    "asia": "neutral",
+    "london": "bullish",
+    "new_york": "bullish"
+  },
+  "weekly_high": {
+    "day": "friday",
+    "time_et_approx": "07:00-09:00",
+    "time_utc_approx": "12:00-14:00"
+  },
+  "weekly_low": {
+    "day": "monday",
+    "time_et_approx": "16:30-17:00",
+    "time_utc_approx": "21:30-22:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "21:30",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Selloff al cierre del lunes. Mínimo semanal en zona 99.5"
+    },
+    {
+      "day": "tuesday",
+      "time_utc": "14:30",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Apertura regular martes (09:30 ET). Inicio del rally"
+    },
+    {
+      "day": "friday",
+      "time_utc": "14:30",
+      "direction": "bearish",
+      "strength": "moderate",
+      "notes": "Selloff viernes al open NY, luego recuperación parcial al cierre"
+    }
+  ],
+  "avoid_utc": [
+    "monday 21:00-tuesday 13:00",
+    "friday 14:30-16:00"
+  ],
+  "best_entry_windows_utc": [
+    "tuesday 14:30-21:00",
+    "wednesday 14:30-21:00",
+    "thursday 14:30-21:00"
+  ],
+  "notes": "S&P 500 replica el patrón del NDX con menor volatilidad. Rally consistente de martes a jueves durante las sesiones regulares NY. El lunes cierra con caída al mínimo semanal. El viernes tiene selloff al open seguido de recuperación. Patrón muy estable históricamente desde 2006. El drift semanal alcista es más moderado que el NDX."
+}

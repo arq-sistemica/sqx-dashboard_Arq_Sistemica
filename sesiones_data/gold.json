@@ -1,0 +1,55 @@
+{
+  "asset": "gold",
+  "type": "commodity",
+  "ticker": "Gold (GC)",
+  "futures_code": "GC3",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bearish",
+  "weekly_drift_pct": -0.5,
+  "daily_bias": {
+    "monday": "bearish",
+    "tuesday": "bearish",
+    "wednesday": "bearish",
+    "thursday": "bearish",
+    "friday": "bullish"
+  },
+  "session_bias": {
+    "asia": "bearish",
+    "london": "bearish",
+    "new_york": "bearish"
+  },
+  "weekly_high": {
+    "day": "monday",
+    "time_et_approx": "02:00-05:00",
+    "time_utc_approx": "07:00-10:00"
+  },
+  "weekly_low": {
+    "day": "thursday",
+    "time_et_approx": "17:00-19:00",
+    "time_utc_approx": "22:00-00:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "07:00",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Máximo semanal del oro al inicio de la sesión asiática/europea del lunes. Desde aquí cae todo el día"
+    },
+    {
+      "day": "friday",
+      "time_utc": "13:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Inicio del surge del viernes. Rally muy pronunciado de 07:00 a 21:00 UTC viernes"
+    }
+  ],
+  "avoid_utc": [
+    "monday 07:00-friday 13:00"
+  ],
+  "best_entry_windows_utc": [
+    "friday 13:00-21:00"
+  ],
+  "notes": "Oro tiene un patrón muy claro: vende de lunes a jueves (bearish durante las sesiones de mercados de equities) y surge fuertemente el viernes (safe haven / posicionamiento fin de semana). El máximo semanal es el lunes mañana temprano (sesión asiática) y el mínimo el jueves noche. El rally del viernes tarde puede ser de 1-1.5% en promedio y es el más consistente de la semana. Correlación inversa alta con equities US."
+}

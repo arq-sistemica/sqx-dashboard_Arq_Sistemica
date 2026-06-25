@@ -1,0 +1,48 @@
+{
+  "asset": "natural_gas",
+  "type": "commodity",
+  "ticker": "Natural Gas (NG)",
+  "futures_code": "NG3",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bearish",
+  "weekly_drift_pct": -0.05,
+  "daily_bias": {
+    "monday": "neutral",
+    "tuesday": "neutral",
+    "wednesday": "neutral",
+    "thursday": "bearish",
+    "friday": "bearish"
+  },
+  "session_bias": {
+    "asia": "neutral",
+    "london": "neutral",
+    "new_york": "bearish"
+  },
+  "weekly_high": {
+    "day": "wednesday",
+    "time_et_approx": "09:00-10:00",
+    "time_utc_approx": "14:00-15:00"
+  },
+  "weekly_low": {
+    "day": "friday",
+    "time_et_approx": "14:00-16:00",
+    "time_utc_approx": "19:00-21:00"
+  },
+  "key_reversals": [
+    {
+      "day": "thursday",
+      "time_utc": "15:30",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "EIA Natural Gas Storage Report (jueves 10:30 ET = 15:30 UTC). Colapso pronunciado desde 14.990 a 14.952. Evento clave semanal"
+    }
+  ],
+  "avoid_utc": [
+    "thursday 15:00-friday 21:00"
+  ],
+  "best_entry_windows_utc": [
+    "monday 00:00-wednesday 15:00"
+  ],
+  "notes": "Gas Natural tiene comportamiento único: plano con ligeras oscilaciones lunes a miércoles (rango 14.988-15.000), luego COLAPSO el jueves al publicarse el EIA Natural Gas Storage Report (jueves 10:30 ET / 15:30 UTC). La caída del jueves al viernes es la más consistente de todos los commodities estudiados. Lunes a miércoles es ideal para range trading. NUNCA mantener longs sobre el jueves."
+}

@@ -1,0 +1,58 @@
+{
+  "asset": "usdjpy",
+  "type": "forex",
+  "ticker": "USD/JPY",
+  "futures_code": null,
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 0.10,
+  "daily_bias": {
+    "monday": "neutral",
+    "tuesday": "neutral",
+    "wednesday": "bullish",
+    "thursday": "bullish",
+    "friday": "bullish"
+  },
+  "session_bias": {
+    "asia": "bearish",
+    "london": "bullish",
+    "new_york": "bullish"
+  },
+  "weekly_high": {
+    "day": "friday",
+    "time_et_approx": "14:00-16:00",
+    "time_utc_approx": "19:00-21:00"
+  },
+  "weekly_low": {
+    "day": "tuesday",
+    "time_et_approx": "05:00-07:00",
+    "time_utc_approx": "10:00-12:00"
+  },
+  "key_reversals": [
+    {
+      "day": "tuesday",
+      "time_utc": "10:00-12:00",
+      "direction": "bearish",
+      "strength": "moderate",
+      "notes": "Caída a mínimo semanal durante la sesión asiática del martes"
+    },
+    {
+      "day": "tuesday",
+      "time_utc": "13:00",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Reversión alcista al inicio de la sesión London/NY del martes. Inicio del rally sostenido"
+    }
+  ],
+  "avoid_utc": [
+    "tuesday 00:00-13:00"
+  ],
+  "best_entry_windows_utc": [
+    "tuesday 13:00-22:00",
+    "wednesday 00:00-22:00",
+    "thursday 00:00-22:00",
+    "friday 00:00-21:00"
+  ],
+  "notes": "USD/JPY tiene un patrón alcista muy claro en la segunda mitad de la semana. El lunes es neutral-mixto. El martes tiene una caída característica durante la sesión asiática (mínimo semanal), seguida de una fuerte reversión alcista que se extiende sin pausa hasta el viernes. La mejor estrategia es comprar en el mínimo del martes (sesión Asia) para capturar el movimiento del martes al viernes."
+}

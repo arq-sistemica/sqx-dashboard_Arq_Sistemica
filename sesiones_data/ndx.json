@@ -1,0 +1,65 @@
+{
+  "asset": "ndx",
+  "type": "index",
+  "ticker": "NASDAQ 100 E-Mini (NQ)",
+  "futures_code": "NQ",
+  "source": "intradayseasonals.com",
+  "data_range": "2006 to Present",
+  "weekly_bias": "bullish",
+  "weekly_drift_pct": 5.5,
+  "daily_bias": {
+    "monday": "neutral",
+    "tuesday": "bullish",
+    "wednesday": "bullish",
+    "thursday": "bullish",
+    "friday": "bearish"
+  },
+  "session_bias": {
+    "asia": "neutral",
+    "london": "bullish",
+    "new_york": "bullish"
+  },
+  "weekly_high": {
+    "day": "friday",
+    "time_et_approx": "07:00-09:00",
+    "time_utc_approx": "12:00-14:00"
+  },
+  "weekly_low": {
+    "day": "monday",
+    "time_et_approx": "16:30-17:00",
+    "time_utc_approx": "21:30-22:00"
+  },
+  "key_reversals": [
+    {
+      "day": "monday",
+      "time_utc": "21:30",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Caída brusca al cierre de la sesión regular del lunes. Mínimo semanal"
+    },
+    {
+      "day": "tuesday",
+      "time_utc": "14:30",
+      "direction": "bullish",
+      "strength": "strong",
+      "notes": "Apertura regular del martes (09:30 ET). Inicio del rally semanal"
+    },
+    {
+      "day": "friday",
+      "time_utc": "14:30",
+      "direction": "bearish",
+      "strength": "strong",
+      "notes": "Apertura regular del viernes con fuerte selloff. Drop de 2% aprox desde máximos"
+    }
+  ],
+  "avoid_utc": [
+    "monday 21:00-tuesday 13:00",
+    "friday 14:30-16:00"
+  ],
+  "best_entry_windows_utc": [
+    "tuesday 14:30-22:00",
+    "wednesday 14:30-21:00",
+    "thursday 14:30-21:00"
+  ],
+  "notes": "NASDAQ 100 es fuertemente alcista de martes a jueves durante las sesiones regulares de NY (14:30-21:00 UTC). El lunes tiene un selloff pronunciado al cierre de la sesión regular que crea el mínimo semanal. El viernes abre con un selloff agresivo (2% aprox desde máximos del jueves) seguido de recuperación parcial. El patrón es muy consistente desde 2006."
+}
