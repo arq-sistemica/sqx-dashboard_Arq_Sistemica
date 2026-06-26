@@ -1374,8 +1374,9 @@ function _computeLiveMetrics(trades) {
     const gW = wins.reduce((a,b)=>a+b,0);
     const gL = Math.abs(losses.reduce((a,b)=>a+b,0));
     const pf = gL > 0 ? +(gW/gL).toFixed(2) : gW > 0 ? 999 : 0;
-    let peak=0,eq=0,maxDD=0;
-    netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; if(peak>0){const dd=(peak-eq)/peak;if(dd>maxDD)maxDD=dd;} });
+    const BASE = 10000;
+    let peak=BASE,eq=BASE,maxDD=0;
+    netPs.forEach(np => { eq+=np; if(eq>peak)peak=eq; const dd=(peak-eq)/peak; if(dd>maxDD)maxDD=dd; });
     result[magic] = {
       pf,
       ddPct: +(maxDD*100).toFixed(2),
