@@ -483,15 +483,6 @@ function buildDetail(bot) {
   const is = bot.is || {};
   const id = String(bot.magic || bot.id);
 
-  // ── pestaña Métricas ──────────────────────────────────────────────
-  let tabMetrics = metricsBlock([
-    ['CAGR%',   fmt(is.cagr,1)+'%',  cagrColor(is.cagr)],
-    ['Sharpe',  fmt(is.sharpe),       sharpeColor(is.sharpe)],
-    ['CAGR/DD', fmt(is.cagrdd),       cagrddColor(is.cagrdd)],
-    ['Net P%',  fmt(is.np,1)+'%',     npColor(is.np)],
-    ['SQN',     fmt(bot.sqn),         sqnColor(bot.sqn)],
-  ]);
-
   // ── pestaña Overview ──────────────────────────────────────────────
   let tabOverview = '';
   if (bot.overviewData?.monthlyData?.length) {
@@ -593,19 +584,17 @@ function buildDetail(bot) {
 
   return `
     <div class="dtab-bar">
-      <button class="dtab-btn active" onclick="switchDTab('${id}','metrics',this)">📊 Métricas IS</button>
-      <button class="dtab-btn"        onclick="switchDTab('${id}','overview',this)">📋 Overview</button>
+      <button class="dtab-btn active" onclick="switchDTab('${id}','overview',this)">📋 Overview</button>
       <button class="dtab-btn"        onclick="switchDTab('${id}','pseudo',this)">📝 Pseudocódigo</button>
     </div>
-    <div id="dtab-${id}-metrics"  class="dtab-panel active">${tabMetrics}</div>
-    <div id="dtab-${id}-overview" class="dtab-panel">${tabOverview}</div>
+    <div id="dtab-${id}-overview" class="dtab-panel active">${tabOverview}</div>
     <div id="dtab-${id}-pseudo"   class="dtab-panel">${tabPseudo}</div>
   `;
 }
 
 // ─── Detail tabs ─────────────────────────────────────────────────────
 function switchDTab(id, tab, btn) {
-  ['metrics','overview','pseudo'].forEach(t => {
+  ['overview','pseudo'].forEach(t => {
     document.getElementById(`dtab-${id}-${t}`)?.classList.toggle('active', t === tab);
   });
   btn.closest('.dtab-bar').querySelectorAll('.dtab-btn').forEach(b => b.classList.remove('active'));
