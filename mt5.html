@@ -627,11 +627,14 @@ function buildTradeRows(list) {
     const rowBg = monthParity === 0 ? '' : 'background:#f1f3f5;';
     const sesBorder = SES_BORDER[getSession(t)];
     const sesBorderStyle = sesBorder ? `border-left:30px solid ${sesBorder};` : 'border-left:30px solid transparent;';
-    html += `<tr style="${rowBg}${sesBorderStyle}">
+    html += `<tr style="${rowBg}">
+      <td style="padding:0;${sesBorderStyle}"></td>
       <td>${t.openDate??'—'}</td><td>${t.closeDate}</td><td>${t.symbol}</td><td>${t.action}</td>
-      <td>${t.lots??'—'}</td><td>${t.openPrice??'—'}</td><td>${t.closePrice??'—'}</td>
-      <td class="${t.netProfit>=0?'trade-p':'trade-n'}">${t.netProfit>=0?'+':''}${fmt(t.netProfit,2)}</td>
-      <td class="${t.cumProfit>=0?'trade-p':'trade-n'}">${fmt(t.cumProfit,2)}</td>
+      <td style="text-align:right">${t.lots??'—'}</td>
+      <td style="text-align:right">${t.openPrice??'—'}</td>
+      <td style="text-align:right">${t.closePrice??'—'}</td>
+      <td style="text-align:right" class="${t.netProfit>=0?'trade-p':'trade-n'}">${t.netProfit>=0?'+':''}${fmt(t.netProfit,2)}</td>
+      <td style="text-align:right" class="${t.cumProfit>=0?'trade-p':'trade-n'}">${fmt(t.cumProfit,2)}</td>
     </tr>`;
   });
   return html;
@@ -640,7 +643,7 @@ function buildTradeRows(list) {
 function buildTradeTable(id, list, wrapStyle) {
   return `<div style="${wrapStyle}overflow-x:auto">
     <table class="trade-table" id="${id}"><thead><tr>
-      <th>Apertura</th><th>Cierre</th><th>Symbol</th><th>Tipo</th><th>Lots</th><th>Open</th><th>Close</th><th>Net P&L</th><th>Acum.</th>
+      <th style="width:30px;padding:0"></th><th>Apertura</th><th>Cierre</th><th>Symbol</th><th>Tipo</th><th style="text-align:right">Lots</th><th style="text-align:right">Open</th><th style="text-align:right">Close</th><th style="text-align:right">Net P&L</th><th style="text-align:right">Acum.</th>
     </tr></thead><tbody>${buildTradeRows(list)}</tbody></table></div>`;
 }
 
