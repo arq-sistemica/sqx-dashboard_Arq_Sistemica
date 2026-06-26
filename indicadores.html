@@ -593,8 +593,8 @@ function calcHoraMuerte(bot) {
   const byHour = {};
   for (let h = 0; h < 24; h++) byHour[h] = { net: 0, count: 0 };
   bot.tradeList.forEach(t => {
-    if (!t.closeDate || t.closeDate === '—') return;
-    const d = new Date(t.closeDate.replace(' ', 'T'));
+    if (!t.openDate || t.openDate === '—') return;
+    const d = new Date(t.openDate.replace(' ', 'T'));
     if (isNaN(d)) return;
     const h = d.getHours();
     byHour[h].net   += t.netProfit || 0;
@@ -1380,6 +1380,7 @@ function _computeLiveMetrics(trades) {
       pf,
       ddPct: +(maxDD*100).toFixed(2),
       tradeList: list.map(t => ({
+        openDate:  t.open_time  ? t.open_time.replace('T',' ')  : '—',
         closeDate: t.close_time ? t.close_time.replace('T',' ') : '—',
         netProfit: +((t.profit||0)+(t.commission||0)+(t.swap||0)).toFixed(2),
       })),
@@ -1487,7 +1488,7 @@ function _botsToOverlapFormat(remoteBots, liveByMagic) {
       const p = b.pseudocodigoData?.parsed || parseSQXFile(b.pseudocodigo || '');
       console.debug('[indicadores] bot:', b.name, '| campo:', b.pseudocodigo ? 'pseudocodigo(raw)' : 'pseudocodigoData.parsed');
       const indsRaw = p.indicadores !== na ? p.indicadores.split(' | ') : [];
-      const inds = [...new Set(indsRaw.map(s => (s.match(/^([A-Za-z]+)/) || [])[1]).filter(Boolean))];
+      const inds = [...new Set(indsRaw.map(s => (s.match(/^([A-Za-z]+)/) || [])[1]).filter(n => n && n.length >= 3))];
       const dir = p.entradaTipo === 'Sell (Short)' ? 'Short' :
                   p.entradaTipo === 'Both (Buy + Sell)' ? 'Both' : 'Long';
       const entry = p.ordenTipo !== na ? p.ordenTipo : 'Market';
