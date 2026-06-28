@@ -189,8 +189,10 @@
   }
   @media(max-width:700px){ #dna-panel .dna-cluster-grid { grid-template-columns: 1fr; } }
   #dna-panel .dna-cluster-card {
-    border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg); cursor: pointer;
   }
+  #dna-panel .dna-cluster-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  #dna-panel .dna-cluster-card.active { border-color: var(--text3); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
   #dna-panel .dna-cluster-head {
     padding: 8px 12px; background: var(--bg2); border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
@@ -201,10 +203,6 @@
     font-size: 10px; padding: 1px 6px; background: var(--bg);
     border: 1px solid var(--border2); border-radius: 10px; color: var(--text3); font-weight: 600;
   }
-  #dna-panel .dna-cluster-body { padding: 8px 12px; display: none; }
-  #dna-panel .dna-cluster-body.open { display: flex; flex-direction: column; gap: 5px; }
-  #dna-panel .dna-cluster-card.open .dna-cluster-chevron { transform: rotate(180deg); }
-  #dna-panel .dna-cluster-chevron { font-size: 10px; color: var(--text3); transition: transform 0.2s; margin-left: 6px; }
   #dna-panel .dna-cluster-key { font-size: 10px; color: var(--text3); margin-bottom: 4px; }
   #dna-panel .dna-cluster-bot {
     display: flex; align-items: center; gap: 6px; padding: 5px 8px;
@@ -458,6 +456,13 @@
       <!-- CLUSTERS -->
       <div class="dna-section-title">Familias de estrategias — bots que comparten indicadores clave</div>
       <div class="dna-cluster-grid" id="dna-clusters"></div>
+      <div id="cluster-detail-panel" style="display:none;margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--bg)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div id="cluster-detail-title" style="font-size:12px;font-weight:700;color:var(--text)"></div>
+          <div id="cluster-detail-key" style="font-size:10px;color:var(--text3)"></div>
+        </div>
+        <div id="cluster-detail-bots" style="display:flex;flex-direction:column;gap:5px"></div>
+      </div>
 
       <!-- ANÁLISIS — 3 cards expandibles -->
       <div class="analysis-cards">
@@ -509,12 +514,34 @@
 </div><!-- /app -->
 
 <script>
-function toggleCluster(headEl) {
-  const card = headEl.closest('.dna-cluster-card');
-  const body = card.querySelector('.dna-cluster-body');
-  const isOpen = body.classList.contains('open');
-  body.classList.toggle('open', !isOpen);
-  card.classList.toggle('open', !isOpen);
+function openClusterDetail(idx) {
+  const cl       = window._clusters[idx];
+  const panel    = document.getElementById('cluster-detail-panel');
+  const thisCard = document.getElementById('cluster-card-' + idx);
+  const isActive = thisCard.classList.contains('active');
+
+  document.querySelectorAll('.dna-cluster-card').forEach(c => c.classList.remove('active'));
+
+  if (isActive) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  thisCard.classList.add('active');
+  document.getElementById('cluster-detail-title').textContent = cl.name;
+  document.getElementById('cluster-detail-key').textContent   = cl.key;
+  const botsHtml = cl.bots.length
+    ? cl.bots.map(b => {
+        const dc = b.dir === 'Long' ? 'var(--green)' : 'var(--red)';
+        return `<div class="dna-cluster-bot">
+          <div class="dna-cbot-name">${b.id}</div>
+          <div class="dna-cbot-meta">${b.asset} ${b.tf}</div>
+          <div style="color:${dc};font-size:10px;font-weight:600;margin-left:auto">${b.dir==='Long'?'▲L':'▼S'}</div>
+        </div>`;
+      }).join('')
+    : '<div style="font-size:10px;color:var(--text3)">Sin bots</div>';
+  document.getElementById('cluster-detail-bots').innerHTML = botsHtml;
+  panel.style.display = 'block';
 }
 
 function toggleAnalysisPanel(panelId, cardId) {
@@ -1134,31 +1161,19 @@ function dnaInit(allBots) {
   const cg = document.getElementById('dna-clusters');
   if (!cg) return;
   cg.innerHTML = '';
-  clusters.forEach(cl => {
-    const bots = allBots.filter(b => b.inds.some(i => cl.inds.includes(i)));
-    const botRows = bots.map(b => {
-      const dc = b.dir === 'Long' ? 'var(--green)' : 'var(--red)';
-      return `<div class="dna-cluster-bot">
-        <div class="dna-cbot-name">${b.id}</div>
-        <div class="dna-cbot-meta">${b.asset} ${b.tf}</div>
-        <div style="color:${dc};font-size:10px;font-weight:600;margin-left:auto">${b.dir==='Long'?'▲L':'▼S'}</div>
-      </div>`;
-    }).join('');
+  window._clusters = clusters.map(cl => ({
+    ...cl,
+    bots: allBots.filter(b => b.inds.some(i => cl.inds.includes(i)))
+  }));
+  clusters.forEach((cl, idx) => {
+    const bots = window._clusters[idx].bots;
     cg.innerHTML += `
-      <div class="dna-cluster-card">
-        <div class="dna-cluster-head" onclick="toggleCluster(this)">
-          <div>
-            <div class="dna-cluster-name">${cl.name}</div>
-            <div class="dna-cluster-key" style="font-size:9px;color:var(--text3);margin-top:1px">${cl.key}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px">
-            <div class="dna-cluster-n">${bots.length}</div>
-            <span class="dna-cluster-chevron">▼</span>
-          </div>
+      <div class="dna-cluster-card" id="cluster-card-${idx}" onclick="openClusterDetail(${idx})">
+        <div class="dna-cluster-head">
+          <div class="dna-cluster-name">${cl.name}</div>
+          <div class="dna-cluster-n">${bots.length}</div>
         </div>
-        <div class="dna-cluster-body">
-          ${botRows || '<div style="font-size:10px;color:var(--text3)">Sin bots</div>'}
-        </div>
+        <div style="font-size:9px;color:var(--text3);padding:3px 12px 6px">${cl.key}</div>
       </div>`;
   });
 
@@ -1425,8 +1440,10 @@ function _updateCounter() {
 }
 
 function _clearPanels() {
-  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid','perf-ind-grid']
+  ['dna-bot-grid','dna-hm-table','dna-rank-freq','dna-rank-asset','dna-clusters','dna-alerts','overlap-summary-table','overlap-asset-grid','perf-ind-grid','cluster-detail-bots']
     .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  const cdp = document.getElementById('cluster-detail-panel');
+  if (cdp) cdp.style.display = 'none';
   const perfSec = document.getElementById('perf-ind-section');
   if (perfSec) perfSec.style.display = 'none';
 }
