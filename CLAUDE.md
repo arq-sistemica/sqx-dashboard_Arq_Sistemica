@@ -56,7 +56,7 @@ Dashboard web personal para analizar bots de trading de StrategyQuant X (SQX) co
 | `estacionalidad.html` | Estacionalidad anual por par/activo — carga bots desde Supabase |
 | `supabase.js` | Cliente REST Supabase (sin librerías) |
 | `CLAUDE.md` | Este archivo |
-| `docs/TradeCapture_v3_historial_completo.mq5` | EA v3.10 — envía historial completo en primera ejecución |
+| `tradecapture/TradeCapture_v4.mq5` | EA v4.01 (actual, corriendo en ambos VPS) — envía trades cerrados a Supabase vía WebRequest |
 
 ## Backend — Supabase
 - **URL**: `https://ofrbktacgwbwsgpftoky.supabase.co`
@@ -68,7 +68,7 @@ Dashboard web personal para analizar bots de trading de StrategyQuant X (SQX) co
 
 ## Pipeline de datos
 ```
-MT5 EA (TradeCapture_v3.mq5)
+MT5 EA (TradeCapture_v4.mq5)
   → WebRequest POST a Edge Function
   → valida token en user_tokens
   → inserta en tabla trades (ticket+account_id únicos)
@@ -175,7 +175,6 @@ window._magicSummary // {[magic]: {topComment, count, symbols}} — buildMagicSu
 - **Grep/Read antes que Agent**: Agent solo para búsquedas amplias o tareas complejas.
 
 ## Pendiente / Próximos pasos
-1. **Instalar TradeCapture_v3 v3.10 en ambos VPS** — reemplazar archivo en MetaEditor, compilar, reiniciar EA, borrar GlobalVariables tc3_*
-2. **Asignar magic numbers** — usar el panel "🔗 Vincular Magic Numbers" en el dashboard al hacer login
-3. **Correlación matemática** — en portfolio.html, agregar correlación entre equity curves individuales
-4. **Alertas externas** — Telegram/email/WhatsApp para alertas críticas (Capa 5 completa)
+1. **Asignar magic numbers** — usar el panel "🔗 Vincular Magic Numbers" en el dashboard al hacer login
+2. **Correlación matemática** — en portfolio.html, agregar correlación entre equity curves individuales
+3. **Alertas externas** — Telegram/email/WhatsApp para alertas críticas (Capa 5 completa)

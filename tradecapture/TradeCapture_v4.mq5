@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
 //| TradeCapture_v4.mq5 — Envía trades cerrados a Supabase          |
-//| v4.0 — Bugfixes: timestamp, O(n²), SL/TP, deal-type filter      |
+//| v4.01 — Tope de lookback a 60 días en modo incremental          |
 //+------------------------------------------------------------------+
 #property copyright "Arquitectura Sistemica"
-#property version   "4.00"
+#property version   "4.01"
 
 input string UserToken    = "";           // Token personal (copiar desde el dashboard)
 input string AccountLabel = "Principal";  // Nombre de esta cuenta MT5
@@ -40,7 +40,7 @@ void ScanHistory() {
    datetime lastCheck = (datetime)GlobalVariableGet(lastKey);
    datetime now       = TimeCurrent();
    bool     isFirstRun = (lastCheck == 0);
-   datetime from      = isFirstRun ? D'2000.01.01 00:00:00' : lastCheck;
+   datetime from      = isFirstRun ? D'2000.01.01 00:00:00' : (datetime)MathMin((double)lastCheck, (double)(now - 60*86400));
 
    if (!HistorySelect(from, now)) return;
 
