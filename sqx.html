@@ -7,6 +7,7 @@
 <script src="supabase.js"></script>
 <script src="sidebar.js"></script>
 <script src="config.js"></script>
+<script src="pseudocode-order.js"></script>
 <style>
 :root{
   --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
@@ -234,28 +235,8 @@ function getDirection(pseudo) {
   return null;
 }
 function dirColor(d) { return d==='Long'?'pass': d==='Short'?'fail': d==='Both'?'warn':'na'; }
-// Única fuente de verdad para el tipo de orden por bloque (Long/Short) — usada
-// tanto por la tabla (getEntryType) como por parseSQXFile, para evitar dos
-// regex independientes detectando lo mismo y quedando desincronizadas.
-function getOrderBlocks(pseudo) {
-  if (!pseudo) return {};
-  const blocks = {};
-  for (const m of pseudo.matchAll(/Open\s+(Long|Short)\s+order\s+at\s+([\s\S]*?);/gi)) {
-    const isLong = /^long$/i.test(m[1]);
-    const expr = m[2].trim();
-    let type = null;
-    if (/^market$/i.test(expr)) type = 'Market';
-    else if (/\bstop\s*$/i.test(expr))  type = isLong ? 'Buy Stop'  : 'Sell Stop';
-    else if (/\blimit\s*$/i.test(expr)) type = isLong ? 'Buy Limit' : 'Sell Limit';
-    blocks[isLong ? 'Long' : 'Short'] = type;
-  }
-  return blocks;
-}
-function formatEntryTypes(blocks) {
-  const types = [...new Set(Object.values(blocks).filter(Boolean))];
-  return types.length ? types.join(' / ') : null;
-}
-function getEntryType(pseudo) { return formatEntryTypes(getOrderBlocks(pseudo)); }
+// getOrderBlocks / formatEntryTypes / getEntryType viven en pseudocode-order.js
+// (compartido con index.html) para que no haya dos copias del parser drift-eando.
 function pfColor(v)     { return v==null?'na': v>=1.30?'pass': v>=1.20?'warn':'fail'; }
 function ddColor(v)     { return v==null?'na': v<=10  ?'pass': v<=20  ?'warn':'fail'; }
 function wrColor(v)     { return v==null?'na': v>=55  ?'pass': v>=45  ?'warn':'fail'; }
