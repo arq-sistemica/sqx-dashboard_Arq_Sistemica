@@ -7,6 +7,7 @@
 <script src="supabase.js"></script>
 <script src="sidebar.js"></script>
 <script src="config.js"></script>
+<script src="pseudocode-order.js"></script>
 <style>
   :root {
     --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
@@ -1256,7 +1257,7 @@ function dnaInit(allBots) {
   const shortBots = allBots.filter(b => b.dir === 'Short').length;
   const bothBots  = allBots.filter(b => b.dir === 'Both').length;
   const mktBots   = allBots.filter(b => b.entry === 'Market').length;
-  const stopBots  = allBots.filter(b => b.entry === 'Stop').length;
+  const stopBots  = allBots.filter(b => b.entry.includes('Stop')).length;
   const assets    = [...new Set(allBots.map(b => b.asset).filter(a => a !== '—'))];
   const portfolioHtml = `
     <div class="dna-alert dna-alert-info" style="flex-direction:column;align-items:flex-start;gap:8px">
@@ -1514,8 +1515,9 @@ function parseSQXFile(text) {
   const longExpr  = longM  ? longM[1].trim()  : 'false';
   const shortExpr = shortM ? shortM[1].trim() : 'false';
   const isFalseExpr = s => /^\(?\s*false(\s+and\s+false)*\s*\)?$/i.test(s.replace(/\s+/g,' ').trim());
-  const hasLongOrder  = /Open\s+Long\s+order/i.test(text);
-  const hasShortOrder = /Open\s+Short\s+order/i.test(text);
+  const orderBlocks   = getOrderBlocks(text);
+  const hasLongOrder  = 'Long'  in orderBlocks;
+  const hasShortOrder = 'Short' in orderBlocks;
   const hasLong  = hasLongOrder  || (!isFalseExpr(longExpr)  && !hasShortOrder);
   const hasShort = hasShortOrder || (!isFalseExpr(shortExpr) && !hasLongOrder);
 
@@ -1543,8 +1545,8 @@ function parseSQXFile(text) {
   r.condicionesLong  = hasLong  ? splitAnd(longExpr)  : [];
   r.condicionesShort = hasShort ? splitAnd(shortExpr) : [];
 
-  const orderM = text.match(/Open\s+(?:Long|Short)\s+order\s+at\s+(\w+)/i);
-  if (orderM) r.ordenTipo = orderM[1];
+  const entryType = formatEntryTypes(orderBlocks);
+  if (entryType) r.ordenTipo = entryType;
 
   const sessM = text.match(/LimitSignalsTimeRange\s*=\s*true\s*\((\d{2,4})\s*-\s*(\d{2,4})/i);
   if (sessM) {
