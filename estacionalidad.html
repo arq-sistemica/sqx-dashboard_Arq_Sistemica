@@ -425,6 +425,8 @@
     <span>Forex (28 pares) — Seasonax, capturas manuales 2015–2025</span>
     <span>·</span>
     <span>US100, US500, XAUUSD — TradingView MCP, datos OHLCV mensuales 2015–2025, verificados año por año</span>
+    <span>·</span>
+    <span>US30 — TradingView TVC:DJI, datos OHLCV mensuales 2015–2025; Pos% calculado con metodología propia (1997–2025) por no existir en la fuente externa usada para los 28 pares FX</span>
   </div>
 
 </div><!-- end tab-general -->
@@ -567,6 +569,13 @@ async function loadDashboard() {
     'XAUUSD': 'XAUUSD',
     'GOLD': 'XAUUSD',
     'XAU': 'XAUUSD',
+    'US30': 'US30',
+    'WS30': 'US30',
+    'DJ30': 'US30',
+    'DJI': 'US30',
+    'DOW': 'US30',
+    'DOWJONES': 'US30',
+    'USA30IDXUSD': 'US30',
   };
 
   db.forEach(bot => {
@@ -876,7 +885,7 @@ const PARES = ['AUDCAD','AUDCHF','AUDJPY','AUDNZD','AUDUSD',
   'EURGBP','EURJPY','EURNZD','EURUSD','GBPAUD','GBPCAD',
   'GBPCHF','GBPJPY','GBPNZD','GBPUSD','NZDCAD','NZDCHF',
   'NZDJPY','NZDUSD','USDCAD','USDCHF','USDJPY',
-  'US100','US500','XAUUSD'];
+  'US100','US500','XAUUSD','US30'];
 
 function switchInnerTab(tab) {
   document.getElementById('tab-general').style.display = tab === 'general' ? 'block' : 'none';
@@ -1289,6 +1298,7 @@ const _LIVE_ALIASES = {
   'US100':  ['US100','NAS100','USTEC','NASDAQ','NDX','USATECHIDXUSD','USA100IDXUSD','NASDAQ100','NAS100m','US100m'],
   'US500':  ['US500','SP500','USA500IDXUSD','SPX500','US500m'],
   'XAUUSD': ['XAUUSD','GOLD','XAU'],
+  'US30':   ['US30','WS30','DJ30','DJI','DOW','USA30IDXUSD','WS30m','US30m'],
 };
 // Construye parámetro PostgREST: si hay aliases usa or=(...), si no usa ilike simple
 function _liveSymFilter(sym) {
