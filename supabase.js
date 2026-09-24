@@ -5,6 +5,43 @@ const SUPABASE_URL = 'https://ofrbktacgwbwsgpftoky.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_OReO6Y5yhrK-BmPWf3fOhw_ODQ1-0_-';
 const SESSION_KEY  = 'sb_arq_session';
 
+// Magics viejos/incompletos que el EA mandó antes de corregir el Magic Number en MT5 (sep-2026).
+// Cada uno se unifica al magic correcto (todos los dígitos del nombre SQX) para que el
+// historial de trades de un mismo bot no aparezca partido en varias filas del dashboard.
+const MAGIC_ALIASES = {
+  '1315314':   '13153141',   // Strategy 1.3.15 - Improved 3.1.4(1)
+  '1324416':   '4324416',    // Strategy 4.3.24 - Improved 4.1.6
+  '1326115':   '13261115',   // Strategy 1.3.26(1) - Improved 1.1.5
+  '1326116':   '13261116',   // Strategy 1.3.26(1) - Improved 1.1.6
+  '1452316':   '1452315',    // Strategy 1.4.5(2) - Improved 3.1.5
+  '1916214':   '19162142',   // Strategy 1.9.16 - Improved 2.1.4(2)
+  '1917':      '1917115',    // Strategy 1.9.17 - Improved 1.1.5
+  '1917516':   '19171515',   // Strategy 1.9.17(1) - Improved 5.1.5
+  '2225':      '2225417',    // Strategy 2.2.25 - Improved 4.1.7
+  '2626':      '2626515',    // Strategy 2.6.26 - Improved 5.1.5
+  '2718':      '2718115',    // Strategy 2.7.18 - Improved 1.1.5
+  '3115216':   '31152216',   // Strategy 3.1.15(2) - Improved 2.1.6
+  '311534151': '3115341511', // Strategy 3.1.15(3) - Improved 4.1.5(1)(1)
+  '3115415':   '3115341511', // Strategy 3.1.15(3) - Improved 4.1.5(1)(1) (segundo magic viejo distinto)
+  '3117':      '31172151',   // Strategy 3.1.17 - Improved 2.1.5(1)
+  '3118':      '31186114',   // Strategy 3.1.18(6) - Improved 1.1.4
+  '3118114':   '31186114',   // Strategy 3.1.18(6) - Improved 1.1.4 (segundo magic viejo distinto)
+  '3220417':   '32201417',   // Strategy 3.2.20(1) - Improved 4.1.7
+  '3223':      '3223415',    // Strategy 3.2.23 - Improved 4.1.5
+  '3626236':   '36262361',   // Strategy 3.6.26 - Improved 2.3.6(1)
+  '38171216':  '381712161',  // Strategy 3.8.17(1) - Improved 2.1.6(1)
+  '41023':     '41023114',   // Strategy 4.10.23 - Improved 1.1.4
+  '410241114': '4102411141', // Strategy 4.10.24(1) - Improved 1.1.4(1)
+  '5524':      '55241415',   // Strategy 5.5.24(1) - Improved 4.1.5
+  '5618':      '5618514',    // Strategy 5.6.18 - Improved 5.1.4
+  '610163104': '6101631042', // Strategy 6.10.16 - Improved 3.10.4(2)
+  '6214315':   '62143152',   // Strategy 6.2.14 - Improved 3.1.5(2)
+};
+
+function isValidEmail(str) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
+}
+
 function _sbHeaders(token) {
   return {
     'apikey':        SUPABASE_KEY,
@@ -266,6 +303,10 @@ const sb = {
       all = all.concat(data);
       if (data.length < batch) break;
       from += batch;
+    }
+    for (const t of all) {
+      const alias = MAGIC_ALIASES[String(t.magic)];
+      if (alias) t.magic = Number(alias);
     }
     return all;
   },
