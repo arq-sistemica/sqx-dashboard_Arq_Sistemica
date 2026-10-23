@@ -62,6 +62,8 @@ td.num{text-align:right}
 .badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 .badge-gray{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge-blue{background:var(--accent-light);color:var(--accent);border:1px solid #c7d2fe}
 .pass{color:var(--green)!important;font-weight:600}
 .fail{color:var(--red)!important;font-weight:600}
 .warn{color:#d97706!important;font-weight:600}
@@ -115,6 +117,18 @@ td.num{text-align:right}
 .toast-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .toast-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 .empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
+
+/* modal bandas del semáforo */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-backdrop.open{display:flex}
+.modal-card{position:relative;background:var(--bg);border-radius:var(--radius-lg);max-width:620px;width:92%;max-height:80vh;overflow-y:auto;padding:20px 24px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.modal-card h2{font-size:14px;margin-bottom:2px}
+.modal-sub{font-size:11px;color:var(--text3);margin-bottom:14px}
+.modal-close{position:absolute;top:14px;right:16px;cursor:pointer;color:var(--text3);font-size:18px;background:none;border:none;height:auto;padding:0;line-height:1}
+.rules-table{width:100%;border-collapse:collapse;font-size:12px}
+.rules-table th,.rules-table td{border:1px solid var(--border);padding:5px 8px;text-align:right}
+.rules-table th{background:var(--bg2);font-weight:700;color:var(--text3);font-size:10px;text-transform:uppercase}
+.rules-table td.left{text-align:left;color:var(--text)}
 </style>
 </head>
 <body>
@@ -134,7 +148,17 @@ td.num{text-align:right}
     <input type="file" id="overview-input" accept=".json" style="display:none" onchange="handleImportOverview(this.files);this.value=''">
     <button class="btn" onclick="document.getElementById('overview-input').click()">📥 Importar Overview backup</button>
     <button class="btn" id="btn-apikey" onclick="configAnthropicKey()" title="Configurar Anthropic API Key para análisis IA">🔑 API Key</button>
+    <button class="btn" onclick="toggleRulesPanel(true)">📊 Bandas del semáforo</button>
     <button class="btn" style="border-color:#fcc;color:var(--red)" onclick="deleteAllBots()">🗑 Borrar todo</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="rules-backdrop" onclick="if(event.target===this)toggleRulesPanel(false)">
+  <div class="modal-card">
+    <button class="modal-close" onclick="toggleRulesPanel(false)">✕</button>
+    <h2>📊 Bandas del semáforo</h2>
+    <div class="modal-sub">public.rules — solo lectura. Define los umbrales verde/naranja/rojo por criterio y clase de activo.</div>
+    <div id="rules-table-wrap"></div>
   </div>
 </div>
 
@@ -143,6 +167,17 @@ td.num{text-align:right}
   <button class="fbtn active" id="f-all"    onclick="setFilter('all')">Todos</button>
   <button class="fbtn"        id="f-passed" onclick="setFilter('passed')">✓ PASSED</button>
   <button class="fbtn"        id="f-failed" onclick="setFilter('failed')">✗ FAILED</button>
+  <span class="filter-label" style="margin-left:8px">Nivel:</span>
+  <select class="filter-sel" id="f-nivel" onchange="renderTable()">
+    <option value="">Todos</option>
+    <option value="Destacado">Destacado</option>
+    <option value="Sólido">Sólido</option>
+    <option value="A revisar">A revisar</option>
+    <option value="Débil">Débil</option>
+    <option value="Sin datos">Sin datos</option>
+  </select>
+  <span class="filter-label">Clase:</span>
+  <select class="filter-sel" id="f-clase" onchange="renderTable()"><option value="">Todas</option></select>
   <span class="filter-label" style="margin-left:8px">Symbol:</span>
   <select class="filter-sel" id="f-symbol" onchange="renderTable()"><option value="">Todos</option></select>
   <span class="filter-label">TF:</span>
@@ -175,17 +210,27 @@ td.num{text-align:right}
       <tr>
         <th class="left" onclick="sortBy('name')">Nombre<span id="s-name"></span></th>
         <th onclick="sortBy('magic')">Magic<span id="s-magic"></span></th>
+        <th class="left" onclick="sortBy('nivel')">Nivel<span id="s-nivel"></span></th>
         <th class="left" onclick="sortBy('symbol')">Par<span id="s-symbol"></span></th>
         <th class="left" onclick="sortBy('dir')">Dir<span id="s-dir"></span></th>
         <th class="left" onclick="sortBy('orderType')">Orden<span id="s-orderType"></span></th>
         <th class="left" onclick="sortBy('tf')">TF<span id="s-tf"></span></th>
         <th onclick="sortBy('isPf')">PF<span id="s-isPf"> ▼</span></th>
-        <th onclick="sortBy('isWr2')">WR%<span id="s-isWr2"></span></th>
+        <th onclick="sortBy('isSqn')">SQN<span id="s-isSqn"></span></th>
+        <th onclick="sortBy('retAnual')">Ret Anual%<span id="s-retAnual"></span></th>
+        <th onclick="sortBy('isStag')">Stagnation<span id="s-isStag"></span></th>
+        <th onclick="sortBy('isDdUsd')">DD $<span id="s-isDdUsd"></span></th>
+        <th onclick="sortBy('isZp')">Z-Prob<span id="s-isZp"></span></th>
+        <th onclick="sortBy('totalYears')">Años<span id="s-totalYears"></span></th>
         <th onclick="sortBy('isRetdd')">Ret/DD<span id="s-isRetdd"></span></th>
-        <th onclick="sortBy('isMaxDd')">Max DD%<span id="s-isMaxDd"></span></th>
         <th onclick="sortBy('isComplex')">Complexity<span id="s-isComplex"></span></th>
-        <th onclick="sortBy('isEntry')">Entry<span id="s-isEntry"></span></th>
+        <th onclick="sortBy('entryDb')">Indicadores<span id="s-entryDb"></span></th>
         <th onclick="sortBy('isTrades')">Trades<span id="s-isTrades"></span></th>
+        <th onclick="sortBy('r2')">R²<span id="s-r2"></span></th>
+        <th onclick="sortBy('payoff')">Payoff<span id="s-payoff"></span></th>
+        <th onclick="sortBy('winRate')">Win Rate%<span id="s-winRate"></span></th>
+        <th onclick="sortBy('worstYear')">Worst Year<span id="s-worstYear"></span></th>
+        <th onclick="sortBy('maxConsec')">Max Consec Losses<span id="s-maxConsec"></span></th>
         <th onclick="sortBy('isFit')">Fitness<span id="s-isFit"></span></th>
         <th onclick="sortBy('isStab')">Stability<span id="s-isStab"></span></th>
         <th class="left" onclick="sortBy('filter')">Filtro<span id="s-filter"></span></th>
@@ -237,18 +282,57 @@ function getDirection(pseudo) {
 function dirColor(d) { return d==='Long'?'pass': d==='Short'?'fail': d==='Both'?'warn':'na'; }
 // getOrderBlocks / formatEntryTypes / getEntryType viven en pseudocode-order.js
 // (compartido con index.html) para que no haya dos copias del parser drift-eando.
-function pfColor(v)     { return v==null?'na': v>=1.30?'pass': v>=1.20?'warn':'fail'; }
-function ddColor(v)     { return v==null?'na': v<=10  ?'pass': v<=20  ?'warn':'fail'; }
-function wrColor(v)     { return v==null?'na': v>=55  ?'pass': v>=45  ?'warn':'fail'; }
 function cagrColor(v)   { return v==null?'na': v>=8   ?'pass': v>=5   ?'warn':'fail'; }
 function sharpeColor(v) { return v==null?'na': v>=0.50?'pass': v>=0.30?'warn':'fail'; }
-function tradesColor(v) { return v==null?'na': v>=500 ?'pass': v>=200 ?'warn':'fail'; }
 function retddColor(v)  { return v==null?'na': v>=2   ?'pass': v>=1   ?'warn':'fail'; }
 function cagrddColor(v) { return v==null?'na': v>=1   ?'pass': v>=0.5 ?'warn':'fail'; }
 function fitColor(v)    { return v==null?'na': v>=0.8 ?'pass': v>=0.6 ?'warn':'fail'; }
 function stabColor(v)   { return v==null?'na': v>=0.8 ?'pass': v>=0.6 ?'warn':'fail'; }
 function npColor(v)     { return v==null?'na': v>0    ?'pass':          'fail'; }
 function sqnColor(v)    { return v==null?'na': v>=1.6 ?'pass': v>=1.0 ?'warn':'fail'; }
+
+// Color por criterio del semáforo de Supabase (vista bots_semaforo, columnas c_*)
+// — reemplaza los umbrales fijos de arriba para PF/SQN/DD/Ret anual/Stagnation/Z-Prob/Trades/Historia.
+function semColor(c) { return c==='verde'?'pass': c==='naranja'?'warn': c==='rojo'?'fail':'na'; }
+
+function nivelBadge(n) {
+  const map = {
+    'Destacado': ['badge-green','🏆 Destacado'],
+    'Sólido':    ['badge-blue', '✓ Sólido'],
+    'A revisar': ['badge-amber','⚠ A revisar'],
+    'Débil':     ['badge-red',  '✗ Débil'],
+    'Sin datos': ['badge-gray', 'Sin datos'],
+  };
+  const [cls, label] = map[n] || ['badge-gray', n || '—'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// ─── Panel de bandas (public.rules, solo lectura) ─────────────────────
+var RULES = [];
+function renderRulesPanel() {
+  const wrap = document.getElementById('rules-table-wrap');
+  if (!wrap) return;
+  if (!RULES.length) { wrap.innerHTML = '<div class="empty-state">Sin bandas cargadas.</div>'; return; }
+  wrap.innerHTML = `<table class="rules-table"><thead><tr>
+      <th class="left">Criterio</th><th class="left">Clase</th><th class="left">Campo</th>
+      <th>Mejor</th><th>Verde</th><th>Naranja</th>
+    </tr></thead><tbody>
+    ${RULES.map(r => `<tr>
+      <td class="left">${r.criterio}</td>
+      <td class="left">${r.clase}</td>
+      <td class="left" style="font-size:10px;color:var(--text3)">${r.campo}</td>
+      <td>${r.mayor_es_mejor ? '↑ mayor' : '↓ menor'}</td>
+      <td class="pass">${r.verde}</td>
+      <td class="warn">${r.naranja}</td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+function toggleRulesPanel(open) {
+  const el = document.getElementById('rules-backdrop');
+  if (!el) return;
+  el.classList.toggle('open', open);
+  if (open) renderRulesPanel();
+}
 
 function filterBadge(f) {
   if (!f) return '<span class="badge badge-gray">—</span>';
@@ -268,23 +352,30 @@ function setFilter(mode) {
 function populateFilters() {
   const symbols = [...new Set(DB.map(b => b.symbol).filter(Boolean))].sort();
   const tfs     = [...new Set(DB.map(b => b.tf).filter(Boolean))].sort();
+  const clases  = [...new Set(DB.map(b => b.clase).filter(Boolean))].sort();
   const symSel = document.getElementById('f-symbol');
   const tfSel  = document.getElementById('f-tf');
-  const ps = symSel.value, pt = tfSel.value;
+  const claseSel = document.getElementById('f-clase');
+  const ps = symSel.value, pt = tfSel.value, pc = claseSel.value;
   symSel.innerHTML = '<option value="">Todos</option>' + symbols.map(s => `<option${s===ps?' selected':''}>${s}</option>`).join('');
   tfSel.innerHTML  = '<option value="">Todos</option>' + tfs.map(t =>    `<option${t===pt?' selected':''}>${t}</option>`).join('');
+  claseSel.innerHTML = '<option value="">Todas</option>' + clases.map(c => `<option${c===pc?' selected':''}>${c}</option>`).join('');
 }
 
 function getFiltered() {
-  const sym = document.getElementById('f-symbol').value;
-  const tf  = document.getElementById('f-tf').value;
+  const sym   = document.getElementById('f-symbol').value;
+  const tf    = document.getElementById('f-tf').value;
+  const nivel = document.getElementById('f-nivel').value;
+  const clase = document.getElementById('f-clase').value;
   return DB.filter(b => {
     if (filterMode === 'passed' && !(b.sqxFilter||'').toUpperCase().includes('PASSED')) return false;
     if (filterMode === 'failed' &&  (b.sqxFilter||'').toUpperCase().includes('PASSED')) return false;
     if (sym && b.symbol !== sym) return false;
     if (tf  && b.tf !== tf)     return false;
+    if (nivel && b.nivel !== nivel) return false;
+    if (clase && b.clase !== clase) return false;
     const dir = document.getElementById('f-dir').value;
-    if (dir && getDirection(b.pseudocodigo) !== dir) return false;
+    if (dir && (b.direction || getDirection(b.pseudocodigo)) !== dir) return false;
     const orden = document.getElementById('f-orden').value;
     if (orden && !(getEntryType(b.pseudocodigo)||'').split(' / ').includes(orden)) return false;
     return true;
@@ -295,17 +386,27 @@ function getFiltered() {
 var KEY = {
   name:       b => (b.name||'').toLowerCase(),
   magic:      b => b.magic || 0,
+  nivel:      b => b.nivel||'',
   symbol:     b => b.symbol||'',
   tf:         b => b.tf||'',
   isPf:      b => b.is?.pf                    ?? -Infinity,
+  isSqn:     b => b.is?.sqn                   ?? -Infinity,
+  retAnual:  b => b.retAnual                  ?? -Infinity,
+  isStag:    b => b.is?.stag                  ?? Infinity,
+  isDdUsd:   b => b.is?.dd                    ?? Infinity,
+  isZp:      b => b.is?.zp                    ?? Infinity,
+  totalYears:b => b.totalYears                ?? -Infinity,
   dir:       b => getDirection(b.pseudocodigo) || '',
   orderType: b => getEntryType(b.pseudocodigo) || '',
-  isWr2:     b => b.standalone?.winning_percent ?? -Infinity,
   isRetdd:   b => b.is?.retdd                 ?? -Infinity,
-  isMaxDd:   b => b.standalone?.max_dd_pct    ?? Infinity,
-  isComplex: b => b.standalone?.complexity    ?? Infinity,
-  isEntry:   b => b.standalone?.entry_indicators ?? -Infinity,
+  isComplex: b => b.complexity                ?? Infinity,
+  entryDb:   b => b.entryIndicators           ?? -Infinity,
   isTrades:  b => b.is?.trades                ?? -Infinity,
+  r2:        b => b.r2                        ?? -Infinity,
+  payoff:    b => b.payoff                    ?? -Infinity,
+  winRate:   b => b.winRate                   ?? -Infinity,
+  worstYear: b => b.worstYear                 ?? -Infinity,
+  maxConsec: b => b.maxConsecLosses           ?? -Infinity,
   isFit:     b => b.is?.fitness               ?? -Infinity,
   isStab:    b => b.is?.stability             ?? -Infinity,
   filter:    b => b.sqxFilter||'',
@@ -423,7 +524,7 @@ function renderTable() {
 
   const tbody = document.getElementById('bots-tbody');
   if (!bots.length) {
-    tbody.innerHTML = '<tr><td colspan="17" class="empty-state">Sin bots. Usa "Scan carpeta SQX" para cargar un Databank CSV.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="27" class="empty-state">Sin bots. Usa "Scan carpeta SQX" para cargar un Databank CSV.</td></tr>';
     return;
   }
 
@@ -431,20 +532,31 @@ function renderTable() {
     const id = String(b.magic || b.id);
     const name = (b.name||'—');
     const nameShort = name.length > 42 ? name.slice(0, 40) + '…' : name;
+    const dir = b.direction || getDirection(b.pseudocodigo);
     return `<tr data-id="${id}" onclick="toggleDetail('${id}')">
       <td class="left" title="${name}">${nameShort}</td>
       <td style="font-variant-numeric:tabular-nums;color:var(--text3);text-align:right">${b.magic||'—'}</td>
-      <td class="left">${b.symbol||'—'}</td>
-      <td class="left ${dirColor(getDirection(b.pseudocodigo))}">${getDirection(b.pseudocodigo)||'—'}</td>
+      <td class="left">${nivelBadge(b.nivel)}</td>
+      <td class="left" title="${b.clase||''}">${b.symbol||'—'}</td>
+      <td class="left ${dirColor(dir)}">${dir||'—'}</td>
       <td class="left">${getEntryType(b.pseudocodigo)||'—'}</td>
       <td class="left">${b.tf||'—'}</td>
-      <td class="${pfColor(b.is?.pf)}">${fmt(b.is?.pf)}</td>
-      <td class="${wrColor(b.standalone?.winning_percent)}">${fmt(b.standalone?.winning_percent,1)}%</td>
+      <td class="${semColor(b.semaforo?.pf)}">${fmt(b.is?.pf)}</td>
+      <td class="${semColor(b.semaforo?.sqn)}">${fmt(b.is?.sqn)}</td>
+      <td class="${semColor(b.semaforo?.ret)}">${fmt(b.retAnual,1)}%</td>
+      <td class="${semColor(b.semaforo?.stag)}">${b.is?.stag??'—'}</td>
+      <td class="${semColor(b.semaforo?.dd)}">${b.is?.dd!=null?'$'+fmt(b.is.dd,0):'—'}</td>
+      <td class="${semColor(b.semaforo?.zp)}">${b.is?.zp!=null?fmt(b.is.zp,0)+'%':'—'}</td>
+      <td class="${semColor(b.semaforo?.hist)}">${fmt(b.totalYears,1)}</td>
       <td class="${retddColor(b.is?.retdd)}">${fmt(b.is?.retdd)}</td>
-      <td class="${ddColor(b.standalone?.max_dd_pct)}">${fmt(b.standalone?.max_dd_pct,1)}%</td>
-      <td>${fmt(b.standalone?.complexity,0)}</td>
-      <td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${b.standalone?.entry_indicators||''}">${b.standalone?.entry_indicators||'—'}</td>
-      <td class="${tradesColor(b.is?.trades)}">${b.is?.trades??'—'}</td>
+      <td>${fmt(b.complexity,0)}</td>
+      <td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${b.entryIndicators||''}">${b.entryIndicators||'—'}</td>
+      <td class="${semColor(b.semaforo?.trades)}">${b.is?.trades??'—'}</td>
+      <td>${fmt(b.r2)}</td>
+      <td>${fmt(b.payoff)}</td>
+      <td>${b.winRate!=null?fmt(b.winRate,1)+'%':'—'}</td>
+      <td>${b.worstYear!=null?fmt(b.worstYear,0):'—'}</td>
+      <td>${b.maxConsecLosses??'—'}</td>
       <td class="${fitColor(b.is?.fitness)}">${fmt(b.is?.fitness)}</td>
       <td class="${stabColor(b.is?.stability)}">${fmt(b.is?.stability)}</td>
       <td class="left">${filterBadge(b.sqxFilter)}</td>
@@ -486,7 +598,7 @@ function insertDetailRow(id, bot) {
   const detail = document.createElement('tr');
   detail.className = 'detail-row';
   detail.id = 'detail-' + id;
-  detail.innerHTML = '<td colspan="17"><div class="detail-inner">' + buildDetail(bot) + '</div></td>';
+  detail.innerHTML = '<td colspan="27"><div class="detail-inner">' + buildDetail(bot) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
 }
 
@@ -1176,8 +1288,9 @@ async function init() {
   updateApiKeyBtn();
   setSyncStatus('Cargando...', '');
   try {
-    const [bots, prefs] = await Promise.all([sb.getBots(), sb.getPrefs()]);
+    const [bots, prefs, rules] = await Promise.all([sb.getBotsSemaforo(), sb.getPrefs(), sb.getRules()]);
     DB = bots;
+    RULES = rules;
     populateFilters();
     applyPrefs(prefs);
     renderTable();

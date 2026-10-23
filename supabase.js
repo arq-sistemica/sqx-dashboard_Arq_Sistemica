@@ -134,6 +134,45 @@ function _rowToBot(row) {
   };
 }
 
+// Row de la vista bots_semaforo → objeto bot JS (bot base + columnas de la
+// reorganización 2026-10-23: clase/métricas full-period/semáforo c_*/nivel).
+// No toca _rowToBot/_botToRow — bots.html, index.html y mt5.html siguen
+// leyendo/escribiendo la tabla `bots` sin ver estas columnas.
+function _semaforoRowToBot(row) {
+  const bot = _rowToBot(row);
+  bot.is.stag = row.is_stag ?? null;
+  bot.is.sqn  = row.is_sqn  ?? null;
+  bot.is.zp   = row.is_zp   ?? null;
+  return {
+    ...bot,
+    clase:           row.clase     || null,
+    direction:       row.direction || bot.direction || null,
+    winRate:         row.win_rate  ?? null,
+    payoff:          row.payoff    ?? null,
+    r2:              row.r2        ?? null,
+    complexity:      row.complexity ?? null,
+    maxConsecLosses: row.max_consec_losses ?? null,
+    worstYear:       row.worst_year        ?? null,
+    avgProfitYear:   row.avg_profit_year   ?? null,
+    retAnual:        row.ret_anual         ?? null,
+    totalYears:      row.total_years       ?? null,
+    avgTrade:        row.avg_trade         ?? null,
+    entryIndicators: row.entry_indicators  || null,
+    exitIndicators:  row.exit_indicators   || null,
+    magicAlias:      row.magic_alias       || null,
+    fuenteMetricas:  row.fuente_metricas   || null,
+    metricasAt:      row.metricas_at       || null,
+    semaforo: {
+      pf: row.c_pf, sqn: row.c_sqn, dd: row.c_dd, ret: row.c_ret,
+      stag: row.c_stag, zp: row.c_zp, trades: row.c_trades, hist: row.c_hist,
+    },
+    nVerde:   row.n_verde   ?? null,
+    nNaranja: row.n_naranja ?? null,
+    nRojo:    row.n_rojo    ?? null,
+    nivel:    row.nivel || null,
+  };
+}
+
 // Objeto bot JS anidado → DB row (columnas planas)
 function _botToRow(bot) {
   return {
@@ -248,6 +287,29 @@ const sb = {
     }
     const rows = await r.json();
     return rows.map(_rowToBot);
+  },
+
+  // Vista bots_semaforo: bots + clase/métricas full-period + semáforo c_* + nivel
+  // (sqx.html). Solo lectura — el upsert sigue yendo a `bots` vía upsertBots().
+  async getBotsSemaforo() {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/bots_semaforo?select=*&order=id`, {
+      headers: _sbHeaders(sb.getToken()),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.message || `Error ${r.status} al cargar bots_semaforo`);
+    }
+    const rows = await r.json();
+    return rows.map(_semaforoRowToBot);
+  },
+
+  // Bandas del semáforo (tabla rules) — solo lectura, para mostrar en un panel informativo.
+  async getRules() {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rules?select=*&order=criterio,clase`, {
+      headers: _sbHeaders(sb.getToken()),
+    });
+    if (!r.ok) return [];
+    return r.json();
   },
 
   async upsertBots(bots) {
