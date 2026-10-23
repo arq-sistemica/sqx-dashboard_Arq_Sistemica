@@ -406,13 +406,53 @@ function equityCurve(tradeList) {
   </svg>`;
 }
 
+// Identidad real de la cuenta: account_id, NUNCA account_label — el label es texto
+// libre que manda el EA (input AccountLabel) y puede llegar con distinta mayúscula/
+// espacios entre instancias, lo que partía una misma cuenta en "cuentas fantasma"
+// en el filtro y en el desempate de magic multi-cuenta. 'historical' es un id
+// sintético compartido por el importador manual de MyFxBook más abajo — ahí SÍ
+// hace falta el label para distinguir cuentas.
+function acctKey(t) {
+  const id = String(t.account_id || '');
+  return id === 'historical' ? id + ':' + (t.account_label || '') : id;
+}
+
+// Nombre amigable para mostrar, a partir de la identidad real (acctKey/account_id).
+function accountDisplayLabel(key) {
+  if (!key) return 'unknown';
+  if (key.startsWith('historical:')) return key.slice('historical:'.length) || 'historical';
+  return (window._accountLabels && window._accountLabels[key]) || key;
+}
+
+// Nombres amigables por account_id: prioriza la tabla `accounts`, y usa el
+// account_label más reciente visto en trades como fallback (cuentas nuevas
+// que todavía no tienen fila en `accounts`).
+async function _loadAccountLabels(trades) {
+  const map = {};
+  const latestClose = {};
+  for (const t of (trades || [])) {
+    const id = String(t.account_id || '');
+    if (!id || id === 'historical') continue;
+    if (!latestClose[id] || (t.close_time || '') > latestClose[id]) {
+      latestClose[id] = t.close_time || '';
+      map[id] = t.account_label || id;
+    }
+  }
+  try {
+    const accounts = await sb.getMyAccounts();
+    for (const a of (accounts || [])) map[String(a.id)] = a.name || map[String(a.id)] || String(a.id);
+  } catch (e) { /* tabla accounts opcional — el fallback de arriba ya cubre */ }
+  window._accountLabels = map;
+}
+
 // ─── computeLiveMetrics (copiado de index.html) ──────────────────────
 function computeLiveMetrics(trades) {
   const byMagicAccount = {};
   for (const t of trades) {
     const m = String(t.magic || '');
     if (!m || m === '0') continue;
-    const acct = t.account_label || String(t.account_id) || 'unknown';
+    const acct = acctKey(t);
+    if (!acct) continue;
     if (!byMagicAccount[m]) byMagicAccount[m] = {};
     if (!byMagicAccount[m][acct]) byMagicAccount[m][acct] = [];
     byMagicAccount[m][acct].push(t);
@@ -464,7 +504,7 @@ function computeLiveMetrics(trades) {
       avgLossUsd: losses.length ? +(gL/losses.length).toFixed(2) : null,
       netProfit:  +netPs.reduce((a,b)=>a+b,0).toFixed(2),
       tradeList,
-      account: winnerAccount[magic] || null,
+      account: accountDisplayLabel(winnerAccount[magic]),
     };
   }
   return result;
@@ -472,14 +512,14 @@ function computeLiveMetrics(trades) {
 
 // ─── Cuenta filter ────────────────────────────────────────────────────
 function populateAccountFilter() {
-  const accounts = [...new Set(_allTrades.map(t => t.account_label).filter(Boolean))].sort();
+  const accounts = [...new Set(_allTrades.map(acctKey).filter(Boolean))].sort();
   const sel = document.getElementById('f-account');
   // Si aparece una cuenta nueva que no estaba en el dropdown anterior, resetear a "Todas"
   const prevOptions = new Set([...sel.options].slice(1).map(o => o.value));
   const hasNewAccount = accounts.some(a => !prevOptions.has(a));
   const prev = hasNewAccount ? '' : sel.value;
   sel.innerHTML = '<option value="">Todas</option>' +
-    accounts.map(a => `<option${a===prev?' selected':''}>${a}</option>`).join('');
+    accounts.map(a => `<option value="${a}"${a===prev?' selected':''}>${accountDisplayLabel(a)}</option>`).join('');
   document.getElementById('acct-wrap').style.display = accounts.length > 1 ? 'flex' : 'none';
 
   const symbols = [...new Set(_allTrades.map(t => t.symbol).filter(Boolean))].sort();
@@ -500,7 +540,7 @@ function applyFilters() {
   const sym  = document.getElementById('f-symbol').value;
   const dir  = document.getElementById('f-dir').value;
   let filtered = _allTrades;
-  if (acct) filtered = filtered.filter(t => t.account_label === acct);
+  if (acct) filtered = filtered.filter(t => acctKey(t) === acct);
   if (sym)  filtered = filtered.filter(t => t.symbol === sym);
   if (dir)  filtered = filtered.filter(t => t.type === dir);
   LIVE = computeLiveMetrics(filtered);
@@ -1434,6 +1474,7 @@ async function loadData() {
   try {
     const [trades, bots] = await Promise.all([sb.getMyTrades(), sb.getBots().catch(() => [])]);
     _allTrades = trades;
+    await _loadAccountLabels(trades); // nombres amigables por account_id, antes de agrupar
     _botsByMagic = {};
     bots.forEach(b => {
       if (b.magic) _botsByMagic[String(b.magic)] = b;
@@ -1474,13 +1515,14 @@ function loadDemo() {
       const closeDate = new Date(closeMs).toISOString().slice(0,16).replace('T',' ');
       const openDate  = new Date(closeMs - 2 * dayMs).toISOString().slice(0,16).replace('T',' ');
       c = +(c + profit).toFixed(2);
-      fakeTrades.push({ magic: p.magic, account_label: 'Demo', symbol: p.symbol,
+      fakeTrades.push({ magic: p.magic, account_id: 'demo', account_label: 'Demo', symbol: p.symbol,
         type: i % 2 === 0 ? 'buy' : 'sell',
         profit, commission: 0, swap: 0, lots: 0.1,
         open_price: 1.1000, close_price: 1.1010, open_time: openDate, close_time: closeDate });
     });
   });
   _allTrades = fakeTrades;
+  window._accountLabels = { demo: 'Demo' };
   _botsByMagic = { '9991': { name: 'Demo Bot A', magic: 9991, symbol: 'EURUSD' }, '9992': { name: 'Demo Bot B', magic: 9992, symbol: 'GBPJPY' } };
   LIVE = computeLiveMetrics(fakeTrades);
   populateAccountFilter();

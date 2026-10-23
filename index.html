@@ -1487,17 +1487,11 @@ async function authGrant() {
     window._lastTrades = _cleanTrades(trades);
     window._selectedAccounts = new Set();  // reset filtro al (re)login
     window._filteredMagics   = null;
+    await _loadAccountLabels(window._lastTrades); // nombres amigables por account_id, antes de computar LIVE
     window.LIVE = computeLiveMetrics(window._lastTrades);
   } catch(e) {
     window.LIVE = {};
-  }
-  // Cargar labels de cuentas para mostrar nombres amigables en los checkboxes
-  try {
-    const accounts = await sb.getMyAccounts();
-    window._accountLabels = {};
-    for (const a of (accounts || [])) window._accountLabels[String(a.id)] = a.label || String(a.id);
-  } catch(e) {
-    window._accountLabels = {};
+    window._accountLabels = window._accountLabels || {};
   }
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('btn-save').disabled = false;
@@ -1518,6 +1512,7 @@ async function refreshTrades() {
     window._lastTrades = _cleanTrades(trades);
     window._selectedAccounts = new Set();
     window._filteredMagics = null;
+    await _loadAccountLabels(window._lastTrades);
     window.LIVE = computeLiveMetrics(window._lastTrades);
     renderAccountCheckboxes();
     render();
@@ -1558,14 +1553,53 @@ function _cleanTrades(trades) {
 
 const MAGIC_ALIAS = { '1452': '1452315', '5962': '5962114' };
 
+// Identidad real de la cuenta: account_id, NUNCA account_label — el label es texto
+// libre que manda el EA (input AccountLabel) y puede llegar con distinta mayúscula/
+// espacios entre instancias, lo que partía una misma cuenta en "cuentas fantasma"
+// en filtros/paneles. 'historical' es un id sintético compartido por el importador
+// manual de MyFxBook (mt5.html) — ahí SÍ hace falta el label para distinguir cuentas.
+function acctKey(t) {
+  const id = String(t.account_id || '');
+  return id === 'historical' ? id + ':' + (t.account_label || '') : id;
+}
+
+// Nombre amigable para mostrar, a partir de la identidad real (acctKey/account_id).
+function accountDisplayLabel(key) {
+  if (!key) return 'unknown';
+  if (key.startsWith('historical:')) return key.slice('historical:'.length) || 'historical';
+  return (window._accountLabels && window._accountLabels[key]) || key;
+}
+
+// Nombres amigables por account_id: prioriza la tabla `accounts`, y usa el
+// account_label más reciente visto en trades como fallback (cuentas nuevas
+// que todavía no tienen fila en `accounts`).
+async function _loadAccountLabels(trades) {
+  const map = {};
+  const latestClose = {};
+  for (const t of (trades || [])) {
+    const id = String(t.account_id || '');
+    if (!id || id === 'historical') continue;
+    if (!latestClose[id] || (t.close_time || '') > latestClose[id]) {
+      latestClose[id] = t.close_time || '';
+      map[id] = t.account_label || id;
+    }
+  }
+  try {
+    const accounts = await sb.getMyAccounts();
+    for (const a of (accounts || [])) map[String(a.id)] = a.name || map[String(a.id)] || String(a.id);
+  } catch (e) { /* tabla accounts opcional — el fallback de arriba ya cubre */ }
+  window._accountLabels = map;
+}
+
 function computeLiveMetrics(trades) {
-  // Paso 1: agrupar por magic → por cuenta
+  // Paso 1: agrupar por magic → por cuenta (identidad real: account_id)
   const byMagicAccount = {};
   for (const t of trades) {
     const raw = String(t.magic || '');
     const m = MAGIC_ALIAS[raw] || raw;
     if (!m || m === '0') continue;
-    const acct = t.account_label || String(t.account_id) || 'unknown';
+    const acct = acctKey(t);
+    if (!acct) continue;
     if (!byMagicAccount[m]) byMagicAccount[m] = {};
     if (!byMagicAccount[m][acct]) byMagicAccount[m][acct] = [];
     byMagicAccount[m][acct].push(t);
@@ -1616,7 +1650,7 @@ function computeLiveMetrics(trades) {
       netProfit:  +netPs.reduce((a,b)=>a+b,0).toFixed(2),
       tradeList,
       source: 'supabase',
-      account: winnerAccount[magic] || null,  // cuenta ganadora (más historial)
+      account: accountDisplayLabel(winnerAccount[magic]),  // cuenta ganadora (más historial)
     };
   }
 
@@ -4210,7 +4244,7 @@ function buildDnaBots() {
     .map(b => {
       const p = b.pseudocodigoData.parsed;
       const indsRaw = p.indicadores !== na ? p.indicadores.split(' | ') : [];
-      const inds = [...new Set(indsRaw.map(s => (s.match(/^([A-Za-z]+)/) || [])[1]).filter(Boolean))];
+      const inds = [...new Set(indsRaw.map(s => (s.match(/^([A-Za-z]+)/) || [])[1]).filter(n => n && n.length >= 3))];
       const dir = p.entradaTipo === 'Sell (Short)' ? 'Short' :
                   p.entradaTipo === 'Both (Buy + Sell)' ? 'Both' : 'Long';
       const entry = p.ordenTipo !== na ? p.ordenTipo : 'Market';
@@ -4721,27 +4755,27 @@ function renderAccountCheckboxes() {
   const container = document.getElementById('account-filters');
   if (!container) return;
 
-  // Detectar cuentas únicas por account_id (account_label puede ser null)
-  const ids = [...new Set(trades.map(t => String(t.account_id)).filter(Boolean))].sort();
+  // Detectar cuentas únicas por acctKey (account_id, o account_id:label para 'historical')
+  const ids = [...new Set(trades.map(acctKey).filter(Boolean))].sort();
 
   // Solo mostrar si hay 2 o más cuentas
   if (ids.length < 2) { container.style.display = 'none'; return; }
   container.style.display = '';
 
   const sel      = window._selectedAccounts;
-  const lblMap   = window._accountLabels || {};
   const countById = {};
   for (const t of trades) {
-    const id = String(t.account_id);
+    const id = acctKey(t);
     if (id) countById[id] = (countById[id] || 0) + 1;
   }
 
   container.innerHTML = `<div class="acct-filters">
     <span class="acct-filters-lbl">📊 Cuenta MT5:</span>
     ${ids.map(id => {
-      const lbl = lblMap[id] || id;
+      const lbl    = accountDisplayLabel(id);
+      const idAttr = id.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       return `<label class="acct-cb-label${sel.has(id) ? ' checked' : ''}"
-               onclick="toggleAccountFilter('${id}')">
+               onclick="toggleAccountFilter('${idAttr}')">
         ${lbl}
         <span style="font-size:10px;color:inherit;opacity:0.7">${countById[id] || 0} trades</span>
       </label>`;
@@ -4768,7 +4802,7 @@ function _applyAccountFilter() {
   const allTrades = window._lastTrades || [];
   const sel       = window._selectedAccounts;
   const trades    = sel.size > 0
-    ? allTrades.filter(t => sel.has(String(t.account_id)))
+    ? allTrades.filter(t => sel.has(acctKey(t)))
     : allTrades;
   window._filteredMagics = sel.size > 0
     ? new Set(trades.map(t => String(t.magic)).filter(m => m && m !== '0'))
