@@ -1214,10 +1214,14 @@ async function handleImportOverview(files) {
 const SQX_OV_COLUMNS = ['archivo','magic','variante','estrategia_sqx','simbolo','tf','desde','hasta','estado','motivo','metrics','monthly','equity_daily','trades','validacion_csv'];
 
 function _sqxOverviewRow(obj) {
+  // Siempre las 15 columnas, con null en las ausentes — un bulk upsert de PostgREST
+  // exige que todas las filas del lote tengan exactamente las mismas claves (los
+  // objetos SIN_ORDERS vienen con menos claves que el resto y rompían el lote).
   const row = {};
+  for (const col of SQX_OV_COLUMNS) row[col] = obj[col] ?? null;
   const extraMetrics = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (SQX_OV_COLUMNS.includes(k)) { row[k] = v; continue; }
+    if (SQX_OV_COLUMNS.includes(k)) continue;
     if (typeof v === 'number' || typeof v === 'boolean') extraMetrics[k] = v;
   }
   if (Object.keys(extraMetrics).length) row.metrics = { ...extraMetrics, ...(row.metrics || {}) };
