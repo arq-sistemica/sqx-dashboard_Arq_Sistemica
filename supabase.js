@@ -330,6 +330,36 @@ const sb = {
     }
   },
 
+  // Todas las variantes de overview guardadas para un bot (sqx.html, ficha expandible — carga lazy).
+  async getSqxOverviewByMagic(magic) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/sqx_overview?magic=eq.${Number(magic)}&select=*`, {
+      headers: _sbHeaders(sb.getToken()),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.message || `Error ${r.status} al cargar sqx_overview`);
+    }
+    return r.json();
+  },
+
+  // Marca una variante como elegida: apaga `elegida` en todas las del mismo magic y
+  // la prende solo en `archivo`. Dos PATCH secuenciales — evita que un único request
+  // mal filtrado deje más de una variante marcada.
+  async setSqxOverviewElegida(magic, archivo) {
+    const base = `${SUPABASE_URL}/rest/v1/sqx_overview`;
+    const headers = { ..._sbHeaders(sb.getToken()), 'Prefer': 'return=minimal' };
+    let r = await fetch(`${base}?magic=eq.${Number(magic)}`, { method: 'PATCH', headers, body: JSON.stringify({ elegida: false }) });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.message || `Error ${r.status} al actualizar elegida`);
+    }
+    r = await fetch(`${base}?archivo=eq.${encodeURIComponent(archivo)}`, { method: 'PATCH', headers, body: JSON.stringify({ elegida: true }) });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.message || `Error ${r.status} al actualizar elegida`);
+    }
+  },
+
   async upsertBots(bots) {
     const rows = bots.map(_botToRow);
     const r = await fetch(`${SUPABASE_URL}/rest/v1/bots`, {

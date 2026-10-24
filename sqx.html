@@ -8,6 +8,7 @@
 <script src="sidebar.js"></script>
 <script src="config.js"></script>
 <script src="pseudocode-order.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
   --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;--border:#e0e3e8;--border2:#c8cdd5;
@@ -267,6 +268,12 @@ var DB = [];
 var sortCol = 'isPf', sortDir = -1;
 var filterMode = 'all';
 var expandedId = null;
+
+// Overview por fila expandible (public.sqx_overview) — cache en memoria por magic
+// (evita refetch al re-renderizar la tabla o al volver a abrir la misma fila) y
+// variante seleccionada actual por magic (pestañas v1/v2/...).
+var _sqxOverviewCache = {};
+var _sqxOverviewSelected = {};
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function authLogout() { if (typeof sb !== 'undefined') sb.signOut(); window.location.href = 'index.html'; }
@@ -596,12 +603,14 @@ function renderTable() {
 function toggleDetail(id) {
   const existing = document.getElementById('detail-' + id);
   if (existing) {
+    destroySqxChart(id);
     existing.remove();
     document.querySelector(`tr[data-id="${id}"]`)?.classList.remove('expanded');
     expandedId = null;
     return;
   }
   if (expandedId) {
+    destroySqxChart(expandedId);
     document.getElementById('detail-' + expandedId)?.remove();
     document.querySelector(`tr[data-id="${expandedId}"]`)?.classList.remove('expanded');
   }
@@ -620,6 +629,7 @@ function insertDetailRow(id, bot) {
   detail.id = 'detail-' + id;
   detail.innerHTML = '<td colspan="27"><div class="detail-inner">' + buildDetail(bot) + '</div></td>';
   tr.insertAdjacentElement('afterend', detail);
+  loadSqxOverviewTab(id, bot);
 }
 
 function metricsBlock(items) {
@@ -628,11 +638,186 @@ function metricsBlock(items) {
   ).join('') + '</div>';
 }
 
-function buildDetail(bot) {
-  const is = bot.is || {};
-  const id = String(bot.magic || bot.id);
+// ─── Overview desde public.sqx_overview (lazy, por fila expandible) ───
+function fmtUsd(v, dec) { // $ con signo (+/-) — P/L
+  if (v == null) return '—';
+  const n = Number(v);
+  return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(dec ?? 0);
+}
+function fmtUsdAbs(v, dec) { // $ sin signo — magnitudes (ej. DD $)
+  if (v == null) return '—';
+  return '$' + Math.abs(Number(v)).toFixed(dec ?? 0);
+}
+function _variantOrder(v) {
+  const m = v && /^v(\d+)$/i.exec(v);
+  return m ? Number(m[1]) : 0;
+}
 
-  // ── pestaña Overview ──────────────────────────────────────────────
+function destroySqxChart(id) {
+  const c = window._sqxCharts && window._sqxCharts[id];
+  if (c) { c.destroy(); delete window._sqxCharts[id]; }
+}
+
+function drawSqxEquityChart(canvasId, id, equityDaily) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !window.Chart) return;
+  const labels = equityDaily.map(p => p[0]);
+  const data   = equityDaily.map(p => p[1]);
+  const last   = data[data.length - 1] ?? 0;
+  const lineColor = last >= 0 ? '#1a7f4b' : '#b91c1c';
+  window._sqxCharts = window._sqxCharts || {};
+  window._sqxCharts[id] = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets: [{ data, borderColor: lineColor, backgroundColor: lineColor + '22', borderWidth: 1.3, pointRadius: 0, fill: true, tension: 0 }] },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => '$' + ctx.parsed.y.toLocaleString('es-AR', { maximumFractionDigits: 0 }) } },
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 10, autoSkip: true, maxRotation: 0 }, grid: { display: false } },
+        y: { ticks: { callback: v => '$' + v.toLocaleString('es-AR', { maximumFractionDigits: 0 }) }, grid: { color: 'rgba(0,0,0,.05)' } },
+      },
+    },
+  });
+}
+
+function buildMonthlyTableFromFlat(monthly) {
+  const years = [...new Set(Object.keys(monthly).map(k => k.slice(0, 4)))].sort();
+  if (!years.length) return '';
+  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  let html = '<div style="overflow-x:auto;margin-top:16px"><div class="detail-title">Mensual</div><table class="monthly-table"><thead><tr><th>Año</th>' +
+    MONTHS.map(m => `<th>${m}</th>`).join('') + '<th>YTD</th></tr></thead><tbody>';
+  years.forEach(y => {
+    let ytd = 0, any = false;
+    html += `<tr><td class="year-col">${y}</td>`;
+    for (let mo = 1; mo <= 12; mo++) {
+      const v = monthly[y + '-' + String(mo).padStart(2, '0')];
+      if (v == null) { html += '<td style="color:var(--text3)">—</td>'; continue; }
+      any = true; ytd += v;
+      html += `<td class="${v >= 0 ? 'm-pos' : 'm-neg'}">${v >= 0 ? '+' : ''}${v.toFixed(0)}</td>`;
+    }
+    html += `<td class="${ytd >= 0 ? 'm-pos' : 'm-neg'}" style="font-weight:700">${any ? (ytd >= 0 ? '+' : '') + ytd.toFixed(0) : '—'}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderSqxVariantBody(id, magic, row, hasMultiple) {
+  const body = document.getElementById('sqxov-body-' + id);
+  if (!body || !row) return;
+
+  const elegidaBtn = hasMultiple
+    ? `<button ${row.elegida ? 'disabled' : ''} style="margin-bottom:12px;${row.elegida ? 'border-color:#b2dfc8;color:var(--green);background:var(--green-bg)' : ''}" onclick="markSqxVariantElegida('${id}','${magic}','${row.archivo.replace(/'/g,"\\'")}')">${row.elegida ? '⭐ Elegida' : 'Marcar como elegida'}</button>`
+    : '';
+
+  if (row.estado === 'SIN_ORDERS' || !row.metrics) {
+    body.innerHTML = elegidaBtn + `<div style="padding:16px;color:var(--text3);font-size:12px">Variante sin backtest guardado${row.motivo ? ' — ' + row.motivo : ''}.</div>`;
+    return;
+  }
+
+  const m = row.metrics || {};
+  const grid = metricsBlock([
+    ['Net Profit', fmtUsd(m.net_profit)],
+    ['Trades', m.trades ?? '—'],
+    ['PF', fmt(m.pf)],
+    ['Win Rate', m.win_rate != null ? fmt(m.win_rate * 100, 1) + '%' : '—'],
+    ['DD $', fmtUsdAbs(m.dd_usd)],
+    ['Ret/DD', fmt(m.ret_dd)],
+    ['Avg Trade', fmtUsd(m.avg_trade)],
+    ['Largest Win', fmtUsd(m.largest_win)],
+    ['Largest Loss', fmtUsd(m.largest_loss)],
+    ['Max Consec Losses', m.max_consec_losses ?? '—'],
+    ['Stagnation (días)', m.stagnation_days ?? '—'],
+    ['Yearly Avg Profit', fmtUsd(m.yearly_avg_profit)],
+  ]);
+
+  const canvasId = 'sqxeq-' + id;
+  const chartHtml = row.equity_daily?.length
+    ? `<div style="margin:16px 0"><div class="detail-title">Equity Curve</div><canvas id="${canvasId}" height="90"></canvas></div>`
+    : '';
+  const monthlyHtml = row.monthly ? buildMonthlyTableFromFlat(row.monthly) : '';
+
+  body.innerHTML = elegidaBtn + grid + chartHtml + monthlyHtml;
+  if (row.equity_daily?.length) drawSqxEquityChart(canvasId, id, row.equity_daily);
+}
+
+function renderSqxOverviewWrap(id, bot, rows) {
+  const wrap = document.getElementById('sqxov-wrap-' + id);
+  if (!wrap) return;
+  const magic = String(bot.magic || bot.id);
+  const sorted = rows.slice().sort((a, b) => _variantOrder(a.variante) - _variantOrder(b.variante));
+  const prevSel = _sqxOverviewSelected[magic];
+  const current = (prevSel && sorted.find(r => r.archivo === prevSel))
+    ? prevSel
+    : (sorted.find(r => r.elegida)?.archivo || sorted[0].archivo);
+  _sqxOverviewSelected[magic] = current;
+  const selRow = sorted.find(r => r.archivo === current);
+  const hasMultiple = sorted.length > 1;
+
+  const tabs = hasMultiple
+    ? `<div class="dtab-bar" style="margin-bottom:12px">
+        ${sorted.map(r => `<button class="dtab-btn${r.archivo === current ? ' active' : ''}" onclick="selectSqxVariant('${id}','${magic}','${r.archivo.replace(/'/g,"\\'")}')">${r.variante || r.archivo}${r.elegida ? ' ⭐' : ''}</button>`).join('')}
+      </div>`
+    : '';
+
+  destroySqxChart(id);
+  wrap.innerHTML = tabs + `<div id="sqxov-body-${id}"></div>`;
+  renderSqxVariantBody(id, magic, selRow, hasMultiple);
+}
+
+function selectSqxVariant(id, magic, archivo) {
+  _sqxOverviewSelected[magic] = archivo;
+  const bot = DB.find(b => String(b.magic || b.id) === id);
+  const rows = _sqxOverviewCache[magic] || [];
+  if (bot && rows.length) renderSqxOverviewWrap(id, bot, rows);
+}
+
+async function markSqxVariantElegida(id, magic, archivo) {
+  try {
+    await sb.setSqxOverviewElegida(magic, archivo);
+    const rows = _sqxOverviewCache[magic] || [];
+    rows.forEach(r => { r.elegida = (r.archivo === archivo); });
+    const bot = DB.find(b => String(b.magic || b.id) === id);
+    if (bot) renderSqxOverviewWrap(id, bot, rows);
+    alertOk('✓ Variante marcada como elegida');
+  } catch(e) {
+    alertErr('Error al marcar elegida: ' + e.message);
+  }
+}
+
+async function loadSqxOverviewTab(id, bot) {
+  if (!document.getElementById('sqxov-wrap-' + id)) return; // la fila se cerró antes de llegar a pintar
+  if (!bot.magic) { // sin magic no hay cómo buscar en sqx_overview (bigint) — directo al fallback manual
+    const wrap = document.getElementById('sqxov-wrap-' + id);
+    if (wrap) wrap.innerHTML = buildManualOverviewTab(bot, id);
+    return;
+  }
+  const magic = String(bot.magic);
+  try {
+    if (!(magic in _sqxOverviewCache)) {
+      _sqxOverviewCache[magic] = await sb.getSqxOverviewByMagic(magic);
+    }
+    const rows = _sqxOverviewCache[magic] || [];
+    const wrap = document.getElementById('sqxov-wrap-' + id);
+    if (!wrap) return; // se cerró mientras cargaba
+    if (!rows.length) {
+      wrap.innerHTML = buildManualOverviewTab(bot, id);
+      return;
+    }
+    renderSqxOverviewWrap(id, bot, rows);
+  } catch(e) {
+    const wrap = document.getElementById('sqxov-wrap-' + id);
+    if (wrap) wrap.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px">Error al cargar overview: ${e.message}</div>`;
+  }
+}
+
+// Overview manual (paste de SQX + overviewData guardado en bots.overview_data) —
+// fallback cuando public.sqx_overview no tiene filas para este magic. No se borra:
+// sigue siendo la única fuente para bots sin backtest re-exportado todavía.
+function buildManualOverviewTab(bot, id) {
   let tabOverview = '';
   if (bot.overviewData?.monthlyData?.length) {
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -720,6 +905,16 @@ function buildDetail(bot) {
   tabOverview += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Pegá el Overview completo copiado desde SQX:</div>
     <textarea id="ov-${id}" rows="6" placeholder="TOTAL PROFIT&#10;$ 6038.41&#10;...&#10;MONTHLY PERFORMANCE ($)&#10;Year&#9;Jan&#9;Feb&#9;..." style="width:100%;font-size:11px;font-family:Consolas,monospace;border:1px solid var(--border2);border-radius:var(--radius);padding:8px;resize:vertical;background:var(--bg2)"></textarea>
     <button style="margin-top:6px" onclick="saveOverview('${id}')">💾 Parsear y guardar</button>`;
+  return tabOverview;
+}
+
+function buildDetail(bot) {
+  const is = bot.is || {};
+  const id = String(bot.magic || bot.id);
+
+  // ── pestaña Overview — placeholder, se llena async desde public.sqx_overview
+  // (loadSqxOverviewTab, llamado por insertDetailRow) o cae al manual si no hay filas.
+  const tabOverview = `<div id="sqxov-wrap-${id}" class="sqxov-wrap"><div style="padding:16px;color:var(--text3);font-size:12px">Cargando overview…</div></div>`;
 
   // ── pestaña Pseudocódigo ──────────────────────────────────────────
   let tabPseudo;
