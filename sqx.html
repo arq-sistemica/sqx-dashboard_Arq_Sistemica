@@ -147,9 +147,29 @@ td.num{text-align:right}
     <button class="btn" onclick="document.getElementById('pseudo-input').click()">📝 Scan Pseudocódigos</button>
     <input type="file" id="overview-input" accept=".json" style="display:none" onchange="handleImportOverview(this.files);this.value=''">
     <button class="btn" onclick="document.getElementById('overview-input').click()">📥 Importar Overview backup</button>
+    <input type="file" id="sqx-overview-input" accept=".json" style="display:none" onchange="handleImportSqxOverview(this.files);this.value=''">
+    <button class="btn" onclick="document.getElementById('sqx-overview-input').click()">📥 Importar SQX Overview</button>
     <button class="btn" id="btn-apikey" onclick="configAnthropicKey()" title="Configurar Anthropic API Key para análisis IA">🔑 API Key</button>
     <button class="btn" onclick="toggleRulesPanel(true)">📊 Bandas del semáforo</button>
     <button class="btn" style="border-color:#fcc;color:var(--red)" onclick="deleteAllBots()">🗑 Borrar todo</button>
+  </div>
+</div>
+
+<div id="sqximp-progress-wrap" style="display:none;padding:8px 24px;border-bottom:1px solid var(--border);background:var(--bg)">
+  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px">
+    <span>Importando SQX Overview…</span><span id="sqximp-progress-label">0 / 0</span>
+  </div>
+  <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+    <div id="sqximp-progress-bar" style="height:100%;width:0%;background:var(--accent);transition:width .15s"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="sqximp-summary-backdrop" onclick="if(event.target===this)closeSqxImportSummary()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeSqxImportSummary()">✕</button>
+    <h2>📥 Importar SQX Overview — resumen</h2>
+    <div class="modal-sub">public.sqx_overview — upsert por "archivo" en lotes de 5.</div>
+    <div id="sqximp-summary-wrap"></div>
   </div>
 </div>
 
@@ -1184,6 +1204,84 @@ async function handleImportOverview(files) {
 
   renderTable();
   alertOk(`✓ Overview importado — ${matched} bot(s) actualizados, ${missed} sin match.`);
+}
+
+// ─── Importar SQX Overview (public.sqx_overview) ──────────────────────
+// Columnas reales de la tabla — cualquier otra clave del JSON se descarta,
+// salvo que sea un valor escalar (número/bool): esas se consideran métricas
+// sueltas (ej. total_data_years, abiertos_al_final, equity_completada_dias)
+// y se pliegan dentro de `metrics` en vez de perderse.
+const SQX_OV_COLUMNS = ['archivo','magic','variante','estrategia_sqx','simbolo','tf','desde','hasta','estado','motivo','metrics','monthly','equity_daily','trades','validacion_csv'];
+
+function _sqxOverviewRow(obj) {
+  const row = {};
+  const extraMetrics = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (SQX_OV_COLUMNS.includes(k)) { row[k] = v; continue; }
+    if (typeof v === 'number' || typeof v === 'boolean') extraMetrics[k] = v;
+  }
+  if (Object.keys(extraMetrics).length) row.metrics = { ...extraMetrics, ...(row.metrics || {}) };
+  return row;
+}
+
+function closeSqxImportSummary() { document.getElementById('sqximp-summary-backdrop')?.classList.remove('open'); }
+
+function showSqxImportSummary(ok, errors) {
+  const wrap = document.getElementById('sqximp-summary-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <div style="font-size:13px;margin-bottom:10px">
+      <b class="pass">${ok} OK</b>&nbsp;·&nbsp;<b class="${errors.length ? 'fail' : ''}">${errors.length} error${errors.length !== 1 ? 'es' : ''}</b>
+    </div>
+    ${errors.length ? `<table class="rules-table"><thead><tr><th class="left">Archivo</th><th class="left">Error</th></tr></thead><tbody>
+      ${errors.map(e => `<tr><td class="left">${e.archivo}</td><td class="left fail">${e.msg}</td></tr>`).join('')}
+    </tbody></table>` : ''}
+  `;
+  document.getElementById('sqximp-summary-backdrop').classList.add('open');
+}
+
+async function handleImportSqxOverview(files) {
+  if (!files.length) return;
+  let json;
+  try { json = JSON.parse(await files[0].text()); }
+  catch(e) { alertErr('JSON inválido: ' + e.message); return; }
+  if (!Array.isArray(json)) { alertErr('El archivo debe ser un array de objetos.'); return; }
+  if (!json.length) { alertErr('Archivo vacío.'); return; }
+
+  const rows = [];
+  const errors = [];
+  json.forEach((obj, i) => {
+    if (!obj || typeof obj !== 'object') { errors.push({ archivo: `(fila ${i+1})`, msg: 'No es un objeto' }); return; }
+    if (!obj.archivo) { errors.push({ archivo: `(fila ${i+1})`, msg: 'Falta "archivo"' }); return; }
+    if (obj.magic == null || isNaN(Number(obj.magic))) { errors.push({ archivo: obj.archivo, msg: 'Magic inválido o ausente' }); return; }
+    rows.push(_sqxOverviewRow(obj));
+  });
+
+  const total = json.length;
+  const progWrap = document.getElementById('sqximp-progress-wrap');
+  const progLbl  = document.getElementById('sqximp-progress-label');
+  const progBar  = document.getElementById('sqximp-progress-bar');
+  progWrap.style.display = '';
+  progLbl.textContent = `0 / ${total}`;
+  progBar.style.width = '0%';
+
+  let ok = 0;
+  const BATCH = 5;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH);
+    try {
+      await sb.upsertSqxOverview(batch);
+      ok += batch.length;
+    } catch(e) {
+      batch.forEach(r => errors.push({ archivo: r.archivo, msg: e.message }));
+    }
+    const done = Math.min(i + BATCH, rows.length) + (total - rows.length);
+    progLbl.textContent = `${done} / ${total}`;
+    progBar.style.width = (done / total * 100) + '%';
+  }
+
+  progWrap.style.display = 'none';
+  showSqxImportSummary(ok, errors);
 }
 
 // ─── parseCSV + splitLine ─────────────────────────────────────────────

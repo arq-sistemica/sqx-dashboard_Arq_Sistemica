@@ -312,6 +312,24 @@ const sb = {
     return r.json();
   },
 
+  // Upsert de un lote de filas en public.sqx_overview (importador SQX Overview, sqx.html).
+  // onConflict por `archivo` (PK). No manda user_id (lo pone auth.uid() por default) ni
+  // `elegida` (columna de selección manual — nunca se pisa desde un import).
+  async upsertSqxOverview(rows) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/sqx_overview?on_conflict=archivo`, {
+      method:  'POST',
+      headers: {
+        ..._sbHeaders(sb.getToken()),
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(rows),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.message || `Error ${r.status} al guardar sqx_overview`);
+    }
+  },
+
   async upsertBots(bots) {
     const rows = bots.map(_botToRow);
     const r = await fetch(`${SUPABASE_URL}/rest/v1/bots`, {
