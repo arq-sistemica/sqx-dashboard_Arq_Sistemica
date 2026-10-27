@@ -1,9 +1,15 @@
 //+------------------------------------------------------------------+
 //| TradeCapture_v4.mq5 — Envía trades cerrados a Supabase          |
-//| v4.01 — Tope de lookback a 60 días en modo incremental          |
+//| v4.03 — Comisión IN+OUT (antes solo tomaba la del deal de       |
+//|         cierre), ticket = ID de posición (antes ticket del      |
+//|         deal — ahora el upsert ticket+account_id deduplica      |
+//|         siempre), dirección leída directo del deal DEAL_ENTRY_IN |
+//|         (antes se invertía el tipo del deal de cierre), y        |
+//|         versión del EA incluida en cada envío.                  |
 //+------------------------------------------------------------------+
 #property copyright "Arquitectura Sistemica"
-#property version   "4.01"
+#property version   "4.03"
+#define EA_VERSION "4.03"
 
 input string UserToken    = "";           // Token personal (copiar desde el dashboard)
 input string AccountLabel = "Principal";  // Nombre de esta cuenta MT5
@@ -40,7 +46,7 @@ void ScanHistory() {
    datetime lastCheck = (datetime)GlobalVariableGet(lastKey);
    datetime now       = TimeCurrent();
    bool     isFirstRun = (lastCheck == 0);
-   datetime from      = isFirstRun ? D'2000.01.01 00:00:00' : (datetime)MathMin((double)lastCheck, (double)(now - 60*86400));
+   datetime from      = isFirstRun ? D'2000.01.01 00:00:00' : (datetime)MathMax((double)lastCheck, (double)(now - 60*86400));
 
    if (!HistorySelect(from, now)) return;
 
@@ -119,27 +125,37 @@ bool SendTrade(ulong ticket) {
    double   profit     = HistoryDealGetDouble(ticket, DEAL_PROFIT);
    double   lots       = HistoryDealGetDouble(ticket, DEAL_VOLUME);
    double   closePrice = HistoryDealGetDouble(ticket, DEAL_PRICE);
-   double   commission = HistoryDealGetDouble(ticket, DEAL_COMMISSION);
    double   swap       = HistoryDealGetDouble(ticket, DEAL_SWAP);
    datetime closeTime  = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
    long     posId      = HistoryDealGetInteger(ticket, DEAL_POSITION_ID);
-   long     dealType   = HistoryDealGetInteger(ticket, DEAL_TYPE);
 
-   // Buscar deal de apertura con HistorySelectByPosition (O(k) por posición, no O(n²))
-   datetime openTime  = 0;
-   double   openPrice = 0;
-   double   sl        = 0;
-   double   tp        = 0;
-   bool     foundOpen = false;
+   // Buscar deal de apertura con HistorySelectByPosition (O(k) por posición, no O(n²)).
+   // Comisión: se suma la de TODOS los deals de la posición (entrada + salida —
+   // MT5 cobra comisión en cada uno por separado, no solo al cerrar).
+   // Dirección: se toma del deal DEAL_ENTRY_IN directo, no invirtiendo el tipo
+   // del deal de cierre (cerrar un long es un SELL deal y viceversa — invertir
+   // funciona en el caso simple, pero depender del deal de apertura es más directo
+   // y no asume nada sobre cuál deal es cuál).
+   datetime openTime   = 0;
+   double   openPrice  = 0;
+   double   sl         = 0;
+   double   tp         = 0;
+   double   commission = 0;
+   long     dealType   = 0;
+   bool     foundOpen  = false;
 
    if (HistorySelectByPosition(posId)) {
       int posDeals = HistoryDealsTotal();
       for (int j = 0; j < posDeals; j++) {
          ulong tk2 = HistoryDealGetTicket(j);
+         commission += HistoryDealGetDouble(tk2, DEAL_COMMISSION);
+
+         if (foundOpen) continue; // ya tenemos los datos del primer IN — solo falta sumar comisión
          if (HistoryDealGetInteger(tk2, DEAL_ENTRY) != DEAL_ENTRY_IN) continue;
 
          openTime  = (datetime)HistoryDealGetInteger(tk2, DEAL_TIME);
          openPrice = HistoryDealGetDouble(tk2, DEAL_PRICE);
+         dealType  = HistoryDealGetInteger(tk2, DEAL_TYPE);
 
          // SL/TP reales desde la orden de entrada
          ulong openOrder = (ulong)HistoryDealGetInteger(tk2, DEAL_ORDER);
@@ -148,7 +164,6 @@ bool SendTrade(ulong ticket) {
             tp = HistoryOrderGetDouble(openOrder, ORDER_TP);
          }
          foundOpen = true;
-         break;
       }
    }
 
@@ -168,21 +183,21 @@ bool SendTrade(ulong ticket) {
    StringReplace(server, "\"", "'");
 
    string json = StringFormat(
-      "{\"token\":\"%s\",\"ticket\":%I64u,\"account_id\":\"%s\",\"account_label\":\"%s\","
+      "{\"token\":\"%s\",\"ticket\":%I64d,\"account_id\":\"%s\",\"account_label\":\"%s\","
       "\"account_broker\":\"%s\",\"account_server\":\"%s\",\"account_currency\":\"%s\","
       "\"magic\":%I64d,\"symbol\":\"%s\",\"type\":\"%s\","
       "\"open_time\":\"%s\",\"close_time\":\"%s\","
       "\"lots\":%.2f,\"open_price\":%.5f,\"close_price\":%.5f,"
       "\"sl\":%.5f,\"tp\":%.5f,\"profit\":%.2f,\"commission\":%.2f,\"swap\":%.2f,"
-      "\"comment\":\"%s\"}",
-      UserToken, ticket, accountId, AccountLabel,
+      "\"comment\":\"%s\",\"ea_version\":\"%s\"}",
+      UserToken, posId, accountId, AccountLabel,
       broker, server, currency,
       magic, symbol,
-      (dealType == DEAL_TYPE_BUY ? "sell" : "buy"),
+      (dealType == DEAL_TYPE_BUY ? "buy" : "sell"),
       TimeToString(openTime,  TIME_DATE|TIME_SECONDS),
       TimeToString(closeTime, TIME_DATE|TIME_SECONDS),
       lots, openPrice, closePrice,
-      sl, tp, profit, commission, swap, comment
+      sl, tp, profit, commission, swap, comment, EA_VERSION
    );
 
    char   body[], response[];
@@ -194,10 +209,10 @@ bool SendTrade(ulong ticket) {
                         5000, body, response, respHeaders);
 
    if (res == 200) {
-      Print("TC v4 OK — ticket ", ticket, " | magic ", magic, " | profit ", profit);
+      Print("TC v4 OK — pos ", posId, " (deal ", ticket, ") | magic ", magic, " | profit ", profit);
       return true;
    }
 
-   Print("TC v4 ERROR ", res, " — ticket ", ticket, " | ", CharArrayToString(response));
+   Print("TC v4 ERROR ", res, " — pos ", posId, " (deal ", ticket, ") | ", CharArrayToString(response));
    return false;
 }
