@@ -1556,17 +1556,15 @@ const MAGIC_ALIAS = { '1452': '1452315', '5962': '5962114' };
 // Identidad real de la cuenta: account_id, NUNCA account_label — el label es texto
 // libre que manda el EA (input AccountLabel) y puede llegar con distinta mayúscula/
 // espacios entre instancias, lo que partía una misma cuenta en "cuentas fantasma"
-// en filtros/paneles. 'historical' es un id sintético compartido por el importador
-// manual de MyFxBook (mt5.html) — ahí SÍ hace falta el label para distinguir cuentas.
+// en filtros/paneles. El importador de MyFxBook (mt5.html) usa el account_id real
+// de la tabla `accounts` — ya no existe el id sintético 'historical'.
 function acctKey(t) {
-  const id = String(t.account_id || '');
-  return id === 'historical' ? id + ':' + (t.account_label || '') : id;
+  return String(t.account_id || '');
 }
 
 // Nombre amigable para mostrar, a partir de la identidad real (acctKey/account_id).
 function accountDisplayLabel(key) {
   if (!key) return 'unknown';
-  if (key.startsWith('historical:')) return key.slice('historical:'.length) || 'historical';
   return (window._accountLabels && window._accountLabels[key]) || key;
 }
 
@@ -1578,7 +1576,7 @@ async function _loadAccountLabels(trades) {
   const latestClose = {};
   for (const t of (trades || [])) {
     const id = String(t.account_id || '');
-    if (!id || id === 'historical') continue;
+    if (!id) continue;
     if (!latestClose[id] || (t.close_time || '') > latestClose[id]) {
       latestClose[id] = t.close_time || '';
       map[id] = t.account_label || id;
@@ -4755,7 +4753,7 @@ function renderAccountCheckboxes() {
   const container = document.getElementById('account-filters');
   if (!container) return;
 
-  // Detectar cuentas únicas por acctKey (account_id, o account_id:label para 'historical')
+  // Detectar cuentas únicas por acctKey (account_id)
   const ids = [...new Set(trades.map(acctKey).filter(Boolean))].sort();
 
   // Solo mostrar si hay 2 o más cuentas

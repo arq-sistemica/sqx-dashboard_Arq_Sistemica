@@ -409,18 +409,16 @@ function equityCurve(tradeList) {
 // Identidad real de la cuenta: account_id, NUNCA account_label — el label es texto
 // libre que manda el EA (input AccountLabel) y puede llegar con distinta mayúscula/
 // espacios entre instancias, lo que partía una misma cuenta en "cuentas fantasma"
-// en el filtro y en el desempate de magic multi-cuenta. 'historical' es un id
-// sintético compartido por el importador manual de MyFxBook más abajo — ahí SÍ
-// hace falta el label para distinguir cuentas.
+// en el filtro y en el desempate de magic multi-cuenta. El importador de MyFxBook
+// ahora también usa el account_id real de la tabla `accounts` — ya no existe el
+// id sintético 'historical', así que no hace falta ninguna rama especial acá.
 function acctKey(t) {
-  const id = String(t.account_id || '');
-  return id === 'historical' ? id + ':' + (t.account_label || '') : id;
+  return String(t.account_id || '');
 }
 
 // Nombre amigable para mostrar, a partir de la identidad real (acctKey/account_id).
 function accountDisplayLabel(key) {
   if (!key) return 'unknown';
-  if (key.startsWith('historical:')) return key.slice('historical:'.length) || 'historical';
   return (window._accountLabels && window._accountLabels[key]) || key;
 }
 
@@ -432,7 +430,7 @@ async function _loadAccountLabels(trades) {
   const latestClose = {};
   for (const t of (trades || [])) {
     const id = String(t.account_id || '');
-    if (!id || id === 'historical') continue;
+    if (!id) continue;
     if (!latestClose[id] || (t.close_time || '') > latestClose[id]) {
       latestClose[id] = t.close_time || '';
       map[id] = t.account_label || id;
@@ -1553,7 +1551,7 @@ function toggleImporter() {
   if (open) populateImporterSelects();
 }
 
-function populateImporterSelects() {
+async function populateImporterSelects() {
   // Bots
   const botSel = document.getElementById('imp-bot');
   const prev   = botSel.value;
@@ -1569,22 +1567,26 @@ function populateImporterSelects() {
       botSel.appendChild(opt);
     });
 
-  // Cuentas — toma las que ya están en _allTrades
+  // Cuentas — desde la tabla `accounts` (value=id real, texto=name), no desde
+  // los labels libres de _allTrades.
   const acctSel  = document.getElementById('imp-account');
   const prevAcct = acctSel.value;
-  const accounts = [...new Set(_allTrades.map(t => t.account_label).filter(Boolean))].sort();
+  let accounts = [];
+  try { accounts = await sb.getMyAccounts(); } catch(e) { /* selector queda vacío */ }
   acctSel.innerHTML = '<option value="">— seleccioná cuenta —</option>' +
-    accounts.map(a => `<option${a===prevAcct?' selected':''}>${a}</option>`).join('');
+    accounts.map(a => `<option value="${a.id}"${String(a.id)===prevAcct?' selected':''}>${a.name || a.id}</option>`).join('');
 }
 
 function impParse() {
-  const raw     = document.getElementById('imp-raw').value.trim();
-  const magic   = document.getElementById('imp-bot').value;
-  const account = document.getElementById('imp-account').value;
+  const raw        = document.getElementById('imp-raw').value.trim();
+  const magic      = document.getElementById('imp-bot').value;
+  const acctSel     = document.getElementById('imp-account');
+  const accountId   = acctSel.value;
+  const accountName = acctSel.selectedOptions[0]?.text || accountId;
 
-  if (!magic)   { alertErr('Seleccioná un bot primero');    return; }
-  if (!account) { alertErr('Seleccioná una cuenta primero'); return; }
-  if (!raw)     { alertErr('Pegá los datos de MyFxBook');   return; }
+  if (!magic)     { alertErr('Seleccioná un bot primero');    return; }
+  if (!accountId) { alertErr('Seleccioná una cuenta primero'); return; }
+  if (!raw)       { alertErr('Pegá los datos de MyFxBook');   return; }
 
   // Normalizar: MyFxBook parte "SL\n(Precio)" y "TP\n(Precio)" en líneas separadas
   // Merge de líneas que son continuación de un header (empiezan con "(" y no son fecha)
@@ -1659,7 +1661,8 @@ function impParse() {
 
     trades.push({
       magic:        Number(magic),
-      account_label: account,
+      account_id:   accountId,
+      account_label: accountName,
       symbol:       sym,
       type,
       open_time:    openTime,
@@ -1705,14 +1708,18 @@ function impParse() {
 }
 
 async function impDeleteBot() {
-  const magic   = document.getElementById('imp-bot').value;
-  const botName = document.getElementById('imp-bot').selectedOptions[0]?.text || magic;
-  if (!magic) { alertErr('Seleccioná un bot primero'); return; }
-  if (!confirm(`¿Borrar TODOS los trades importados de MyFxBook para "${botName}"?\nEsta acción no se puede deshacer.`)) return;
+  const magic      = document.getElementById('imp-bot').value;
+  const botName    = document.getElementById('imp-bot').selectedOptions[0]?.text || magic;
+  const acctSel    = document.getElementById('imp-account');
+  const accountId  = acctSel.value;
+  const acctName   = acctSel.selectedOptions[0]?.text || accountId;
+  if (!magic)     { alertErr('Seleccioná un bot primero'); return; }
+  if (!accountId) { alertErr('Seleccioná una cuenta primero'); return; }
+  if (!confirm(`¿Borrar los trades importados de MyFxBook para "${botName}" en la cuenta "${acctName}"?\nEsta acción no se puede deshacer.`)) return;
 
   const authToken = sb.getToken();
   const userId    = JSON.parse(atob(authToken.split('.')[1])).sub;
-  const endpoint  = `${SUPABASE_URL}/rest/v1/trades?magic=eq.${magic}&account_id=eq.historical&comment=eq.myfxbook_import&user_id=eq.${userId}`;
+  const endpoint  = `${SUPABASE_URL}/rest/v1/trades?magic=eq.${magic}&account_id=eq.${encodeURIComponent(accountId)}&comment=eq.myfxbook_import&user_id=eq.${userId}`;
 
   try {
     const res = await fetch(endpoint, {
@@ -1748,7 +1755,10 @@ async function impConfirm() {
   const userId = JSON.parse(atob(authToken.split('.')[1])).sub;
 
   const rows = _impTrades.map(t => {
-    const hashStr = `${t.magic}_${t.open_time}_${t.close_time}_${t.symbol}`;
+    // Dedupe por posición real: cuenta + precios de apertura/cierre + cierre al
+    // minuto + lotes. Sin magic — si el mismo trade se importa para 2 bots por
+    // error, ahora SÍ choca (antes el hash incluía magic y nunca deduplicaba).
+    const hashStr = `${t.account_id}_${t.close_time}_${t.open_price}_${t.close_price}_${t.lots}`;
     let hash = 0;
     for (let c = 0; c < hashStr.length; c++) hash = Math.imul(31, hash) + hashStr.charCodeAt(c) | 0;
     const syntheticTicket = Math.abs(hash) + 9000000000;
@@ -1756,7 +1766,7 @@ async function impConfirm() {
     return {
       user_id:       userId,
       ticket:        syntheticTicket,
-      account_id:    'historical',
+      account_id:    t.account_id,
       account_label: t.account_label,
       magic:         t.magic,
       symbol:        t.symbol,
