@@ -804,6 +804,12 @@ function showApp(bots) {
 
 const MAGIC_ALIAS = { '1452': '1452315', '5962': '5962114' };
 
+// Identidad real de la cuenta: account_id, no account_label (texto libre del EA,
+// puede variar de mayúscula/espacios entre instancias y partir una cuenta en dos).
+function acctKey(t) {
+  return String(t.account_id || '');
+}
+
 function computeLiveMetrics(trades) {
   // Paso 1: agrupar por magic → por cuenta (evitar double-counting multi-VPS)
   const byMagicAccount = {};
@@ -811,7 +817,8 @@ function computeLiveMetrics(trades) {
     const raw = String(t.magic || '');
     const m = MAGIC_ALIAS[raw] || raw;
     if (!m || m === '0') continue;
-    const acct = t.account_label || String(t.account_id) || 'unknown';
+    const acct = acctKey(t);
+    if (!acct) continue;
     if (!byMagicAccount[m]) byMagicAccount[m] = {};
     if (!byMagicAccount[m][acct]) byMagicAccount[m][acct] = [];
     byMagicAccount[m][acct].push(t);

@@ -13,7 +13,6 @@ const MAGIC_ALIASES = {
   '1324416':   '4324416',    // Strategy 4.3.24 - Improved 4.1.6
   '1326115':   '13261115',   // Strategy 1.3.26(1) - Improved 1.1.5
   '1326116':   '13261116',   // Strategy 1.3.26(1) - Improved 1.1.6
-  '1452316':   '1452315',    // Strategy 1.4.5(2) - Improved 3.1.5
   '1916214':   '19162142',   // Strategy 1.9.16 - Improved 2.1.4(2)
   '1917':      '1917115',    // Strategy 1.9.17 - Improved 1.1.5
   '1917516':   '19171515',   // Strategy 1.9.17(1) - Improved 5.1.5
@@ -21,8 +20,7 @@ const MAGIC_ALIASES = {
   '2626':      '2626515',    // Strategy 2.6.26 - Improved 5.1.5
   '2718':      '2718115',    // Strategy 2.7.18 - Improved 1.1.5
   '3115216':   '31152216',   // Strategy 3.1.15(2) - Improved 2.1.6
-  '311534151': '3115341511', // Strategy 3.1.15(3) - Improved 4.1.5(1)(1)
-  '3115415':   '3115341511', // Strategy 3.1.15(3) - Improved 4.1.5(1)(1) (segundo magic viejo distinto)
+  '3115415':   '311534151',  // Strategy 3.1.15(3) - Improved 4.1.5(1) (magic viejo del bot real)
   '3117':      '31172151',   // Strategy 3.1.17 - Improved 2.1.5(1)
   '3118':      '31186114',   // Strategy 3.1.18(6) - Improved 1.1.4
   '3118114':   '31186114',   // Strategy 3.1.18(6) - Improved 1.1.4 (segundo magic viejo distinto)
